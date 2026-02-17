@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>التطبيق الاحترافي</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#f5f5f5;padding-bottom:70px}header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:15px 20px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.1);position:sticky;top:0;z-index:999}header h1{font-size:22px}#mainContent{min-height:calc(100vh - 130px);padding:20px}.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:10px 0;box-shadow:0 -2px 10px rgba(0,0,0,.1);z-index:1000}.nav-item{flex:1;text-align:center;padding:8px 0;cursor:pointer;transition:all .3s;border:none;background:none}.nav-item.active{color:#667eea}.nav-icon{font-size:24px;display:block;margin-bottom:4px}.nav-label{font-size:11px;color:#6c757d}.nav-item.active .nav-label{color:#667eea;font-weight:600}.home-content{text-align:center;padding:50px 20px}.welcome-card{background:#fff;padding:40px 20px;border-radius:15px;box-shadow:0 4px 15px rgba(0,0,0,.1);max-width:400px;margin:0 auto}.welcome-card h2{color:#667eea;margin-bottom:15px;font-size:28px}.welcome-card p{color:#6c757d;font-size:16px;line-height:1.6}
+</style>
+</head>
+<body>
+<header><h1 id="pageTitle">🌟 التطبيق الاحترافي</h1></header>
+<div id="mainContent">
+<div class="home-content">
+<div class="welcome-card">
+<h2>مرحباً بك! 👋</h2>
+<p>اضغط على أيقونة "البروفايل" في الأسفل لعرض صفحة البروفايل دون إعادة تحميل الصفحة</p>
+</div>
+</div>
+</div>
+<nav class="bottom-nav">
+<button class="nav-item active" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">الرئيسية</span></button>
+<button class="nav-item" data-page="search"><span class="nav-icon">🔍</span><span class="nav-label">البحث</span></button>
+<button class="nav-item" data-page="notifications"><span class="nav-icon">🔔</span><span class="nav-label">الإشعارات</span></button>
+<button class="nav-item" data-page="profile"><span class="nav-icon">👤</span><span class="nav-label">البروفايل</span></button>
+</nav>
+<script src="app.js"></script>
+</body>
+</html>
