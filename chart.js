@@ -1,1 +1,1235 @@
-const $=i=>document.getElementById(i),clp=(v,a,b)=>Math.max(a,Math.min(b,v)),nS=v=>{if(!(v>0))return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),n=v/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p};class Chart{constructor(){this.cv=$("c");this.ctx=this.cv.getContext("2d");this.host=this.cv.closest(".tc");this.cs=[];this.cc=null;this.baseSpacing=12;this.baseCandleWidth=8;this.drag=0;this.dragStartX=0;this.dragStartScroll=0;this.manualScrollOffset=0;this.targetScrollOffset=0;this.momentum=0;this.lastDragDelta=0;this.lastDragTime=0;this.tf=6e4;this.t0=Math.floor(Date.now()/6e4)*6e4;this.minZoom=.5;this.maxZoom=50;this.tlDrag=null;this.zoom=1;this.targetZoom=1;this.zoomEase=.18;this.priceInd=null;this.scaleMark=null;this.on=0;this.switching=0;this.candleWidthMultiplier=1;this.priceCompression=1;this.tickTimer=null;this.loopFrame=null;this.pair="EUR/USD";this.d={price:1.0895,seed:33333,digits:5};this.cp=1.0895;this.priceRange={min:1.0895*.95,max:1.0895*1.05};this.inds=[];this.setup();this.ev()}setup(){const dpr=devicePixelRatio||1,r=this.host.getBoundingClientRect();this.w=Math.max(0,r.width);this.h=Math.max(0,r.height-24);this.cv.width=Math.floor(this.w*dpr);this.cv.height=Math.floor(this.h*dpr);this.cv.style.width=this.w+"px";this.cv.style.height=this.h+"px";this.ctx.setTransform(dpr,0,0,dpr,0,0);if(!this.priceInd){this.priceInd=document.createElement("div");this.priceInd.className="priceIndicator";this.host.appendChild(this.priceInd)}if(!this.scaleMark){this.scaleMark=document.createElement("div");this.scaleMark.className="priceScaleMark";this.host.appendChild(this.scaleMark)}}tickZoom(){const dz=this.targetZoom-this.zoom;this.zoom=Math.abs(dz)>.0001?this.zoom+dz*this.zoomEase:this.targetZoom}getSpacing(){return this.baseSpacing*this.zoom}getCandleWidth(){return Math.max(1,this.baseCandleWidth*this.zoom*this.candleWidthMultiplier)}getMinScrollOffset(){return this.w/2-this.cs.length*this.getSpacing()}getMaxScrollOffset(){return this.w/2}clampPan(){const mn=this.getMinScrollOffset(),mx=this.getMaxScrollOffset();this.targetScrollOffset=clp(this.targetScrollOffset,mn,mx);this.manualScrollOffset=clp(this.manualScrollOffset,mn,mx)}snapToLive(){this.targetScrollOffset=this.getMinScrollOffset();this.manualScrollOffset=this.targetScrollOffset;this.momentum=0;this.clampPan()}smoothScroll(){let df=this.targetScrollOffset-this.manualScrollOffset;if(Math.abs(df)>.001){const cp=this.getSpacing()*.45;df=clp(df,-cp,cp);this.manualScrollOffset+=df*.35}else this.manualScrollOffset=this.targetScrollOffset}applyMomentum(){if(Math.abs(this.momentum)>.1){this.targetScrollOffset+=this.momentum;this.momentum*=.94}else this.momentum=0}getScrollOffset(){this.applyMomentum();this.smoothScroll();this.clampPan();return this.manualScrollOffset}indexToX(i){return this.getScrollOffset()+i*this.getSpacing()}xToIndex(x){return(x-this.getScrollOffset())/this.getSpacing()}rnd(s){const x=Math.sin(s)*1e4;return x-Math.floor(x)}rndG(s){const u1=this.rnd(s),u2=this.rnd(s+1e5);return Math.sqrt(-2*Math.log(u1+1e-10))*Math.cos(2*Math.PI*u2)}genCandle(t,op){const s=this.d.seed+Math.floor(t/this.tf),vBase=.0008,tBase=.00005,r1=this.rndG(s),r2=this.rndG(s+1),r3=this.rndG(s+2),r4=this.rnd(s+3),r5=this.rnd(s+4),r6=this.rnd(s+5),vl=vBase*(.7+Math.abs(r1)*.8),tr=tBase*r2*.6,dr=r3>0?1:-1,tg=op+(dr*vl+tr),rv=vl*(.2+r4*.6),hm=rv*(.3+r5*.7),lm=rv*(.3+(1-r5)*.7),dg=this.d.digits,cl=+(tg+(r6-.5)*vl*.1).toFixed(dg),o=+op.toFixed(dg);return{open:o,close:cl,high:+Math.max(o,cl,o+hm,cl+hm).toFixed(dg),low:+Math.min(o,cl,o-lm,cl-lm).toFixed(dg),timestamp:t}}getPriceRange(){const c=(this.priceRange.min+this.priceRange.max)/2,hr=((this.priceRange.max-this.priceRange.min)/2)/(1*this.priceCompression);return{min:c-hr,max:c+hr}}priceToY(p){const r=this.getPriceRange(),n=(p-r.min)/(r.max-r.min);return this.h*(1-n)}yToPrice(y){const r=this.getPriceRange(),n=1-(y/this.h);return r.min+n*(r.max-r.min)}updatePriceRange(){let v=[...this.cs];if(this.cc&&(!v.length||this.cc.timestamp!==v[v.length-1].timestamp))v.push(this.cc);if(!v.length){this.priceRange={min:this.d.price*.95,max:this.d.price*1.05};return}const s=Math.floor(this.xToIndex(0)),e=Math.ceil(this.xToIndex(this.w)),vs=v.slice(Math.max(0,s-5),Math.min(v.length,e+5));if(!vs.length){this.priceRange={min:this.d.price*.95,max:this.d.price*1.05};return}const lw=vs.map(x=>x.low),hg=vs.map(x=>x.high),mn=Math.min(...lw),mx=Math.max(...hg),pd=(mx-mn)*.15||1e-9;this.priceRange={min:mn-pd,max:mx+pd}}gridSteps(){const r=this.getPriceRange(),sp=r.max-r.min,sP=nS(sp/8),tS=this.tf*(this.w/this.getSpacing());let sT=nS(tS/7);const al=[5e3,1e4,15e3,3e4,6e4,12e4,3e5,6e5,9e5,18e5,36e5,72e5];sT=al.reduce((a,b)=>Math.abs(b-sT)<Math.abs(a-sT)?b:a,al[0]);return{stepP:sP,stepT:sT}}drawGrid(){const r=this.getPriceRange(),{stepP,stepT}=this.gridSteps();this.ctx.lineWidth=1;this.ctx.strokeStyle="rgba(255,255,255,.16)";let p0=Math.floor(r.min/stepP)*stepP;for(let p=p0;p<=r.max+stepP*1.001;p+=stepP){const y=this.priceToY(p);if(y<0||y>this.h)continue;this.ctx.beginPath();this.ctx.moveTo(0,y+.5);this.ctx.lineTo(this.w,y+.5);this.ctx.stroke()}const s=Math.floor(this.xToIndex(0))-2,e=Math.ceil(this.xToIndex(this.w))+2,tS=this.cs.length?this.cs[0].timestamp:(this.t0-this.tf*this.cs.length);for(let i=s;i<=e;i++){const t=tS+i*this.tf;if(((t-(Math.floor(tS/stepT)*stepT))%stepT)!==0)continue;const x=this.indexToX(i);if(x<0||x>this.w)continue;this.ctx.beginPath();this.ctx.moveTo(x+.5,0);this.ctx.lineTo(x+.5,this.h);this.ctx.stroke()}}drawCandle(cd,x,lv){const o=this.priceToY(cd.open),cl=this.priceToY(cd.close),hi=this.priceToY(cd.high),lo=this.priceToY(cd.low),bl=cd.close>=cd.open,co=bl?"#00c853":"#d32f2f",w=this.getCandleWidth();this.ctx.strokeStyle=co;this.ctx.lineWidth=Math.max(1,w*.18);this.ctx.beginPath();this.ctx.moveTo(x,hi);this.ctx.lineTo(x,lo);this.ctx.stroke();const bh=Math.max(1,Math.abs(cl-o)),bt=Math.min(o,cl);this.ctx.fillStyle=co;if(lv){this.ctx.shadowColor=co;this.ctx.shadowBlur=7}this.ctx.fillRect(x-w/2,bt,w,bh);if(lv)this.ctx.shadowBlur=0}calcSMA(per){if(this.cs.length<per)return[];let r=[];for(let i=per-1;i<this.cs.length;i++){let s=0;for(let j=0;j<per;j++)s+=this.cs[i-j].close;r.push(s/per)}return r}calcEMA(per){if(this.cs.length<per)return[];const k=2/(per+1);let r=[],e=this.cs.slice(0,per).reduce((a,b)=>a+b.close,0)/per;r.push(e);for(let i=per;i<this.cs.length;i++){e=(this.cs[i].close-e)*k+e;r.push(e)}return r}calcRSI(per=14){if(this.cs.length<=per)return[];let g=[],l=[];for(let i=1;i<this.cs.length;i++){const ch=this.cs[i].close-this.cs[i-1].close;g.push(ch>0?ch:0);l.push(ch<0?-ch:0)}let ag=g.slice(0,per).reduce((a,b)=>a+b,0)/per,al=l.slice(0,per).reduce((a,b)=>a+b,0)/per,r=[100-100/(1+ag/al)];for(let i=per;i<g.length;i++){ag=(ag*(per-1)+g[i])/per;al=(al*(per-1)+l[i])/per;r.push(100-100/(1+ag/al))}return r}calcMACD(f=12,s=26,sig=9){const fe=this.calcEMA(f),se=this.calcEMA(s);if(!fe.length||!se.length)return{macd:[],signal:[],hist:[]};const of=fe.length-se.length;let mc=se.map((v,i)=>fe[i+of]-v);if(mc.length<sig)return{macd:mc,signal:[],hist:[]};const k=2/(sig+1);let sm=mc.slice(0,sig).reduce((a,b)=>a+b,0)/sig,si=[sm];for(let i=sig;i<mc.length;i++){sm=(mc[i]-sm)*k+sm;si.push(sm)}let hs=si.map((v,i)=>mc[i+sig-1]-v);return{macd:mc,signal:si,hist:hs}}calcBB(per=20,std=2){if(this.cs.length<per)return{upper:[],middle:[],lower:[]};let m=[],u=[],l=[];for(let i=per-1;i<this.cs.length;i++){let s=0;for(let j=0;j<per;j++)s+=this.cs[i-j].close;const av=s/per;let va=0;for(let j=0;j<per;j++){const d=this.cs[i-j].close-av;va+=d*d}const sd=Math.sqrt(va/per);m.push(av);u.push(av+std*sd);l.push(av-std*sd)}return{upper:u,middle:m,lower:l}}calcStoch(kper=14,dper=3,sper=3){if(this.cs.length<kper)return{k:[],d:[]};let k=[];for(let i=kper-1;i<this.cs.length;i++){const sl=this.cs.slice(i-kper+1,i+1);const h=Math.max(...sl.map(c=>c.high));const l=Math.min(...sl.map(c=>c.low));const c=this.cs[i].close;k.push(h===l?50:((c-l)/(h-l))*100)}let ks=[];for(let i=sper-1;i<k.length;i++){ks.push(k.slice(i-sper+1,i+1).reduce((a,b)=>a+b,0)/sper)}let d=[];for(let i=dper-1;i<ks.length;i++){d.push(ks.slice(i-dper+1,i+1).reduce((a,b)=>a+b,0)/dper)}return{k:ks,d:d}}calcATR(per=14){if(this.cs.length<=per)return[];let tr=[];for(let i=1;i<this.cs.length;i++){const h=this.cs[i].high,l=this.cs[i].low,pc=this.cs[i-1].close;tr.push(Math.max(h-l,Math.abs(h-pc),Math.abs(l-pc)))}let at=tr.slice(0,per).reduce((a,b)=>a+b,0)/per,r=[at];for(let i=per;i<tr.length;i++){at=(at*(per-1)+tr[i])/per;r.push(at)}return r}calcADX(per=14){if(this.cs.length<=per+1)return{adx:[],pdi:[],mdi:[]};let pdm=[],mdm=[],tr=[];for(let i=1;i<this.cs.length;i++){const hu=this.cs[i].high-this.cs[i-1].high,ld=this.cs[i-1].low-this.cs[i].low;pdm.push(hu>ld&&hu>0?hu:0);mdm.push(ld>hu&&ld>0?ld:0);const h=this.cs[i].high,l=this.cs[i].low,pc=this.cs[i-1].close;tr.push(Math.max(h-l,Math.abs(h-pc),Math.abs(l-pc)))}let spd=pdm.slice(0,per).reduce((a,b)=>a+b,0),smd=mdm.slice(0,per).reduce((a,b)=>a+b,0),str=tr.slice(0,per).reduce((a,b)=>a+b,0);let pdi=[spd/str*100],mdi=[smd/str*100];for(let i=per;i<tr.length;i++){spd=spd-spd/per+pdm[i];smd=smd-smd/per+mdm[i];str=str-str/per+tr[i];pdi.push(spd/str*100);mdi.push(smd/str*100)}let dx=pdi.map((v,i)=>Math.abs(v-mdi[i])/(v+mdi[i])*100);let adx=dx.slice(0,per).reduce((a,b)=>a+b,0)/per,ar=[adx];for(let i=per;i<dx.length;i++){adx=(adx*(per-1)+dx[i])/per;ar.push(adx)}return{adx:ar,pdi:pdi.slice(per-1),mdi:mdi.slice(per-1)}}calcCCI(per=20){if(this.cs.length<per)return[];let tp=this.cs.map(c=>(c.high+c.low+c.close)/3),r=[];for(let i=per-1;i<tp.length;i++){const sl=tp.slice(i-per+1,i+1);const sm=sl.reduce((a,b)=>a+b,0)/per;const md=sl.reduce((a,b)=>a+Math.abs(b-sm),0)/per;r.push((tp[i]-sm)/(.015*md))}return r}calcMomentum(per=10){if(this.cs.length<=per)return[];let r=[];for(let i=per;i<this.cs.length;i++){r.push(this.cs[i].close-this.cs[i-per].close)}return r}calcROC(per=10){if(this.cs.length<=per)return[];let r=[];for(let i=per;i<this.cs.length;i++){r.push((this.cs[i].close-this.cs[i-per].close)/this.cs[i-per].close*100)}return r}calcWilliamsR(per=14){if(this.cs.length<per)return[];let r=[];for(let i=per-1;i<this.cs.length;i++){const sl=this.cs.slice(i-per+1,i+1);const h=Math.max(...sl.map(c=>c.high));const l=Math.min(...sl.map(c=>c.low));const c=this.cs[i].close;r.push(h===l?-50:((h-c)/(h-l))*-100)}return r}calcAO(){if(this.cs.length<34)return[];const s5=this.calcSMA(5),s34=this.calcSMA(34);const of=s5.length-s34.length;return s34.map((v,i)=>s5[i+of]-v)}calcAC(){const ao=this.calcAO();if(ao.length<5)return[];const sma=[];for(let i=4;i<ao.length;i++){sma.push(ao.slice(i-4,i+1).reduce((a,b)=>a+b,0)/5)}return sma.map((v,i)=>ao[i+4]-v)}calcBullPower(per=13){const ema=this.calcEMA(per);if(!ema.length)return[];const of=this.cs.length-ema.length;return ema.map((v,i)=>this.cs[i+of].high-v)}calcBearPower(per=13){const ema=this.calcEMA(per);if(!ema.length)return[];const of=this.cs.length-ema.length;return ema.map((v,i)=>this.cs[i+of].low-v)}calcDemarker(per=14){if(this.cs.length<=per)return[];let dh=[],dl=[];for(let i=1;i<this.cs.length;i++){const h=this.cs[i].high>this.cs[i-1].high?this.cs[i].high-this.cs[i-1].high:0;const l=this.cs[i].low<this.cs[i-1].low?this.cs[i-1].low-this.cs[i].low:0;dh.push(h);dl.push(l)}let sdh=dh.slice(0,per).reduce((a,b)=>a+b,0),sdl=dl.slice(0,per).reduce((a,b)=>a+b,0),r=[sdh/(sdh+sdl)];for(let i=per;i<dh.length;i++){sdh=sdh-dh[i-per]+dh[i];sdl=sdl-dl[i-per]+dl[i];r.push(sdh/(sdh+sdl))}return r}calcEnvelopes(per=14,dev=0.1){const sma=this.calcSMA(per);return{upper:sma.map(v=>v*(1+dev)),middle:sma,lower:sma.map(v=>v*(1-dev))}}calcAlligator(){const jaw=this.calcSMA(13),teeth=this.calcSMA(8),lips=this.calcSMA(5);return{jaw,teeth,lips}}calcIchimoku(){if(this.cs.length<52)return{tenkan:[],kijun:[],senkou_a:[],senkou_b:[],chikou:[]};const calc=(per,i)=>{const sl=this.cs.slice(Math.max(0,i-per+1),i+1);return(Math.max(...sl.map(c=>c.high))+Math.min(...sl.map(c=>c.low)))/2};let ten=[],kij=[],sa=[],sb=[],chi=[];for(let i=0;i<this.cs.length;i++){if(i>=8)ten.push(calc(9,i));if(i>=25)kij.push(calc(26,i));if(i>=25)chi.push(this.cs[i-25].close);if(i>=25)sa.push((ten[ten.length-1]+kij[kij.length-1])/2);if(i>=51)sb.push(calc(52,i))}return{tenkan:ten,kijun:kij,senkou_a:sa,senkou_b:sb,chikou:chi}}calcParabolicSAR(af=0.02,max=0.2){if(this.cs.length<2)return[];let r=[],trend=1,ep=this.cs[0].high,sar=this.cs[0].low,caf=af;for(let i=1;i<this.cs.length;i++){sar=sar+caf*(ep-sar);if(trend===1){if(this.cs[i].low<sar){trend=-1;sar=ep;ep=this.cs[i].low;caf=af}else{if(this.cs[i].high>ep){ep=this.cs[i].high;caf=Math.min(caf+af,max)}}}else{if(this.cs[i].high>sar){trend=1;sar=ep;ep=this.cs[i].high;caf=af}else{if(this.cs[i].low<ep){ep=this.cs[i].low;caf=Math.min(caf+af,max)}}}r.push(sar)}return r}calcVortex(per=14){if(this.cs.length<=per)return{plus:[],minus:[]};let vp=[],vm=[],tr=[];for(let i=1;i<this.cs.length;i++){vp.push(Math.abs(this.cs[i].high-this.cs[i-1].low));vm.push(Math.abs(this.cs[i].low-this.cs[i-1].high));const h=this.cs[i].high,l=this.cs[i].low,pc=this.cs[i-1].close;tr.push(Math.max(h-l,Math.abs(h-pc),Math.abs(l-pc)))}let r={plus:[],minus:[]};for(let i=per-1;i<vp.length;i++){const svp=vp.slice(i-per+1,i+1).reduce((a,b)=>a+b,0);const svm=vm.slice(i-per+1,i+1).reduce((a,b)=>a+b,0);const str=tr.slice(i-per+1,i+1).reduce((a,b)=>a+b,0);r.plus.push(svp/str);r.minus.push(svm/str)}return r}calcSuperTrend(per=10,mul=3){const atr=this.calcATR(per);if(!atr.length)return{trend:[],signal:[]};const of=this.cs.length-atr.length-1;let tr=[],sig=[];for(let i=0;i<atr.length;i++){const idx=i+of+1;const hl=(this.cs[idx].high+this.cs[idx].low)/2;const bu=hl+mul*atr[i];const bl=hl-mul*atr[i];let t=1;if(i>0){if(this.cs[idx].close>tr[i-1])t=1;else if(this.cs[idx].close<tr[i-1])t=-1;else t=sig[i-1]}tr.push(t===1?bl:bu);sig.push(t)}return{trend:tr,signal:sig}}calcKeltner(per=20,mul=2){const ema=this.calcEMA(per);const atr=this.calcATR(per);if(!ema.length||!atr.length)return{upper:[],middle:[],lower:[]};const of=Math.abs(ema.length-atr.length);const mn=Math.min(ema.length,atr.length);return{upper:ema.slice(-mn).map((v,i)=>v+mul*atr.slice(-mn)[i]),middle:ema.slice(-mn),lower:ema.slice(-mn).map((v,i)=>v-mul*atr.slice(-mn)[i])}}calcDonchian(per=20){if(this.cs.length<per)return{upper:[],middle:[],lower:[]};let u=[],l=[];for(let i=per-1;i<this.cs.length;i++){const sl=this.cs.slice(i-per+1,i+1);u.push(Math.max(...sl.map(c=>c.high)));l.push(Math.min(...sl.map(c=>c.low)))}return{upper:u,middle:u.map((v,i)=>(v+l[i])/2),lower:l}}calcAroon(per=25){if(this.cs.length<per)return{up:[],down:[]};let u=[],d=[];for(let i=per-1;i<this.cs.length;i++){const sl=this.cs.slice(i-per+1,i+1);const mh=Math.max(...sl.map(c=>c.high));const ml=Math.min(...sl.map(c=>c.low));let ih=0,il=0;for(let j=0;j<sl.length;j++){if(sl[j].high===mh)ih=j;if(sl[j].low===ml)il=j}u.push((per-per+ih)/per*100);d.push((per-per+il)/per*100)}return{up:u,down:d}}calcOsMA(f=12,s=26,sig=9){const{macd,signal}=this.calcMACD(f,s,sig);if(!macd.length||!signal.length)return[];const of=macd.length-signal.length;return signal.map((v,i)=>macd[i+of]-v)}calcSchaffTC(f=23,s=50,cyc=10){const macd=this.calcMACD(f,s,1).macd;if(macd.length<cyc)return[];let f1=[],k=[];for(let i=cyc-1;i<macd.length;i++){const sl=macd.slice(i-cyc+1,i+1);const ll=Math.min(...sl);const hh=Math.max(...sl);f1.push(hh===ll?50:((macd[i]-ll)/(hh-ll))*100)}for(let i=0;i<f1.length;i++){k.push(i===0?f1[i]:(k[i-1]+f1[i])/2)}let f2=[];for(let i=cyc-1;i<k.length;i++){const sl=k.slice(i-cyc+1,i+1);const ll=Math.min(...sl);const hh=Math.max(...sl);f2.push(hh===ll?50:((k[i]-ll)/(hh-ll))*100)}let r=[];for(let i=0;i<f2.length;i++){r.push(i===0?f2[i]:(r[i-1]+f2[i])/2)}return r}calcZigZag(depth=12,dev=5){if(this.cs.length<depth)return[];let pts=[],last=null,dir=0;for(let i=depth;i<this.cs.length;i++){const h=Math.max(...this.cs.slice(i-depth,i).map(c=>c.high));const l=Math.min(...this.cs.slice(i-depth,i).map(c=>c.low));if(dir===0){if(this.cs[i].high>=h){dir=1;last={i:i,p:this.cs[i].high}}else if(this.cs[i].low<=l){dir=-1;last={i:i,p:this.cs[i].low}}}else if(dir===1){if(this.cs[i].high>last.p){last={i:i,p:this.cs[i].high}}else if(this.cs[i].low<last.p*(1-dev/100)){pts.push(last);dir=-1;last={i:i,p:this.cs[i].low}}}else{if(this.cs[i].low<last.p){last={i:i,p:this.cs[i].low}}else if(this.cs[i].high>last.p*(1+dev/100)){pts.push(last);dir=1;last={i:i,p:this.cs[i].high}}}}if(last)pts.push(last);return pts}calcFractal(){if(this.cs.length<5)return{up:[],down:[]};let u=[],d=[];for(let i=2;i<this.cs.length-2;i++){if(this.cs[i].high>this.cs[i-1].high&&this.cs[i].high>this.cs[i-2].high&&this.cs[i].high>this.cs[i+1].high&&this.cs[i].high>this.cs[i+2].high){u.push({i:i,p:this.cs[i].high})}if(this.cs[i].low<this.cs[i-1].low&&this.cs[i].low<this.cs[i-2].low&&this.cs[i].low<this.cs[i+1].low&&this.cs[i].low<this.cs[i+2].low){d.push({i:i,p:this.cs[i].low})}}return{up:u,down:d}}drawIndicators(){for(const ind of this.inds){if(!ind.visible)continue;const of=this.getOffset(ind.type,ind);this.ctx.save();this.ctx.strokeStyle=ind.color||"#ffff00";this.ctx.lineWidth=ind.width||2;if(ind.type==="Moving Average"){const d=ind.maType==="SMA"?this.calcSMA(ind.period):ind.maType==="EMA"?this.calcEMA(ind.period):this.calcSMA(ind.period);this.drawLine(d,of)}else if(ind.type==="RSI"){const d=this.calcRSI(ind.period);this.drawOscillator(d,of,0,100,30,70)}else if(ind.type==="MACD"){const{macd,signal,hist}=this.calcMACD(ind.fast,ind.slow,ind.signal);const of2=this.cs.length-macd.length;this.drawOscillatorLine(macd,of2,"#00aaff");this.drawOscillatorLine(signal,of2+macd.length-signal.length,"#ff6600");this.drawHistogram(hist,of2+macd.length-hist.length)}else if(ind.type==="Bollinger Bands"){const{upper,middle,lower}=this.calcBB(ind.period,ind.std);this.ctx.globalAlpha=0.3;this.drawLine(upper,of);this.drawLine(lower,of);this.ctx.globalAlpha=1;this.drawLine(middle,of)}else if(ind.type==="Stochastic"){const{k,d}=this.calcStoch(ind.kPeriod,ind.dPeriod,ind.slowing);const of2=this.cs.length-k.length;this.ctx.strokeStyle="#00aaff";this.drawOscillator(k,of2,0,100,20,80);this.ctx.strokeStyle="#ff6600";const of3=of2+k.length-d.length;this.drawOscillator(d,of3,0,100,20,80)}else if(ind.type==="ATR"){const d=this.calcATR(ind.period);this.drawSubLine(d,of)}else if(ind.type==="ADX"){const{adx,pdi,mdi}=this.calcADX(ind.period);const of2=this.cs.length-adx.length-ind.period+1;this.ctx.strokeStyle="#ffff00";this.drawOscillator(adx,of2,0,100);this.ctx.strokeStyle="#00ff00";this.drawOscillator(pdi,of2,0,100);this.ctx.strokeStyle="#ff0000";this.drawOscillator(mdi,of2,0,100)}else if(ind.type==="CCI"){const d=this.calcCCI(ind.period);this.drawOscillator(d,of,-200,200)}else if(ind.type==="Momentum"){const d=this.calcMomentum(ind.period);this.drawOscillator(d,of)}else if(ind.type==="ROC"){const d=this.calcROC(ind.period);this.drawOscillator(d,of,-10,10)}else if(ind.type==="Williams %R"){const d=this.calcWilliamsR(ind.period);this.drawOscillator(d,of,-100,0,-80,-20)}else if(ind.type==="Awesome Oscillator"){const d=this.calcAO();this.drawHistogram(d,34-1)}else if(ind.type==="Accelerator Oscillator"){const d=this.calcAC();this.drawHistogram(d,38-1)}else if(ind.type==="Bulls Power"){const d=this.calcBullPower(ind.period);this.drawOscillator(d,of)}else if(ind.type==="Bears Power"){const d=this.calcBearPower(ind.period);this.drawOscillator(d,of)}else if(ind.type==="DeMarker"){const d=this.calcDemarker(ind.period);this.drawOscillator(d,of,0,1,0.3,0.7)}else if(ind.type==="Envelopes"){const{upper,middle,lower}=this.calcEnvelopes(ind.period,ind.deviation);this.ctx.globalAlpha=0.3;this.drawLine(upper,of);this.drawLine(lower,of);this.ctx.globalAlpha=1;this.drawLine(middle,of)}else if(ind.type==="Alligator"){const{jaw,teeth,lips}=this.calcAlligator();this.ctx.strokeStyle="#0000ff";this.drawLine(jaw,13-1);this.ctx.strokeStyle="#ff0000";this.drawLine(teeth,8-1);this.ctx.strokeStyle="#00ff00";this.drawLine(lips,5-1)}else if(ind.type==="Ichimoku"){const{tenkan,kijun,senkou_a,senkou_b,chikou}=this.calcIchimoku();this.ctx.strokeStyle="#ff0000";this.drawLine(tenkan,8);this.ctx.strokeStyle="#0000ff";this.drawLine(kijun,25);this.ctx.globalAlpha=0.2;this.ctx.strokeStyle="#00ff00";this.drawLine(senkou_a,25,26);this.ctx.strokeStyle="#ff6600";this.drawLine(senkou_b,51,26);this.ctx.globalAlpha=1;this.ctx.strokeStyle="#9900ff";this.drawLine(chikou,25,-26)}else if(ind.type==="Parabolic SAR"){const d=this.calcParabolicSAR(ind.af,ind.max);this.drawDots(d,1)}else if(ind.type==="Vortex"){const{plus,minus}=this.calcVortex(ind.period);this.ctx.strokeStyle="#00ff00";this.drawOscillator(plus,of,0,2);this.ctx.strokeStyle="#ff0000";this.drawOscillator(minus,of,0,2)}else if(ind.type==="SuperTrend"){const{trend,signal}=this.calcSuperTrend(ind.period,ind.multiplier);const of2=this.cs.length-trend.length-ind.period;for(let i=0;i<trend.length;i++){this.ctx.strokeStyle=signal[i]===1?"#00ff00":"#ff0000";const x=this.indexToX(i+of2+ind.period);const y=this.priceToY(trend[i]);if(x>=-60&&x<=this.w+60){this.ctx.beginPath();this.ctx.arc(x,y,2,0,Math.PI*2);this.ctx.fill()}}}else if(ind.type==="Keltner Channel"){const{upper,middle,lower}=this.calcKeltner(ind.period,ind.multiplier);const of2=this.cs.length-middle.length;this.ctx.globalAlpha=0.3;this.drawLine(upper,of2);this.drawLine(lower,of2);this.ctx.globalAlpha=1;this.drawLine(middle,of2)}else if(ind.type==="Donchian Channel"){const{upper,middle,lower}=this.calcDonchian(ind.period);this.ctx.globalAlpha=0.3;this.drawLine(upper,of);this.drawLine(lower,of);this.ctx.globalAlpha=1;this.drawLine(middle,of)}else if(ind.type==="Aroon"){const{up,down}=this.calcAroon(ind.period);this.ctx.strokeStyle="#00ff00";this.drawOscillator(up,of,0,100);this.ctx.strokeStyle="#ff0000";this.drawOscillator(down,of,0,100)}else if(ind.type==="OsMA"){const d=this.calcOsMA(ind.fast,ind.slow,ind.signal);const mcd=this.calcMACD(ind.fast,ind.slow,ind.signal).macd;this.drawHistogram(d,this.cs.length-mcd.length)}else if(ind.type==="Schaff Trend Cycle"){const d=this.calcSchaffTC(ind.fast,ind.slow,ind.cycle);this.drawOscillator(d,this.cs.length-d.length,0,100,25,75)}else if(ind.type==="ZigZag"){const pts=this.calcZigZag(ind.depth,ind.deviation);this.ctx.beginPath();for(let i=0;i<pts.length;i++){const x=this.indexToX(pts[i].i);const y=this.priceToY(pts[i].p);if(i===0)this.ctx.moveTo(x,y);else this.ctx.lineTo(x,y)}this.ctx.stroke()}else if(ind.type==="Fractal"){const{up,down}=this.calcFractal();this.ctx.fillStyle="#00ff00";for(const pt of up){const x=this.indexToX(pt.i);const y=this.priceToY(pt.p)-8;if(x>=-60&&x<=this.w+60){this.ctx.beginPath();this.ctx.moveTo(x,y);this.ctx.lineTo(x-4,y+6);this.ctx.lineTo(x+4,y+6);this.ctx.closePath();this.ctx.fill()}}this.ctx.fillStyle="#ff0000";for(const pt of down){const x=this.indexToX(pt.i);const y=this.priceToY(pt.p)+8;if(x>=-60&&x<=this.w+60){this.ctx.beginPath();this.ctx.moveTo(x,y);this.ctx.lineTo(x-4,y-6);this.ctx.lineTo(x+4,y-6);this.ctx.closePath();this.ctx.fill()}}}this.ctx.restore()}}getOffset(type,ind){const m={"Moving Average":ind.period||20,"Bollinger Bands":ind.period||20,"Envelopes":ind.period||14,"ATR":ind.period||14,"CCI":ind.period||20,"Momentum":ind.period||10,"ROC":ind.period||10,"Williams %R":ind.period||14,"Bears Power":ind.period||13,"Bulls Power":ind.period||13,"DeMarker":ind.period||14,"Donchian Channel":ind.period||20,"Aroon":ind.period||25};return m[type]||0}drawLine(data,offset,shift=0){if(!data.length)return;this.ctx.beginPath();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset+shift);const y=this.priceToY(data[i]);if(x<-60||x>this.w+60)continue;if(i===0||this.indexToX(i+offset-1+shift)<-60)this.ctx.moveTo(x,y);else this.ctx.lineTo(x,y)}this.ctx.stroke()}drawOscillator(data,offset,min=-100,max=100,lv1,lv2){if(!data.length)return;const h=120,y0=this.h-h,sc=h/(max-min);this.ctx.save();this.ctx.strokeStyle="rgba(255,255,255,0.1)";this.ctx.lineWidth=1;this.ctx.strokeRect(0,y0,this.w,h);if(lv1!==undefined){this.ctx.beginPath();this.ctx.moveTo(0,y0+h-(lv1-min)*sc);this.ctx.lineTo(this.w,y0+h-(lv1-min)*sc);this.ctx.stroke();this.ctx.beginPath();this.ctx.moveTo(0,y0+h-(lv2-min)*sc);this.ctx.lineTo(this.w,y0+h-(lv2-min)*sc);this.ctx.stroke()}this.ctx.strokeStyle=this.ctx.strokeStyle;this.ctx.lineWidth=2;this.ctx.beginPath();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset);const y=y0+h-(data[i]-min)*sc;if(x<-60||x>this.w+60)continue;if(i===0)this.ctx.moveTo(x,y);else this.ctx.lineTo(x,y)}this.ctx.stroke();this.ctx.restore()}drawOscillatorLine(data,offset,color){if(!data.length)return;const h=120,y0=this.h-h;let min=Math.min(...data),max=Math.max(...data),rg=max-min||1,sc=h/rg;this.ctx.save();this.ctx.strokeStyle=color;this.ctx.lineWidth=2;this.ctx.beginPath();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset);const y=y0+h-(data[i]-min)*sc;if(x<-60||x>this.w+60)continue;if(i===0)this.ctx.moveTo(x,y);else this.ctx.lineTo(x,y)}this.ctx.stroke();this.ctx.restore()}drawHistogram(data,offset){if(!data.length)return;const h=120,y0=this.h-h;let min=Math.min(...data,0),max=Math.max(...data,0),rg=max-min||1,sc=h/rg,z=y0+h-(-min)*sc;this.ctx.save();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset);if(x<-60||x>this.w+60)continue;const y=y0+h-(data[i]-min)*sc;this.ctx.fillStyle=data[i]>=0?"#00ff88":"#ff5555";this.ctx.fillRect(x-2,Math.min(y,z),4,Math.abs(y-z))}this.ctx.restore()}drawSubLine(data,offset){if(!data.length)return;const h=80,y0=this.h-h;let min=Math.min(...data),max=Math.max(...data),rg=max-min||1,sc=h/rg;this.ctx.save();this.ctx.strokeStyle="rgba(255,255,255,0.1)";this.ctx.lineWidth=1;this.ctx.strokeRect(0,y0,this.w,h);this.ctx.strokeStyle=this.ctx.strokeStyle;this.ctx.lineWidth=2;this.ctx.beginPath();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset);const y=y0+h-(data[i]-min)*sc;if(x<-60||x>this.w+60)continue;if(i===0)this.ctx.moveTo(x,y);else this.ctx.lineTo(x,y)}this.ctx.stroke();this.ctx.restore()}drawDots(data,offset){if(!data.length)return;this.ctx.save();for(let i=0;i<data.length;i++){const x=this.indexToX(i+offset);const y=this.priceToY(data[i]);if(x<-60||x>this.w+60)continue;this.ctx.beginPath();this.ctx.arc(x,y,3,0,Math.PI*2);this.ctx.fill()}this.ctx.restore()}addIndicator(type,cfg){this.inds.push({id:Date.now(),type:type,visible:true,...cfg});this.updateIndicatorUI()}removeIndicator(id){this.inds=this.inds.filter(i=>i.id!==id);this.updateIndicatorUI()}updateIndicatorUI(){const bar=$("indBar");if(!bar)return;bar.innerHTML=this.inds.map(ind=>`<div class="indBadge"><span class="name" data-id="${ind.id}">${ind.type}</span><button data-rm="${ind.id}">×</button></div>`).join("");bar.style.display=this.inds.length?"flex":"none";bar.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>this.removeIndicator(+b.dataset.rm))}draw(){this.tickZoom();this.ctx.clearRect(0,0,this.w,this.h);this.drawGrid();for(let i=0;i<this.cs.length;i++){const x=this.indexToX(i);if(x<-60||x>this.w+60)continue;this.drawCandle(this.cs[i],x,0)}if(this.cc&&(!this.cs.length||this.cc.timestamp!==this.cs[this.cs.length-1].timestamp)){const lX=this.indexToX(this.cs.length);if(lX>=-60&&lX<=this.w+60)this.drawCandle(this.cc,lX,1)}this.drawIndicators()}loop(){if(!this.on)return;this.draw();this.loopFrame=requestAnimationFrame(()=>this.loop())}ev(){addEventListener("resize",()=>this.setup());this.cv.addEventListener("wheel",e=>{e.preventDefault();const r=this.cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top,sc=e.deltaY>0?1/1.10:1.10,oZ=this.targetZoom,nZ=clp(oZ*sc,this.minZoom,this.maxZoom);if(Math.abs(nZ-oZ)>=1e-6){const ix=this.xToIndex(mx);this.targetZoom=nZ;this.zoom=nZ;const nx=mx-ix*this.getSpacing();this.targetScrollOffset=nx;this.manualScrollOffset=nx;this.clampPan()}},{passive:!1})}async boot(){const sk=$("sk");if(sk)sk.classList.add("on");for(let i=0;i<100;i++){const t=this.t0-this.tf*(100-i),cd=this.genCandle(t,this.cp);this.cs.push(cd);this.cp=cd.close}this.snapToLive();this.updatePriceRange();this.on=1;this.loop();if(sk)sk.classList.remove("on")}}const INDICATORS=[{name:"Accelerator Oscillator",type:"Accelerator Oscillator",params:{}},{name:"ADX",type:"ADX",params:{period:14}},{name:"Alligator",type:"Alligator",params:{}},{name:"Aroon",type:"Aroon",params:{period:25}},{name:"ATR",type:"ATR",params:{period:14}},{name:"Awesome Oscillator",type:"Awesome Oscillator",params:{}},{name:"Bears Power",type:"Bears Power",params:{period:13}},{name:"Bollinger Bands",type:"Bollinger Bands",params:{period:20,std:2}},{name:"Bollinger Bands Width",type:"Bollinger Bands",params:{period:20,std:2}},{name:"Bulls Power",type:"Bulls Power",params:{period:13}},{name:"CCI",type:"CCI",params:{period:20}},{name:"Donchian Channel",type:"Donchian Channel",params:{period:20}},{name:"DeMarker",type:"DeMarker",params:{period:14}},{name:"Envelopes",type:"Envelopes",params:{period:14,deviation:0.1}},{name:"Fractal",type:"Fractal",params:{}},{name:"Fractal Chaos Bands",type:"Fractal",params:{}},{name:"Ichimoku",type:"Ichimoku",params:{}},{name:"Keltner Channel",type:"Keltner Channel",params:{period:20,multiplier:2}},{name:"MACD",type:"MACD",params:{fast:12,slow:26,signal:9}},{name:"Momentum",type:"Momentum",params:{period:10}},{name:"Moving Average",type:"Moving Average",params:{period:20,maType:"SMA"}},{name:"Moving Average Oscillator",type:"OsMA",params:{fast:12,slow:26,signal:9}},{name:"Parabolic SAR",type:"Parabolic SAR",params:{af:0.02,max:0.2}},{name:"RSI",type:"RSI",params:{period:14}},{name:"ROC",type:"ROC",params:{period:10}},{name:"Schaff Trend Cycle",type:"Schaff Trend Cycle",params:{fast:23,slow:50,cycle:10}},{name:"Stochastic",type:"Stochastic",params:{kPeriod:14,dPeriod:3,slowing:3}},{name:"SuperTrend",type:"SuperTrend",params:{period:10,multiplier:3}},{name:"Volume",type:"Volume",params:{}},{name:"Vortex",type:"Vortex",params:{period:14}},{name:"Williams %R",type:"Williams %R",params:{period:14}},{name:"ZigZag",type:"ZigZag",params:{depth:12,deviation:5}}];function initIndicatorPanel(){const panel=$("indicatorsPanel"),list=panel?.querySelector(".indPanelHead")?.nextElementSibling;if(!list)return;list.innerHTML="";INDICATORS.forEach(ind=>{const div=document.createElement("div");div.className="indItem";div.innerHTML=`<span>${ind.name}</span>`;div.onclick=()=>{window.chart?.addIndicator(ind.type,{color:"#ffff00",width:2,...ind.params});panel?.classList.remove("show")};list.appendChild(div)})}if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",initIndicatorPanel)}else{initIndicatorPanel()}
+// ============================================
+// Firebase Configuration & Initialization
+// ============================================
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBOUqLixfphg3b8hajc4hkwV-VJmldGBVw",
+    authDomain: "randers-c640b.firebaseapp.com",
+    projectId: "randers-c640b",
+    storageBucket: "randers-c640b.firebasestorage.app",
+    messagingSenderId: "391496092929",
+    appId: "1:391496092929:web:58208b4eb3e6f9a8571f00",
+    measurementId: "G-DBDSVVF7PS"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ============================================
+// Local Storage Manager
+// ============================================
+
+class LocalStorageManager {
+    constructor() {
+        this.CANDLES_KEY = 'qt_trading_candles';
+        this.LAST_SYNC_KEY = 'qt_last_sync';
+    }
+
+    saveCandles(candles) {
+        try {
+            localStorage.setItem(this.CANDLES_KEY, JSON.stringify(candles));
+            localStorage.setItem(this.LAST_SYNC_KEY, Date.now().toString());
+            console.log('✅ Candles saved to local storage:', candles.length);
+        } catch (error) {
+            console.error('❌ Error saving to local storage:', error);
+        }
+    }
+
+    loadCandles() {
+        try {
+            const data = localStorage.getItem(this.CANDLES_KEY);
+            if (data) {
+                const candles = JSON.parse(data);
+                console.log('✅ Candles loaded from local storage:', candles.length);
+                return candles;
+            }
+        } catch (error) {
+            console.error('❌ Error loading from local storage:', error);
+        }
+        return null;
+    }
+
+    getLastSyncTime() {
+        const time = localStorage.getItem(this.LAST_SYNC_KEY);
+        return time ? parseInt(time) : 0;
+    }
+
+    clear() {
+        localStorage.removeItem(this.CANDLES_KEY);
+        localStorage.removeItem(this.LAST_SYNC_KEY);
+        console.log('🗑️ Local storage cleared');
+    }
+}
+
+// ============================================
+// Firebase Manager
+// ============================================
+
+class FirebaseManager {
+    constructor() {
+        this.db = db;
+        this.candlesCollection = 'candles';
+        this.saveBatchSize = 50; // عدد الشموع في كل دفعة حفظ
+        this.saveInterval = 30000; // 30 ثانية
+        this.lastSaveTime = 0;
+        this.pendingCandles = [];
+        this.isSaving = false;
+        
+        // بدء الحفظ التلقائي
+        this.startAutoSave();
+    }
+
+    async saveCandles(candles) {
+        if (this.isSaving) {
+            console.log('⏳ Save operation already in progress...');
+            return false;
+        }
+
+        try {
+            this.isSaving = true;
+            console.log('💾 Starting to save candles to Firebase:', candles.length);
+
+            const batch = [];
+            for (const candle of candles) {
+                const candleData = {
+                    open: candle.open,
+                    high: candle.high,
+                    low: candle.low,
+                    close: candle.close,
+                    timestamp: candle.timestamp,
+                    savedAt: serverTimestamp()
+                };
+                batch.push(candleData);
+
+                // حفظ الدفعات
+                if (batch.length >= this.saveBatchSize) {
+                    await this.saveBatch(batch);
+                    batch.length = 0;
+                    await this.delay(100); // تأخير صغير بين الدفعات
+                }
+            }
+
+            // حفظ الشموع المتبقية
+            if (batch.length > 0) {
+                await this.saveBatch(batch);
+            }
+
+            this.lastSaveTime = Date.now();
+            console.log('✅ All candles saved to Firebase successfully');
+            return true;
+
+        } catch (error) {
+            console.error('❌ Error saving candles to Firebase:', error);
+            return false;
+        } finally {
+            this.isSaving = false;
+        }
+    }
+
+    async saveBatch(batch) {
+        const promises = batch.map(candleData => 
+            addDoc(collection(this.db, this.candlesCollection), candleData)
+        );
+        await Promise.all(promises);
+        console.log(`✅ Saved batch of ${batch.length} candles`);
+    }
+
+    async loadCandles(maxCandles = 200) {
+        try {
+            console.log('📥 Loading candles from Firebase...');
+            
+            const q = query(
+                collection(this.db, this.candlesCollection),
+                orderBy('timestamp', 'desc'),
+                limit(maxCandles)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const candles = [];
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                candles.push({
+                    open: data.open,
+                    high: data.high,
+                    low: data.low,
+                    close: data.close,
+                    timestamp: data.timestamp
+                });
+            });
+
+            // ترتيب الشموع من الأقدم للأحدث
+            candles.reverse();
+
+            console.log('✅ Loaded candles from Firebase:', candles.length);
+            return candles;
+
+        } catch (error) {
+            console.error('❌ Error loading candles from Firebase:', error);
+            return null;
+        }
+    }
+
+    async clearOldCandles(daysToKeep = 7) {
+        try {
+            const cutoffTime = Date.now() - (daysToKeep * 24 * 60 * 60 * 1000);
+            const q = query(
+                collection(this.db, this.candlesCollection),
+                where('timestamp', '<', cutoffTime)
+            );
+
+            const querySnapshot = await getDocs(q);
+            console.log(`🗑️ Found ${querySnapshot.size} old candles to delete`);
+
+            // يمكن إضافة كود الحذف هنا إذا لزم الأمر
+            
+        } catch (error) {
+            console.error('❌ Error clearing old candles:', error);
+        }
+    }
+
+    addPendingCandle(candle) {
+        this.pendingCandles.push(candle);
+    }
+
+    startAutoSave() {
+        setInterval(async () => {
+            if (this.pendingCandles.length > 0 && !this.isSaving) {
+                const candlesToSave = [...this.pendingCandles];
+                this.pendingCandles = [];
+                await this.saveCandles(candlesToSave);
+            }
+        }, this.saveInterval);
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// ============================================
+// Live Time Display
+// ============================================
+
+function updateLiveTime() {
+    const d = new Date();
+    const u = d.getTime() + d.getTimezoneOffset() * 60000;
+    const t = new Date(u + (3 * 3600000)); // UTC+3
+    const h = String(t.getHours()).padStart(2, "0");
+    const m = String(t.getMinutes()).padStart(2, "0");
+    const s = String(t.getSeconds()).padStart(2, "0");
+    document.getElementById("liveTime").textContent = `${h}:${m}:${s} UTC+3`;
+}
+
+updateLiveTime();
+setInterval(updateLiveTime, 1000);
+
+// ============================================
+// Advanced Trading Chart Class
+// ============================================
+
+class AdvancedTradingChart {
+    constructor() {
+        this.plot = document.getElementById("plot");
+        this.canvas = document.getElementById("chartCanvas");
+        this.ctx = this.canvas.getContext("2d");
+        this.timeLabels = document.getElementById("timeLabels");
+        this.candleTimer = document.getElementById("candleTimer");
+        this.priceLine = document.getElementById("priceLine");
+        this.priceScaleLabels = document.getElementById("priceScaleLabels");
+        this.currentPriceEl = document.getElementById("currentPrice");
+        this.loadingOverlay = document.getElementById("loadingOverlay");
+
+        // Initialize managers
+        this.localStorageManager = new LocalStorageManager();
+        this.firebaseManager = new FirebaseManager();
+
+        this.candles = [];
+        this.currentCandle = null;
+        this.maxCandles = 200;
+        this.basePrice = 1.95;
+        this.currentPrice = 1.9518;
+        this.seed = 11001;
+        this.digits = 5;
+        this.priceRange = { min: 1.9, max: 2 };
+        this.baseSpacing = 12;
+        this.zoom = 1;
+        this.targetZoom = 1;
+        this.minZoom = 0.425;
+        this.maxZoom = 2.25;
+        this.zoomEase = 0.28;
+        this.targetOffsetX = 0;
+        this.offsetX = 0;
+        this.panEase = 0.38;
+        this.velocity = 0;
+        this.drag = 0;
+        this.dragStartX = 0;
+        this.dragStartOffset = 0;
+        this.lastDragX = 0;
+        this.lastDragTime = 0;
+        this.pinch = 0;
+        this.p0 = 0;
+        this.pMidX = 0;
+        this.pMidY = 0;
+        this.timeframe = 60000; // 1 minute
+        this.t0 = Math.floor(Date.now() / 60000) * 60000;
+        this.smin = null;
+        this.smax = null;
+        this.sre = 0.088;
+        this._fr = 0;
+        this.markers = [];
+        this.selectedTime = 5;
+
+        this.dataLoaded = false;
+        this.usingLocalStorage = false;
+
+        this.setup();
+        this.initData();
+    }
+
+    async initData() {
+        this.showLoading(true);
+
+        try {
+            // محاولة تحميل من Firebase أولاً
+            console.log('🔄 Attempting to load from Firebase...');
+            const firebaseCandles = await this.firebaseManager.loadCandles(this.maxCandles);
+
+            if (firebaseCandles && firebaseCandles.length > 0) {
+                console.log('✅ Using Firebase data');
+                this.candles = firebaseCandles;
+                this.usingLocalStorage = false;
+                
+                // حفظ نسخة محلية
+                this.localStorageManager.saveCandles(this.candles);
+            } else {
+                // إذا لم تتوفر بيانات Firebase، استخدم التخزين المحلي
+                console.log('⚠️ No Firebase data, trying local storage...');
+                const localCandles = this.localStorageManager.loadCandles();
+
+                if (localCandles && localCandles.length > 0) {
+                    console.log('✅ Using local storage data');
+                    this.candles = localCandles;
+                    this.usingLocalStorage = true;
+                } else {
+                    // توليد بيانات تاريخية جديدة
+                    console.log('📊 Generating new historical data...');
+                    this.initHistoricalData();
+                    this.usingLocalStorage = true;
+                }
+            }
+
+            // تهيئة السعر الحالي
+            if (this.candles.length > 0) {
+                this.currentPrice = this.candles[this.candles.length - 1].close;
+            }
+
+            this.snapToLive();
+            this.updateTimeLabels();
+            this.updatePriceRange();
+            this.smin = this.priceRange.min;
+            this.smax = this.priceRange.max;
+            this.updatePriceScale();
+            this.updatePriceLabel();
+
+            this.dataLoaded = true;
+            this.initEvents();
+            this.startRealtime();
+            this.loop();
+
+        } catch (error) {
+            console.error('❌ Error initializing data:', error);
+            // في حالة الخطأ، استخدم البيانات المحلية أو التوليد
+            this.initHistoricalData();
+            this.usingLocalStorage = true;
+            this.dataLoaded = true;
+            this.initEvents();
+            this.startRealtime();
+            this.loop();
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    showLoading(show) {
+        if (this.loadingOverlay) {
+            if (show) {
+                this.loadingOverlay.classList.add('show');
+            } else {
+                this.loadingOverlay.classList.remove('show');
+            }
+        }
+    }
+
+    setup() {
+        const dpr = window.devicePixelRatio || 1;
+        const r = this.plot.getBoundingClientRect();
+        this.w = r.width;
+        this.h = r.height - 24;
+        this.canvas.width = this.w * dpr;
+        this.canvas.height = this.h * dpr;
+        this.canvas.style.width = this.w + "px";
+        this.canvas.style.height = this.h + "px";
+        this.ctx.scale(dpr, dpr);
+        
+        if (this.dataLoaded) {
+            this.updatePriceLabel();
+            this.updatePriceScale();
+            this.updateTimeLabels();
+        }
+    }
+
+    rnd(s) {
+        const x = Math.sin(s) * 10000;
+        return x - Math.floor(x);
+    }
+
+    rndG(s) {
+        const u1 = this.rnd(s);
+        const u2 = this.rnd(s + 100000);
+        return Math.sqrt(-2 * Math.log(u1 + 0.00001)) * Math.cos(2 * Math.PI * u2);
+    }
+
+    genCandle(t, o) {
+        const s = this.seed + Math.floor(t / this.timeframe);
+        const vb = 0.0008;
+        const tb = 0.00005;
+        const r1 = this.rndG(s);
+        const r2 = this.rndG(s + 1);
+        const r3 = this.rndG(s + 2);
+        const r4 = this.rnd(s + 3);
+        const r5 = this.rnd(s + 4);
+        const r6 = this.rnd(s + 5);
+        const v = vb * (0.7 + Math.abs(r1) * 0.8);
+        const tr = tb * r2 * 0.6;
+        const dir = r3 > 0 ? 1 : -1;
+        const tc = o + (dir * v + tr);
+        const rg = v * (0.2 + r4 * 0.6);
+        const hm = rg * (0.3 + r5 * 0.7);
+        const lm = rg * (0.3 + (1 - r5) * 0.7);
+        const c = +(tc + (r6 - 0.5) * v * 0.1).toFixed(this.digits);
+        const op = +o.toFixed(this.digits);
+
+        return {
+            open: op,
+            close: c,
+            high: +Math.max(op, c, op + hm, c + hm).toFixed(this.digits),
+            low: +Math.min(op, c, op - lm, c - lm).toFixed(this.digits),
+            timestamp: t
+        };
+    }
+
+    initHistoricalData() {
+        let p = this.basePrice;
+        let t = Date.now() - this.maxCandles * this.timeframe;
+        
+        for (let i = 0; i < this.maxCandles; i++) {
+            const c = this.genCandle(t, p);
+            this.candles.push(c);
+            p = c.close;
+            t += this.timeframe;
+        }
+
+        this.currentPrice = this.candles[this.candles.length - 1].close;
+        
+        // حفظ البيانات المولدة
+        this.localStorageManager.saveCandles(this.candles);
+    }
+
+    getSpacing() {
+        return this.baseSpacing * this.zoom;
+    }
+
+    getCandleWidth() {
+        return this.getSpacing() * 0.8;
+    }
+
+    getMinOffset() {
+        return this.w / 2 - this.candles.length * this.getSpacing();
+    }
+
+    getMaxOffset() {
+        return this.w / 2;
+    }
+
+    clampPan() {
+        const mn = this.getMinOffset();
+        const mx = this.getMaxOffset();
+        this.targetOffsetX = Math.max(mn, Math.min(mx, this.targetOffsetX));
+        this.offsetX = Math.max(mn, Math.min(mx, this.offsetX));
+    }
+
+    snapToLive() {
+        this.targetOffsetX = this.getMinOffset();
+        this.offsetX = this.targetOffsetX;
+        this.velocity = 0;
+        this.clampPan();
+    }
+
+    updatePan() {
+        const diff = this.targetOffsetX - this.offsetX;
+        if (Math.abs(diff) > 0.003) {
+            this.offsetX += diff * this.panEase;
+        } else {
+            this.offsetX = this.targetOffsetX;
+        }
+
+        if (Math.abs(this.velocity) > 0.01) {
+            this.targetOffsetX += this.velocity;
+            this.velocity *= 0.972;
+            this.clampPan();
+        } else {
+            this.velocity = 0;
+        }
+    }
+
+    tickZoom() {
+        const d = this.targetZoom - this.zoom;
+        if (Math.abs(d) > 0.0001) {
+            this.zoom += d * this.zoomEase;
+        } else {
+            this.zoom = this.targetZoom;
+        }
+    }
+
+    tickSR() {
+        const r = this.priceRange;
+        if (this.smin === null) {
+            this.smin = r.min;
+            this.smax = r.max;
+            return;
+        }
+        this.smin += (r.min - this.smin) * this.sre;
+        this.smax += (r.max - this.smax) * this.sre;
+    }
+
+    applyZoomAround(mx, my, sc) {
+        const oz = this.targetZoom;
+        const nz = Math.max(this.minZoom, Math.min(this.maxZoom, oz * sc));
+        if (Math.abs(nz - oz) < 0.000001) return;
+
+        const idx = this.xToIndex(mx);
+        this.targetZoom = nz;
+        this.zoom = nz;
+        const nx = mx - idx * this.getSpacing();
+        this.targetOffsetX = nx;
+        this.offsetX = nx;
+        this.clampPan();
+        this.updateTimeLabels();
+    }
+
+    indexToX(i) {
+        return this.offsetX + i * this.getSpacing();
+    }
+
+    xToIndex(x) {
+        return (x - this.offsetX) / this.getSpacing();
+    }
+
+    getPriceRange() {
+        const mn = this.smin !== null ? this.smin : this.priceRange.min;
+        const mx = this.smax !== null ? this.smax : this.priceRange.max;
+        return { min: mn, max: mx };
+    }
+
+    niceNum(v, rnd) {
+        const e = Math.floor(Math.log10(v));
+        const p = Math.pow(10, e);
+        const f = v / p;
+        let nf;
+
+        if (rnd) {
+            if (f < 1.5) nf = 1;
+            else if (f < 3) nf = 2;
+            else if (f < 7) nf = 5;
+            else nf = 10;
+        } else {
+            if (f <= 1) nf = 1;
+            else if (f <= 2) nf = 2;
+            else if (f <= 5) nf = 5;
+            else nf = 10;
+        }
+
+        return nf * p;
+    }
+
+    calcNiceGrid() {
+        const r = this.getPriceRange();
+        const rng = r.max - r.min;
+        const d = this.niceNum(rng / 7, false);
+        const g0 = Math.floor(r.min / d) * d;
+        const g1 = Math.ceil(r.max / d) * d;
+
+        return {
+            min: g0,
+            max: g1,
+            step: d,
+            count: Math.round((g1 - g0) / d)
+        };
+    }
+
+    drawGrid() {
+        const { min, max, step, count } = this.calcNiceGrid();
+
+        // رسم خطوط السعر الأفقية
+        for (let i = 0; i <= count; i++) {
+            const p = min + i * step;
+            const y = this.priceToY(p);
+            if (y < -5 || y > this.h + 5) continue;
+
+            const mj = i % 5 === 0;
+            this.ctx.strokeStyle = mj ? "rgba(255,215,0,.12)" : "rgba(255,255,255,.05)";
+            this.ctx.lineWidth = mj ? 1 : 0.8;
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, y + 0.5);
+            this.ctx.lineTo(this.w, y + 0.5);
+            this.ctx.stroke();
+        }
+
+        // رسم خطوط الوقت العمودية
+        const visC = this.w / this.getSpacing();
+        const targetL = 9;
+        const stepC = Math.max(1, Math.round(visC / targetL));
+        const s = Math.floor(this.xToIndex(0));
+        const e = Math.ceil(this.xToIndex(this.w));
+
+        for (let i = s; i <= e; i++) {
+            if (i % stepC !== 0) continue;
+            const x = this.indexToX(i);
+            if (x < -5 || x > this.w + 5) continue;
+
+            const mj = i % Math.round(stepC * 5) === 0;
+            this.ctx.strokeStyle = mj ? "rgba(255,215,0,.12)" : "rgba(255,255,255,.05)";
+            this.ctx.lineWidth = mj ? 1 : 0.8;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x + 0.5, 0);
+            this.ctx.lineTo(x + 0.5, this.h);
+            this.ctx.stroke();
+        }
+    }
+
+    updateTimeLabels() {
+        const tl = this.timeLabels;
+        tl.innerHTML = "";
+
+        const visC = this.w / this.getSpacing();
+        const targetL = 9;
+        const stepC = Math.max(1, Math.round(visC / targetL));
+        const s = Math.floor(this.xToIndex(0));
+        const e = Math.ceil(this.xToIndex(this.w));
+        const tS = this.candles.length ? this.candles[0].timestamp : this.t0;
+
+        for (let i = s; i <= e; i++) {
+            if (i % stepC !== 0) continue;
+            const x = this.indexToX(i);
+            if (x < 5 || x > this.w - 5) continue;
+
+            const t = tS + i * this.timeframe;
+            const d = new Date(t);
+            const hh = String(d.getHours()).padStart(2, "0");
+            const mm = String(d.getMinutes()).padStart(2, "0");
+
+            const lb = document.createElement("div");
+            lb.className = "timeLabel";
+            if (i % Math.round(stepC * 5) === 0) {
+                lb.classList.add("major");
+            }
+            lb.style.left = x + "px";
+            lb.textContent = `${hh}:${mm}`;
+            tl.appendChild(lb);
+        }
+    }
+
+    updatePriceScale() {
+        const { min, step, count } = this.calcNiceGrid();
+        let h = "";
+
+        for (let i = 0; i <= count; i++) {
+            const p = min + i * step;
+            const y = this.priceToY(p);
+            if (y < -8 || y > this.h + 8) continue;
+
+            const mj = i % 5 === 0;
+            h += `<div class="pLabel${mj ? " major" : ""}" style="top:${y}px">${p.toFixed(this.digits)}</div>`;
+        }
+
+        this.priceScaleLabels.innerHTML = h;
+    }
+
+    updatePriceLabel() {
+        const py = this.priceToY(this.currentPrice);
+        this.priceLine.style.top = py + "px";
+        this.currentPriceEl.style.top = py + "px";
+        this.currentPriceEl.textContent = this.currentPrice.toFixed(this.digits);
+    }
+
+    updateCandleTimer() {
+        if (!this.currentCandle) return;
+
+        const n = Date.now();
+        const e = n - this.t0;
+        const r = this.timeframe - e;
+        const s = Math.floor(r / 1000);
+
+        this.candleTimer.textContent = s >= 0 ? s : 0;
+
+        const cx = this.indexToX(this.candles.length);
+        this.candleTimer.style.left = cx + 15 + "px";
+        this.candleTimer.style.top = "10px";
+        this.candleTimer.style.display = 'block';
+    }
+
+    priceToY(p) {
+        const r = this.getPriceRange();
+        const n = (p - r.min) / (r.max - r.min);
+        return this.h * (1 - n);
+    }
+
+    drawCandle(c, x, glow) {
+        const oy = this.priceToY(c.open);
+        const cy = this.priceToY(c.close);
+        const hy = this.priceToY(c.high);
+        const ly = this.priceToY(c.low);
+        const b = c.close >= c.open;
+        const w = this.getCandleWidth();
+
+        // رسم الظل (shadow/wick)
+        this.ctx.strokeStyle = b ? "#0f0" : "#f00";
+        this.ctx.lineWidth = Math.max(1, 0.18 * w);
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, hy);
+        this.ctx.lineTo(x, ly);
+        this.ctx.stroke();
+
+        // رسم جسم الشمعة
+        const bh = Math.max(1, Math.abs(cy - oy));
+        const bt = Math.min(oy, cy);
+
+        const g = this.ctx.createLinearGradient(x, bt, x, bt + bh);
+        if (b) {
+            g.addColorStop(0, "#0f0");
+            g.addColorStop(0.5, "#0f0");
+            g.addColorStop(1, "#0c0");
+        } else {
+            g.addColorStop(0, "#f00");
+            g.addColorStop(0.5, "#f00");
+            g.addColorStop(1, "#c00");
+        }
+
+        this.ctx.fillStyle = g;
+
+        if (glow) {
+            this.ctx.shadowColor = b ? "rgba(0,255,0,.8)" : "rgba(255,0,0,.8)";
+            this.ctx.shadowBlur = 12;
+        }
+
+        this.ctx.fillRect(x - w / 2, bt, w, bh);
+
+        if (glow) {
+            this.ctx.shadowBlur = 0;
+        }
+    }
+
+    addMarker(t) {
+        const op = this.currentPrice;
+        const c = this.currentCandle;
+        if (!c) return;
+
+        const bt = Math.max(c.open, c.close);
+        const bb = Math.min(c.open, c.close);
+        let fp = op;
+
+        if (op > bt) {
+            fp = bt;
+        } else if (op < bb) {
+            fp = bb;
+        }
+
+        const fi = this.candles.length;
+
+        this.markers.push({
+            type: t,
+            ts: Date.now(),
+            price: fp,
+            candleIndex: fi,
+            candleTimestamp: c.timestamp
+        });
+    }
+
+    drawMarker(m) {
+        let actualIdx = m.candleIndex;
+
+        // العثور على الفهرس الفعلي بناءً على الطابع الزمني
+        for (let i = 0; i < this.candles.length; i++) {
+            if (this.candles[i].timestamp === m.candleTimestamp) {
+                actualIdx = i;
+                break;
+            }
+        }
+
+        const x = this.indexToX(actualIdx);
+        if (x < -200 || x > this.w + 50) return;
+
+        const y = this.priceToY(m.price);
+        const w = this.getCandleWidth();
+        const ib = m.type === "buy";
+        const cl = ib ? "#16a34a" : "#ff3b3b";
+        const r = 5.5;
+
+        this.ctx.save();
+
+        // رسم النقطة الرئيسية
+        const lsx = x;
+        this.ctx.shadowColor = cl;
+        this.ctx.shadowBlur = 9;
+        this.ctx.fillStyle = cl;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, r, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+
+        // رسم السهم
+        this.ctx.fillStyle = "#fff";
+        this.ctx.save();
+        this.ctx.translate(x, y);
+        if (!ib) this.ctx.rotate(Math.PI);
+        
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, -2.8);
+        this.ctx.lineTo(-2, 0.8);
+        this.ctx.lineTo(-0.65, 0.8);
+        this.ctx.lineTo(-0.65, 2.8);
+        this.ctx.lineTo(0.65, 2.8);
+        this.ctx.lineTo(0.65, 0.8);
+        this.ctx.lineTo(2, 0.8);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.restore();
+
+        // رسم الخط والدائرة النهائية
+        const lx = lsx + w / 2 + 3;
+        const lw = Math.min(95, this.w - lx - 22);
+
+        this.ctx.strokeStyle = ib ? "rgba(22,163,74,.7)" : "rgba(255,59,59,.7)";
+        this.ctx.lineWidth = 1.2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(lsx + w / 2, y);
+        this.ctx.lineTo(lx, y);
+        this.ctx.stroke();
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(lx, y);
+        this.ctx.lineTo(lx + lw, y);
+        this.ctx.stroke();
+
+        const ex = lx + lw;
+        const er = 5;
+
+        this.ctx.strokeStyle = cl;
+        this.ctx.lineWidth = 2;
+        this.ctx.fillStyle = "#fff";
+        this.ctx.beginPath();
+        this.ctx.arc(ex, y, er, 0, 2 * Math.PI);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        this.ctx.strokeStyle = ib ? "rgba(22,163,74,.5)" : "rgba(255,59,59,.5)";
+        this.ctx.lineWidth = 1.2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(ex + er, y);
+        this.ctx.lineTo(ex + 65, y);
+        this.ctx.stroke();
+
+        this.ctx.restore();
+    }
+
+    draw() {
+        this.tickZoom();
+        this.updatePan();
+        this.updatePriceRange();
+        this.tickSR();
+
+        this.ctx.clearRect(0, 0, this.w, this.h);
+
+        this.drawGrid();
+
+        // رسم الشموع
+        for (let i = 0; i < this.candles.length; i++) {
+            const x = this.indexToX(i);
+            if (x < -60 || x > this.w + 60) continue;
+            this.drawCandle(this.candles[i], x, false);
+        }
+
+        // رسم الشمعة الحالية
+        if (this.currentCandle && (!this.candles.length || this.currentCandle.timestamp !== this.candles[this.candles.length - 1].timestamp)) {
+            const lx = this.indexToX(this.candles.length);
+            if (lx >= -60 && lx <= this.w + 60) {
+                this.drawCandle(this.currentCandle, lx, true);
+            }
+        }
+
+        // رسم العلامات
+        for (let mk of this.markers) {
+            this.drawMarker(mk);
+        }
+
+        // تحديث واجهة المستخدم
+        if (++this._fr % 2 === 0) {
+            this.updatePriceScale();
+            this.updateTimeLabels();
+        }
+
+        this.updatePriceLabel();
+        this.updateCandleTimer();
+    }
+
+    stepTowards(c, t, m) {
+        const d = t - c;
+        return Math.abs(d) <= m ? t : c + Math.sign(d) * m;
+    }
+
+    updateCurrentCandle() {
+        if (!this.currentCandle) {
+            const lp = this.candles.length ? this.candles[this.candles.length - 1].close : this.currentPrice;
+            this.currentCandle = this.genCandle(this.t0, lp);
+            this.currentCandle.close = lp;
+            this.currentCandle.high = Math.max(this.currentCandle.open, this.currentCandle.close);
+            this.currentCandle.low = Math.min(this.currentCandle.open, this.currentCandle.close);
+            return;
+        }
+
+        const n = Date.now();
+        const r = this.rnd(this.seed + n);
+        const dir = (r - 0.5) * 0.0004;
+        const t = this.currentCandle.close + dir;
+        const ms = 0.0008 * 0.18;
+        const nc = +this.stepTowards(this.currentCandle.close, t, ms).toFixed(this.digits);
+
+        this.currentCandle.close = nc;
+        this.currentCandle.high = +Math.max(this.currentCandle.high, nc).toFixed(this.digits);
+        this.currentCandle.low = +Math.min(this.currentCandle.low, nc).toFixed(this.digits);
+        this.currentPrice = nc;
+    }
+
+    startRealtime() {
+        setInterval(() => {
+            const n = Date.now();
+            const e = n - this.t0;
+
+            if (e >= this.timeframe) {
+                // إنهاء الشمعة الحالية
+                if (this.currentCandle && (!this.candles.length || this.candles[this.candles.length - 1].timestamp !== this.currentCandle.timestamp)) {
+                    const completedCandle = { ...this.currentCandle };
+                    this.candles.push(completedCandle);
+                    
+                    // حفظ الشمعة المكتملة
+                    this.saveCompletedCandle(completedCandle);
+
+                    // الحفاظ على الحد الأقصى للشموع
+                    if (this.candles.length > this.maxCandles) {
+                        this.candles.shift();
+                    }
+                }
+
+                // بدء شمعة جديدة
+                this.t0 = Math.floor(n / this.timeframe) * this.timeframe;
+                const lp = this.currentCandle ? this.currentCandle.close : this.currentPrice;
+                this.currentCandle = this.genCandle(this.t0, lp);
+                this.currentCandle.open = lp;
+                this.currentCandle.close = lp;
+                this.currentCandle.high = lp;
+                this.currentCandle.low = lp;
+                this.currentPrice = lp;
+            } else {
+                this.updateCurrentCandle();
+            }
+        }, 200);
+
+        // حفظ دوري للتخزين المحلي
+        setInterval(() => {
+            this.localStorageManager.saveCandles(this.candles);
+        }, 10000); // كل 10 ثواني
+    }
+
+    async saveCompletedCandle(candle) {
+        try {
+            // حفظ في Firebase
+            this.firebaseManager.addPendingCandle(candle);
+            console.log('📊 Candle queued for Firebase save');
+        } catch (error) {
+            console.error('❌ Error queuing candle:', error);
+        }
+    }
+
+    updatePriceRange() {
+        let v = [...this.candles];
+        if (this.currentCandle && (!v.length || this.currentCandle.timestamp !== v[v.length - 1].timestamp)) {
+            v.push(this.currentCandle);
+        }
+
+        if (!v.length) {
+            this.priceRange = {
+                min: 0.95 * this.basePrice,
+                max: 1.05 * this.basePrice
+            };
+            return;
+        }
+
+        const si = Math.floor(this.xToIndex(0));
+        const ei = Math.ceil(this.xToIndex(this.w));
+        const sl = v.slice(Math.max(0, si - 5), Math.min(v.length, ei + 5));
+
+        if (!sl.length) {
+            this.priceRange = {
+                min: 0.95 * this.basePrice,
+                max: 1.05 * this.basePrice
+            };
+            return;
+        }
+
+        const lo = sl.map(c => c.low);
+        const hi = sl.map(c => c.high);
+        const mn = Math.min(...lo);
+        const mx = Math.max(...hi);
+        const pd = 0.15 * (mx - mn) || 0.000000001;
+
+        this.priceRange = {
+            min: mn - pd,
+            max: mx + pd
+        };
+    }
+
+    initEvents() {
+        addEventListener("resize", () => this.setup());
+
+        // Mouse wheel zoom
+        this.canvas.addEventListener("wheel", e => {
+            e.preventDefault();
+            const r = this.canvas.getBoundingClientRect();
+            const x = e.clientX - r.left;
+            const y = e.clientY - r.top;
+            const sc = e.deltaY > 0 ? 1 / 1.1 : 1.1;
+            this.applyZoomAround(x, y, sc);
+        }, { passive: false });
+
+        // Mouse drag
+        const md = (x, t) => {
+            this.drag = 1;
+            this.dragStartX = x;
+            this.dragStartOffset = this.targetOffsetX;
+            this.velocity = 0;
+            this.lastDragX = x;
+            this.lastDragTime = t;
+        };
+
+        const mm = (x, t) => {
+            if (this.drag) {
+                const d = x - this.dragStartX;
+                this.targetOffsetX = this.dragStartOffset + d;
+                this.clampPan();
+
+                const dt = t - this.lastDragTime;
+                if (dt > 0 && dt < 80) {
+                    this.velocity = (x - this.lastDragX) / dt * 26;
+                }
+
+                this.lastDragX = x;
+                this.lastDragTime = t;
+            }
+        };
+
+        const mu = () => {
+            this.drag = 0;
+            this.updateTimeLabels();
+        };
+
+        this.canvas.addEventListener("mousedown", e => {
+            const r = this.canvas.getBoundingClientRect();
+            md(e.clientX - r.left, Date.now());
+        });
+
+        addEventListener("mousemove", e => {
+            const r = this.canvas.getBoundingClientRect();
+            mm(e.clientX - r.left, Date.now());
+        });
+
+        addEventListener("mouseup", mu);
+
+        // Touch events
+        const db = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
+
+        this.canvas.addEventListener("touchstart", e => {
+            const r = this.canvas.getBoundingClientRect();
+            if (e.touches.length === 1) {
+                md(e.touches[0].clientX - r.left, Date.now());
+            } else if (e.touches.length === 2) {
+                this.drag = 0;
+                this.pinch = 1;
+                this.p0 = db(e.touches[0], e.touches[1]);
+                this.pMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+                this.pMidY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener("touchmove", e => {
+            e.preventDefault();
+            const r = this.canvas.getBoundingClientRect();
+
+            if (this.pinch && e.touches.length === 2) {
+                const d = db(e.touches[0], e.touches[1]);
+                if (this.p0 > 0) {
+                    const sc = Math.max(0.2, Math.min(5, d / (this.p0 || d)));
+                    this.applyZoomAround(this.pMidX, this.pMidY, sc);
+                }
+                this.p0 = d;
+            } else if (!this.pinch && e.touches.length === 1) {
+                mm(e.touches[0].clientX - r.left, Date.now());
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener("touchend", e => {
+            if (e.touches.length < 2) {
+                this.pinch = 0;
+                this.p0 = 0;
+            }
+            if (e.touches.length === 0) {
+                mu();
+            }
+        }, { passive: false });
+
+        this.canvas.addEventListener("touchcancel", () => {
+            this.pinch = 0;
+            this.p0 = 0;
+            mu();
+        }, { passive: false });
+    }
+
+    loop() {
+        this.draw();
+        requestAnimationFrame(() => this.loop());
+    }
+}
+
+// ============================================
+// Initialize Chart & Controls
+// ============================================
+
+window.chart = new AdvancedTradingChart();
+
+// Time selector controls
+const timeSelector = document.getElementById("timeSelector");
+const timeDropdown = document.getElementById("timeDropdown");
+const timeDisplay = document.getElementById("timeDisplay");
+const tabCompensation = document.getElementById("tabCompensation");
+const tabCustom = document.getElementById("tabCustom");
+const compensationList = document.getElementById("compensationList");
+const amountDisplay = document.getElementById("amountDisplay");
+const amountContainer = document.getElementById("amountContainer");
+
+let isEditingTime = false;
+let savedTimeValue = "00:05";
+
+timeSelector.addEventListener("click", e => {
+    e.stopPropagation();
+    if (!isEditingTime) {
+        timeDropdown.classList.toggle("show");
+    }
+});
+
+document.addEventListener("click", () => {
+    timeDropdown.classList.remove("show");
+    if (isEditingTime) {
+        timeDisplay.textContent = savedTimeValue;
+        isEditingTime = false;
+    }
+});
+
+timeDropdown.addEventListener("click", e => e.stopPropagation());
+
+tabCompensation.addEventListener("click", () => {
+    tabCompensation.classList.add("active");
+    tabCustom.classList.remove("active");
+    compensationList.style.display = "grid";
+    if (isEditingTime) {
+        timeDisplay.textContent = savedTimeValue;
+        isEditingTime = false;
+    }
+});
+
+tabCustom.addEventListener("click", () => {
+    tabCustom.classList.add("active");
+    tabCompensation.classList.remove("active");
+    compensationList.style.display = "none";
+    timeDisplay.textContent = "";
+    isEditingTime = true;
+    setTimeout(() => timeDisplay.focus(), 50);
+});
+
+compensationList.addEventListener("click", e => {
+    if (e.target.classList.contains("dropdown-item")) {
+        savedTimeValue = e.target.textContent;
+        timeDisplay.textContent = savedTimeValue;
+        chart.selectedTime = parseInt(e.target.getAttribute("data-sec"));
+        timeDropdown.classList.remove("show");
+    }
+});
+
+timeDisplay.addEventListener("input", e => {
+    if (isEditingTime) {
+        let v = e.target.textContent.replace(/[^0-9]/g, "");
+        if (v.length > 4) v = v.slice(0, 4);
+        e.target.textContent = v;
+    }
+});
+
+timeDisplay.addEventListener("blur", () => {
+    if (isEditingTime) {
+        let v = timeDisplay.textContent.replace(/[^0-9]/g, "");
+        if (v.length === 0) v = "0005";
+        v = v.padStart(4, "0");
+        const h = v.slice(0, 2);
+        const m = v.slice(2, 4);
+        savedTimeValue = `${h}:${m}`;
+        timeDisplay.textContent = savedTimeValue;
+        isEditingTime = false;
+    }
+});
+
+// Amount input controls
+amountContainer.addEventListener("click", () => {
+    amountDisplay.focus();
+});
+
+amountDisplay.addEventListener("focus", function () {
+    let v = this.value.replace("$", "");
+    this.value = v;
+    setTimeout(() => {
+        this.setSelectionRange(0, this.value.length);
+    }, 10);
+});
+
+amountDisplay.addEventListener("input", function () {
+    this.value = this.value.replace(/[^0-9]/g, "");
+});
+
+amountDisplay.addEventListener("blur", function () {
+    let val = parseFloat(this.value) || 50;
+    this.value = val + "$";
+});
+
+amountDisplay.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        this.blur();
+    }
+});
+
+// Trade buttons
+document.getElementById("buyBtn").addEventListener("click", () => chart.addMarker("buy"));
+document.getElementById("sellBtn").addEventListener("click", () => chart.addMarker("sell"));
+
+console.log('🚀 QT Trading Chart initialized with Firebase integration');
