@@ -1,9 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDSkeB77jmxyu7CGIoNbCuTLRKJwTr5waU",
-  authDatabaseURL: "https://qt-real-trading-default-rtdb.firebaseio.com/",
+  authDomain: "qt-real-trading.firebaseapp.com",
+  databaseURL: "https://qt-real-trading-default-rtdb.firebaseio.com/",
   projectId: "qt-real-trading",
   storageBucket: "qt-real-trading.appspot.com",
   messagingSenderId: "123456789",
@@ -12,7 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
 
+let currentUser = null;
 let candles = [];
 let chartWidth, chartHeight, candleWidth = 8, spacing = 2, offsetX = 0, isDragging = false, lastX = 0, minPrice = 1.08, maxPrice = 1.12, lastPrice = 1.10, timeframe = 60, candleTimer = timeframe, lastCandleTime = Date.now();
 
@@ -29,6 +33,15 @@ const walletBtn = document.querySelector('.wallet-btn');
 const loadingOverlay = document.getElementById('loadingOverlay');
 
 let candleGenModal = null;
+let isDataLoaded = false;
+
+function showLoading() {
+  loadingOverlay.classList.add('show');
+}
+
+function hideLoading() {
+  loadingOverlay.classList.remove('show');
+}
 
 function resizeCanvas() {
   const container = canvas.parentElement;
@@ -148,10 +161,37 @@ function generateRealisticCandle() {
   return { open, high, low, close, time: Date.now() };
 }
 
-function loadCandlesFromFirebase() {
-  loadingOverlay.classList.add('show');
+async function initializeUserData(uid) {
+  const userRef = ref(db, `users/${uid}`);
+  const snapshot = await get(userRef);
+  
+  if (!snapshot.exists()) {
+    await set(userRef, {
+      balance: 11000,
+      createdAt: Date.now(),
+      lastActive: Date.now()
+    });
+  } else {
+    await update(userRef, { lastActive: Date.now() });
+  }
+}
+
+function loadUserBalance(uid) {
+  const balanceRef = ref(db, `users/${uid}/balance`);
+  onValue(balanceRef, (snapshot) => {
+    const balance = snapshot.exists() ? snapshot.val() : 11000;
+    balanceAmount.textContent = '$' + balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  });
+}
+
+async function loadCandlesFromFirebase() {
+  if (isDataLoaded) return;
+  
+  showLoading();
   const candlesRef = ref(db, 'candles');
-  get(candlesRef).then((snapshot) => {
+  
+  try {
+    const snapshot = await get(candlesRef);
     if (snapshot.exists()) {
       candles = snapshot.val() || [];
       if (candles.length > 0) {
@@ -161,23 +201,29 @@ function loadCandlesFromFirebase() {
       }
     } else {
       generateInitialCandles(100);
-      saveCandlesToFirebase();
+      await saveCandlesToFirebase();
     }
-    loadingOverlay.classList.remove('show');
+    
+    isDataLoaded = true;
     drawChart();
-  }).catch((error) => {
+    hideLoading();
+  } catch (error) {
     console.error("Error loading candles:", error);
     generateInitialCandles(100);
-    loadingOverlay.classList.remove('show');
+    isDataLoaded = true;
     drawChart();
-  });
+    hideLoading();
+  }
 }
 
-function saveCandlesToFirebase() {
+async function saveCandlesToFirebase() {
+  if (!currentUser) return;
   const candlesRef = ref(db, 'candles');
-  set(candlesRef, candles).catch((error) => {
+  try {
+    await set(candlesRef, candles);
+  } catch (error) {
     console.error("Error saving candles:", error);
-  });
+  }
 }
 
 function generateInitialCandles(count) {
@@ -188,6 +234,8 @@ function generateInitialCandles(count) {
 }
 
 function updateCandle() {
+  if (!isDataLoaded) return;
+  
   const now = Date.now();
   const elapsed = Math.floor((now - lastCandleTime) / 1000);
   candleTimer = Math.max(0, timeframe - elapsed);
@@ -260,10 +308,10 @@ function closeCandleModal() {
   }
 }
 
-function generateCustomCandles(count, trend) {
-  loadingOverlay.classList.add('show');
+async function generateCustomCandles(count, trend) {
+  showLoading();
   
-  setTimeout(() => {
+  setTimeout(async () => {
     const newCandles = [];
     let currentPrice = lastPrice;
     
@@ -315,11 +363,31 @@ function generateCustomCandles(count, trend) {
     minPrice = Math.min(...candles.map(c => c.low)) - 0.001;
     maxPrice = Math.max(...candles.map(c => c.high)) + 0.001;
     
-    saveCandlesToFirebase();
+    await saveCandlesToFirebase();
     drawChart();
-    loadingOverlay.classList.remove('show');
+    hideLoading();
   }, 100);
 }
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    console.log('User logged in:', user.uid);
+    await initializeUserData(user.uid);
+    loadUserBalance(user.uid);
+    await loadCandlesFromFirebase();
+  } else {
+    showLoading();
+    try {
+      const userCredential = await signInAnonymously(auth);
+      currentUser = userCredential.user;
+      console.log('Anonymous user created:', currentUser.uid);
+    } catch (error) {
+      console.error('Error signing in:', error);
+      hideLoading();
+    }
+  }
+});
 
 canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; });
 canvas.addEventListener('mousemove', (e) => { if (isDragging) { offsetX += lastX - e.clientX; offsetX = Math.max(0, offsetX); lastX = e.clientX; drawChart(); } });
@@ -333,17 +401,9 @@ walletBtn.addEventListener('click', showCandleGeneratorModal);
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
-loadCandlesFromFirebase();
 setInterval(updateCandle, 1000);
 setInterval(updateLiveTime, 1000);
 updateLiveTime();
-
-const balanceRef = ref(db, 'balance');
-onValue(balanceRef, (snapshot) => {
-  const balance = snapshot.exists() ? snapshot.val() : 11000;
-  balanceAmount.textContent = '$' + balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-});
-set(balanceRef, 11000);
 
 document.getElementById('timeSelector').addEventListener('click', () => {
   document.getElementById('timeDropdown').classList.toggle('show');
