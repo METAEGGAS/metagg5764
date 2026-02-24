@@ -90,19 +90,8 @@ const auth = getAuth(app);
     #timeDisplay { caret-color: #fff !important; outline: none !important; }
     #timeDisplay:focus { border-color: rgba(255,255,255,.35) !important; }
 
-    /* ✅ شارة الماستر / المشاهد */
-    #_qtRoleBadge{
-      position:fixed;bottom:10px;left:10px;
-      font-size:10px;font-weight:900;letter-spacing:.5px;
-      padding:3px 9px;border-radius:7px;z-index:9999;
-      pointer-events:none;transition:.3s;
-    }
-    #_qtRoleBadge.master{
-      background:rgba(0,255,65,.12);border:1px solid rgba(0,255,65,.35);color:#00ff41;
-    }
-    #_qtRoleBadge.viewer{
-      background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);color:#ffa500;
-    }
+    /* ✅ شارة الماستر / المشاهد (مخفية بالكامل حسب طلبك) */
+    #_qtRoleBadge{display:none !important;opacity:0 !important;visibility:hidden !important;}
   `;
   document.head.appendChild(st);
 })();
@@ -120,9 +109,65 @@ class AuthManager {
     this.realBalance   = 0;
     this.demoBalance   = 10000;
     this.menuVisible   = false;
+    this.balancesReady = false;
+
+    // ✅ استرجاع رصيد الديمو محلياً للمستخدم غير المسجل (اختياري)
+    try {
+      const ls = localStorage.getItem('qt_demo_balance');
+      const v = ls !== null ? parseFloat(ls) : NaN;
+      if (Number.isFinite(v)) this.demoBalance = Math.max(0, v);
+    } catch(e) {}
 
     this.initMenuUI();
     this.init();
+  }
+
+  _fmtMoney(n) {
+    try {
+      return '$' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+    } catch(e) {
+      return '$' + (Math.round(n * 100) / 100).toFixed(2);
+    }
+  }
+
+  async setBalance(type, amount, { persist = true } = {}) {
+    const safeAmt = Math.max(0, Number(amount) || 0);
+
+    if (type === 'real') this.realBalance = safeAmt;
+    else this.demoBalance = safeAmt;
+
+    // ✅ تحديث UI داخل القائمة
+    const realEl = document.getElementById('qtRealAmt');
+    const demoEl = document.getElementById('qtDemoAmt');
+    if (realEl) realEl.textContent = this._fmtMoney(this.realBalance);
+    if (demoEl) demoEl.textContent = this._fmtMoney(this.demoBalance);
+
+    // ✅ تحديث الـ header balance حسب الحساب النشط
+    if (this.balanceEl) {
+      const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
+      this.balanceEl.textContent = this._fmtMoney(showAmt);
+    }
+
+    // ✅ تحديث balAmount (إن وجد)
+    const balAmount = document.getElementById('balAmount');
+    if (balAmount) {
+      const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
+      balAmount.textContent = this._fmtMoney(showAmt);
+    }
+
+    // ✅ تخزين محلي للديمو لو مفيش تسجيل دخول
+    if (type === 'demo' && !this.user) {
+      try { localStorage.setItem('qt_demo_balance', String(safeAmt)); } catch(e) {}
+    }
+
+    // ✅ حفظ على Firebase للمستخدم (REAL + DEMO)
+    if (persist && this.user) {
+      const userRef = doc(db, 'users', this.user.email);
+      const payload = (type === 'real')
+        ? { realBalance: safeAmt, balance: safeAmt }
+        : { demoBalance: safeAmt };
+      updateDoc(userRef, payload).catch(e => console.warn('⚠️ Firebase balance sync:', e));
+    }
   }
 
   initMenuUI() {
@@ -163,6 +208,11 @@ class AuthManager {
     `;
     wrap.appendChild(menu);
 
+    // ✅ قيم ابتدائية من الذاكرة (قبل Firebase)
+    this.setBalance('real', this.realBalance, { persist: false });
+    this.setBalance('demo', this.demoBalance, { persist: false });
+    this.switchAccount(this.activeAccount);
+
     wrap.addEventListener('click', (e) => {
       e.stopPropagation();
       if (e.target.closest('#qtAccMenu')) return;
@@ -190,17 +240,19 @@ class AuthManager {
         this.closeMenu();
       });
     });
-    document.getElementById('qtRefillBtn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.demoBalance = 10000;
-      const el = document.getElementById('qtDemoAmt');
-      if (el) el.textContent = '$10,000.00';
-      if (this.activeAccount === 'demo' && this.balanceEl)
-        this.balanceEl.textContent = '$10,000.00';
-      const btn = document.getElementById('qtRefillBtn');
-      btn.textContent = '✅ Refilled!';
-      setTimeout(() => { btn.textContent = '🔄 Refill Demo Account'; }, 1500);
-    });
+
+    const refillBtn = document.getElementById('qtRefillBtn');
+    if (refillBtn) {
+      refillBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // ✅ الريفيل للديمو + حفظه (Firebase لو المستخدم مسجل)
+        this.setBalance('demo', 10000, { persist: true });
+
+        const btn = document.getElementById('qtRefillBtn');
+        btn.textContent = '✅ Refilled!';
+        setTimeout(() => { btn.textContent = '🔄 Refill Demo Account'; }, 1500);
+      });
+    }
   }
 
   toggleMenu() {
@@ -220,9 +272,19 @@ class AuthManager {
   switchAccount(type) {
     this.activeAccount = type;
     if (!this.balanceEl) return;
-    this.balanceEl.textContent = type === 'real'
-      ? `$${this.realBalance.toFixed(2)}`
-      : `$${this.demoBalance.toFixed(2)}`;
+
+    const showAmt = type === 'real' ? this.realBalance : this.demoBalance;
+    this.balanceEl.textContent = this._fmtMoney(showAmt);
+
+    const balAmount = document.getElementById('balAmount');
+    if (balAmount) balAmount.textContent = this._fmtMoney(showAmt);
+
+    // ✅ تحديث بادج الصفقات حسب الحساب النشط (لو الشارت جاهز)
+    try {
+      if (window.chart && typeof window.chart._refreshTradeBadge === 'function') {
+        window.chart._refreshTradeBadge();
+      }
+    } catch(e) {}
   }
 
   async init() {
@@ -238,10 +300,14 @@ class AuthManager {
           }
         }
       } else {
-        if (this.balanceEl)
-          this.balanceEl.textContent = this.activeAccount === 'demo'
-            ? `$${this.demoBalance.toFixed(2)}`
-            : '$0.00';
+        this.user = null;
+        this.balancesReady = false;
+
+        // عند الخروج: اعرض حسب الحساب النشط
+        if (this.balanceEl) {
+          const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
+          this.balanceEl.textContent = this._fmtMoney(showAmt);
+        }
       }
     });
   }
@@ -249,28 +315,84 @@ class AuthManager {
   async loadUserBalance() {
     const userRef  = doc(db, "users", this.user.email);
     const userSnap = await getDoc(userRef);
-    if (!userSnap.exists() || !userSnap.data().balance) {
-      await setDoc(userRef, { balance: 0, email: this.user.email, createdAt: serverTimestamp() }, { merge: true });
+
+    // ✅ Migration/Default schema
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: this.user.email,
+        realBalance: 0,
+        demoBalance: 10000,
+        // توافق للخلف
+        balance: 0,
+        createdAt: serverTimestamp()
+      }, { merge: true });
+    } else {
+      const d = userSnap.data() || {};
+      const migrateReal = (d.realBalance === undefined && d.balance !== undefined);
+      const migrateDemo = (d.demoBalance === undefined);
+      if (migrateReal || migrateDemo) {
+        await setDoc(userRef, {
+          realBalance: d.realBalance !== undefined ? d.realBalance : (d.balance || 0),
+          demoBalance: d.demoBalance !== undefined ? d.demoBalance : 10000,
+          // حافظ على balance كنسخة real للتوافق
+          balance: d.balance !== undefined ? d.balance : (d.realBalance || 0)
+        }, { merge: true });
+      }
     }
+
+    if (this.unsubscribeBalance) {
+      try { this.unsubscribeBalance(); } catch(e) {}
+      this.unsubscribeBalance = null;
+    }
+
     this.unsubscribeBalance = onSnapshot(userRef, (d) => {
       const data = d.data();
-      if (data) {
-        this.realBalance = data.balance !== undefined ? data.balance : 0;
-        const realEl = document.getElementById('qtRealAmt');
-        if (realEl) realEl.textContent = `$${this.realBalance.toFixed(2)}`;
-        if (this.activeAccount === 'real' && this.balanceEl)
-          this.balanceEl.textContent = `$${this.realBalance.toFixed(2)}`;
+      if (!data) return;
+
+      this.realBalance = (data.realBalance !== undefined) ? data.realBalance : (data.balance || 0);
+      this.demoBalance = (data.demoBalance !== undefined) ? data.demoBalance : 10000;
+      this.balancesReady = true;
+
+      // ✅ تحديث UI
+      const realEl = document.getElementById('qtRealAmt');
+      const demoEl = document.getElementById('qtDemoAmt');
+      if (realEl) realEl.textContent = this._fmtMoney(this.realBalance);
+      if (demoEl) demoEl.textContent = this._fmtMoney(this.demoBalance);
+
+      // ✅ تحديث header حسب الحساب النشط
+      if (this.balanceEl) {
+        const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
+        this.balanceEl.textContent = this._fmtMoney(showAmt);
       }
+
+      const balAmount = document.getElementById('balAmount');
+      if (balAmount) {
+        const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
+        balAmount.textContent = this._fmtMoney(showAmt);
+      }
+
+      // ✅ مزامنة محلية للديمو
+      try { localStorage.setItem('qt_demo_balance', String(this.demoBalance)); } catch(e) {}
+
     });
   }
 
-  async updateBalance(amount) {
+  // ✅ متوافق للخلف (مش لازم تستخدمه لو مش محتاج)
+  async updateBalance(type, amount) {
     if (!this.user) return;
     const userRef  = doc(db, "users", this.user.email);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
-      const currentBalance = userSnap.data().balance || 0;
-      await updateDoc(userRef, { balance: currentBalance + amount });
+      const data = userSnap.data() || {};
+      const field = type === 'real' ? 'realBalance' : 'demoBalance';
+      const currentBalance = (data[field] !== undefined)
+        ? data[field]
+        : (type === 'real' ? (data.balance || 0) : 10000);
+      const next = currentBalance + amount;
+      const payload = {};
+      payload[field] = next;
+      if (type === 'real') payload.balance = next;
+      await updateDoc(userRef, payload);
     }
   }
 }
@@ -508,7 +630,7 @@ class AdvancedTradingChart {
   }
 
   /* ============================================================
-     ✅ تعيين شارة الدور
+     ✅ تعيين شارة الدور (ستظل مخفية بالـ CSS)
      ============================================================ */
   _setRoleBadge(role) {
     let badge = document.getElementById('_qtRoleBadge');
@@ -847,7 +969,7 @@ class AdvancedTradingChart {
       if (window.tradeHistory) {
         window.tradeHistory.setTrades([]);
       }
-      this._updateTradeBadge(0);
+      this._refreshTradeBadge();
 
       /* ✅ تهيئة نظام الماستر/المشاهد (تشمل ملء الفجوات) */
       await this._initMasterViewerSystem();
@@ -936,7 +1058,7 @@ class AdvancedTradingChart {
   priceToY(p){const r=this.getPriceRange();const n=(p-r.min)/(r.max-r.min);return this.h*(1-n);}
   drawCandle(c,x,glow){const oy=this.priceToY(c.open);const cy=this.priceToY(c.close);const hy=this.priceToY(c.high);const ly=this.priceToY(c.low);const b=c.close>=c.open;const w=this.getCandleWidth();this.ctx.strokeStyle=b?"#0f0":"#f00";this.ctx.lineWidth=Math.max(1,0.18*w);this.ctx.beginPath();this.ctx.moveTo(x,hy);this.ctx.lineTo(x,ly);this.ctx.stroke();const bh=Math.max(1,Math.abs(cy-oy));const bt=Math.min(oy,cy);const g=this.ctx.createLinearGradient(x,bt,x,bt+bh);if(b){g.addColorStop(0,"#0f0");g.addColorStop(0.5,"#0f0");g.addColorStop(1,"#0c0");}else{g.addColorStop(0,"#f00");g.addColorStop(0.5,"#f00");g.addColorStop(1,"#c00");}this.ctx.fillStyle=g;if(glow){this.ctx.shadowColor=b?"rgba(0,255,0,.8)":"rgba(255,0,0,.8)";this.ctx.shadowBlur=12;}this.ctx.fillRect(x-w/2,bt,w,bh);if(glow){this.ctx.shadowBlur=0;}}
 
-  addMarker(t, tradeId){
+  addMarker(t, tradeId, account){
     const op=this.currentPrice;
     const c=this.currentCandle;
     if(!c)return;
@@ -952,6 +1074,7 @@ class AdvancedTradingChart {
       candleIndex:fi,
       candleTimestamp:c.timestamp,
       tradeId: tradeId || null,
+      account: account || this._getActiveAcc(),
       closed: false,
       profitLoss: null
     });
@@ -1056,7 +1179,39 @@ class AdvancedTradingChart {
     this.ctx.restore();
   }
 
-  draw(){this.tickZoom();this.updatePan();this.updatePriceRange();this.tickSR();this.ctx.clearRect(0,0,this.w,this.h);this.drawGrid();for(let i=0;i<this.candles.length;i++){const x=this.indexToX(i);if(x<-60||x>this.w+60)continue;this.drawCandle(this.candles[i],x,false);}if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){const lx=this.indexToX(this.candles.length);if(lx>=-60&&lx<=this.w+60){this.drawCandle(this.currentCandle,lx,true);}}for(let mk of this.markers){this.drawMarker(mk);}if(++this._fr%2===0){this.updatePriceScale();this.updateTimeLabels();}this.updatePriceLabel();this.updateCandleTimer();}
+  draw(){
+    this.tickZoom();
+    this.updatePan();
+    this.updatePriceRange();
+    this.tickSR();
+    this.ctx.clearRect(0,0,this.w,this.h);
+    this.drawGrid();
+
+    for(let i=0;i<this.candles.length;i++){
+      const x=this.indexToX(i);
+      if(x<-60||x>this.w+60)continue;
+      this.drawCandle(this.candles[i],x,false);
+    }
+
+    if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){
+      const lx=this.indexToX(this.candles.length);
+      if(lx>=-60&&lx<=this.w+60){
+        this.drawCandle(this.currentCandle,lx,true);
+      }
+    }
+
+    // ✅ منع اختلاط عرض الماركرز بين الحسابات
+    const activeAcc = this._getActiveAcc();
+    for(let mk of this.markers){
+      if ((mk.account || 'demo') !== activeAcc) continue;
+      this.drawMarker(mk);
+    }
+
+    if(++this._fr%2===0){this.updatePriceScale();this.updateTimeLabels();}
+    this.updatePriceLabel();
+    this.updateCandleTimer();
+  }
+
   stepTowards(c,t,m){const d=t-c;return Math.abs(d)<=m?t:c+Math.sign(d)*m;}
 
   updateCurrentCandle(){
@@ -1188,49 +1343,72 @@ class AdvancedTradingChart {
   }
 
   /* ============================================================
-     إدارة الرصيد
+     إدارة الرصيد (منفصل تماماً بين REAL و DEMO + حفظ الاثنين)
      ============================================================ */
   _getActiveAcc() { return this.authManager.activeAccount || 'demo'; }
   _fmtBal(n) {
     try { return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n); }
     catch(e) { return (Math.round(n * 100) / 100).toFixed(2); }
   }
-  _getBalance() {
-    const acc = this._getActiveAcc();
-    return acc === 'real' ? (this.authManager.realBalance || 0) : (this.authManager.demoBalance || 10000);
+  _getBalanceFor(acc) {
+    const a = acc || this._getActiveAcc();
+    return a === 'real'
+      ? (this.authManager.realBalance || 0)
+      : (this.authManager.demoBalance || 0);
   }
-  _setBalance(amount) {
-    const safeAmt = Math.max(0, amount);
-    const formatted = '$' + this._fmtBal(safeAmt);
-    const acc = this._getActiveAcc();
-    if (acc === 'demo') {
-      this.authManager.demoBalance = safeAmt;
-      const qtEl = document.getElementById('qtDemoAmt');
-      if (qtEl) qtEl.textContent = formatted;
-    } else {
-      this.authManager.realBalance = safeAmt;
-      const qtEl = document.getElementById('qtRealAmt');
-      if (qtEl) qtEl.textContent = formatted;
-      if (this.authManager.user) {
-        const userRef = doc(db, 'users', this.authManager.user.email);
-        updateDoc(userRef, { balance: safeAmt }).catch(e => console.warn('⚠️ Firebase balance sync:', e));
-      }
-    }
-    if (this.authManager.balanceEl) this.authManager.balanceEl.textContent = formatted;
-    const balAmount = document.getElementById('balAmount');
-    if (balAmount) balAmount.textContent = formatted;
+  _setBalanceFor(acc, amount) {
+    const a = acc || this._getActiveAcc();
+    const safeAmt = Math.max(0, Number(amount) || 0);
+    this.authManager.setBalance(a, safeAmt, { persist: true });
   }
 
   /* ============================================================
-     فتح صفقة
+     فتح صفقة (ممنوع لو الحساب فارغ/القيمة فاضية + عدم خلط الحسابات)
      ============================================================ */
   openTrade(direction) {
+    const acc = this._getActiveAcc();
+
+    // ✅ منع استخدام REAL بدون تسجيل دخول
+    if (acc === 'real' && !this.authManager.user) {
+      this._showMsg('سجّل الدخول لاستخدام الحساب الحقيقي ❌', '#dc2626');
+      return;
+    }
+
+    // ✅ لو المستخدم مسجل ولسه الرصيد ما اتحمّلش
+    if (this.authManager.user && !this.authManager.balancesReady) {
+      this._showMsg('استنى تحميل الرصيد لحظة... ⏳', '#f59e0b');
+      return;
+    }
+
     const amountEl = document.getElementById('amountDisplay');
-    const rawVal = amountEl ? amountEl.value.replace(/[^0-9.]/g, '') : '50';
-    const amount = parseFloat(rawVal) || 50;
-    const balance = this._getBalance();
-    if (balance < amount) { this._showMsg('رصيد غير كافٍ ❌', '#dc2626'); return; }
-    this._setBalance(balance - amount);
+    const raw = amountEl ? String(amountEl.value || '') : '';
+    const rawVal = raw.replace(/[^0-9.]/g, '');
+
+    if (!rawVal || rawVal.trim() === '') {
+      this._showMsg('اكتب مبلغ الصفقة الأول ❌', '#dc2626');
+      return;
+    }
+
+    const amount = parseFloat(rawVal);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this._showMsg('مبلغ غير صحيح ❌', '#dc2626');
+      return;
+    }
+
+    const balance = this._getBalanceFor(acc);
+
+    if (!Number.isFinite(balance) || balance <= 0) {
+      this._showMsg('الحساب فارغ ❌', '#dc2626');
+      return;
+    }
+
+    if (balance < amount) {
+      this._showMsg('رصيد غير كافٍ ❌', '#dc2626');
+      return;
+    }
+
+    // ✅ خصم من نفس الحساب فقط + حفظه (REAL/DEMO)
+    this._setBalanceFor(acc, balance - amount);
 
     const parts = this.currentPair.split('/');
     const flagMap = {'AED':'ae','CNY':'cn','AUD':'au','CAD':'ca','CHF':'ch','BHD':'bh','EUR':'eu','RUB':'ru','USD':'us','KES':'ke','LBP':'lb','QAR':'qa','TRY':'tr','SYP':'sy','EGP':'eg','INR':'in','IRR':'ir'};
@@ -1250,7 +1428,7 @@ class AdvancedTradingChart {
       flags:[f1,f2],amountTxt:this._fmtBal(amount),stake:amount,
       entry:this.currentPrice,payout,remain:duration,duration,
       openTime,closeTime,open:true,status:'open',
-      account:this._getActiveAcc(),
+      account: acc,
       markerCandleTimestamp:this.currentCandle?this.currentCandle.timestamp:null,
       markerPrice:this.currentPrice,markerCandleIndex:this.candles.length
     };
@@ -1261,20 +1439,19 @@ class AdvancedTradingChart {
       window.tradeHistory.setTrades(current);
     }
 
-    this.addMarker(direction, tradeId);
+    this.addMarker(direction, tradeId, acc);
 
     if (this.authManager.user) {
       this._saveTradeToFirebase(trade).catch(e => console.warn('❌ Trade save error:', e));
     }
 
-    const allTrades = (window.tradeHistory ? window.tradeHistory.getTrades() : null) || [];
-    this._updateTradeBadge(allTrades.length);
+    this._refreshTradeBadge();
 
     setTimeout(() => this._closeTrade(tradeId, trade), duration * 1000);
   }
 
   /* ============================================================
-     إغلاق الصفقة
+     إغلاق الصفقة (يرجع الربح لنفس الحساب الذي فُتحت عليه)
      ============================================================ */
   _closeTrade(tradeId, trade) {
     const currentP = this.currentPrice;
@@ -1285,10 +1462,14 @@ class AdvancedTradingChart {
     if (window.tradeHistory) {
       const remaining = (window.tradeHistory.getTrades() || []).filter(t => t.id !== tradeId);
       window.tradeHistory.setTrades(remaining);
-      this._updateTradeBadge(remaining.length);
     }
 
-    if (win) { this._setBalance(this._getBalance() + trade.stake + profit); }
+    // ✅ عدم خلط الحسابات: التسوية تتم على حساب الصفقة نفسه
+    const acc = trade.account || 'demo';
+    if (win) {
+      const b = this._getBalanceFor(acc);
+      this._setBalanceFor(acc, b + trade.stake + profit);
+    }
 
     const mIdx = this.markers.findIndex(mk => mk.tradeId === tradeId);
     if (mIdx >= 0) { this.markers[mIdx].closed = true; this.markers[mIdx].profitLoss = pl; }
@@ -1296,6 +1477,8 @@ class AdvancedTradingChart {
     if (this.authManager.user) {
       this._updateTradeInFirebase(tradeId, {status:'closed',result:win?'win':'loss',profit:pl,closedAt:Date.now(),closePrice:currentP}).catch(e=>console.warn('❌ Trade close update error:',e));
     }
+
+    this._refreshTradeBadge();
   }
 
   async _saveTradeToFirebase(trade) {
@@ -1326,13 +1509,15 @@ class AdvancedTradingChart {
       const tradesRef = collection(db, 'users', email, 'trades');
       const q = query(tradesRef, where('status', '==', 'open'));
       const snapshot = await getDocs(q);
-      if (snapshot.empty) return;
+      if (snapshot.empty) {
+        this._refreshTradeBadge();
+        return;
+      }
 
       if (window.tradeHistory) window.tradeHistory.setTrades([]);
       this.markers = [];
 
       const now = Date.now();
-      let activeCount = 0;
 
       for (const docSnap of snapshot.docs) {
         const trade = { ...docSnap.data(), id: docSnap.id };
@@ -1349,10 +1534,10 @@ class AdvancedTradingChart {
           }
           this._restoreTradeMarker(trade);
           setTimeout(() => this._closeTrade(trade.id, trade), remaining);
-          activeCount++;
         }
       }
-      this._updateTradeBadge(activeCount);
+
+      this._refreshTradeBadge();
     } catch(e) { console.error('❌ loadOpenTrades error:', e); }
   }
 
@@ -1363,7 +1548,17 @@ class AdvancedTradingChart {
         if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
       }
     }
-    this.markers.push({type:trade.dir==='up'?'buy':'sell',ts:trade.openTime||Date.now(),price:trade.markerPrice||trade.entry,candleIndex:candleIdx,candleTimestamp:trade.markerCandleTimestamp,tradeId:trade.id,closed:false,profitLoss:null});
+    this.markers.push({
+      type:trade.dir==='up'?'buy':'sell',
+      ts:trade.openTime||Date.now(),
+      price:trade.markerPrice||trade.entry,
+      candleIndex:candleIdx,
+      candleTimestamp:trade.markerCandleTimestamp,
+      tradeId:trade.id,
+      account: trade.account || 'demo',
+      closed:false,
+      profitLoss:null
+    });
   }
 
   async _closeExpiredTrade(trade) {
@@ -1371,17 +1566,45 @@ class AdvancedTradingChart {
     const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP <= trade.entry);
     const profit = win ? trade.stake * trade.payout : 0;
     const pl = win ? profit : -trade.stake;
-    if (win) { this._setBalance(this._getBalance() + trade.stake + profit); }
+
+    const acc = trade.account || 'demo';
+    if (win) {
+      const b = this._getBalanceFor(acc);
+      this._setBalanceFor(acc, b + trade.stake + profit);
+    }
+
     let candleIdx = trade.markerCandleIndex || 0;
     if (trade.markerCandleTimestamp) {
       for (let i = 0; i < this.candles.length; i++) {
         if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
       }
     }
-    this.markers.push({type:trade.dir==='up'?'buy':'sell',ts:trade.openTime||Date.now(),price:trade.markerPrice||trade.entry,candleIndex:candleIdx,candleTimestamp:trade.markerCandleTimestamp,tradeId:trade.id,closed:true,profitLoss:pl});
+    this.markers.push({
+      type:trade.dir==='up'?'buy':'sell',
+      ts:trade.openTime||Date.now(),
+      price:trade.markerPrice||trade.entry,
+      candleIndex:candleIdx,
+      candleTimestamp:trade.markerCandleTimestamp,
+      tradeId:trade.id,
+      account: acc,
+      closed:true,
+      profitLoss:pl
+    });
+
     try {
       await this._updateTradeInFirebase(trade.id, {status:'closed',result:win?'win':'loss',profit:pl,closedAt:Date.now(),closePrice:currentP});
     } catch(e) { console.warn('⚠️ Expired trade Firebase update error:', e); }
+  }
+
+  _refreshTradeBadge() {
+    try {
+      const acc = this._getActiveAcc();
+      const trades = (window.tradeHistory ? (window.tradeHistory.getTrades() || []) : []);
+      const count = trades.filter(t => (t.account || 'demo') === acc).length;
+      this._updateTradeBadge(count);
+    } catch(e) {
+      // ignore
+    }
   }
 
   _updateTradeBadge(count) {
@@ -1520,4 +1743,4 @@ amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preve
 document.getElementById("buyBtn").addEventListener("click",()=>chart.openTrade("buy"));
 document.getElementById("sellBtn").addEventListener("click",()=>chart.openTrade("sell"));
 
-console.log('🚀 QT Trading Chart v3 — Live Shared Candle + Gap Fill + 10K Candles ✅');
+console.log('🚀 QT Trading Chart v3 — Live Shared Candle + Gap Fill + 10K Candles ✅ (Role badge hidden + Separate balances + Persist real/demo)');
