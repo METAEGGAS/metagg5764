@@ -8,7 +8,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 /* ============================================================
-   💉 حقن CSS مربع تبديل الحسابات
+   💉 حقن CSS مربع تبديل الحسابات + وقت مخصص
    ============================================================ */
 (function injectAccMenuStyles() {
   if (document.getElementById('qtAccMenuCSS')) return;
@@ -85,6 +85,24 @@ const auth = getAuth(app);
     }
     .qt-refill-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(66,153,225,.45)}
     .qt-refill-btn:active{transform:scale(.97)}
+
+    /* ✅ مؤشر نص للوقت المخصص */
+    #timeDisplay { caret-color: #fff !important; outline: none !important; }
+    #timeDisplay:focus { border-color: rgba(255,255,255,.35) !important; }
+
+    /* ✅ شارة الماستر / المشاهد */
+    #_qtRoleBadge{
+      position:fixed;bottom:10px;left:10px;
+      font-size:10px;font-weight:900;letter-spacing:.5px;
+      padding:3px 9px;border-radius:7px;z-index:9999;
+      pointer-events:none;transition:.3s;
+    }
+    #_qtRoleBadge.master{
+      background:rgba(0,255,65,.12);border:1px solid rgba(0,255,65,.35);color:#00ff41;
+    }
+    #_qtRoleBadge.viewer{
+      background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.35);color:#ffa500;
+    }
   `;
   document.head.appendChild(st);
 })();
@@ -207,13 +225,11 @@ class AuthManager {
       : `$${this.demoBalance.toFixed(2)}`;
   }
 
-  /* ✅ تهيئة Firebase Auth — تُشغّل loadOpenTrades عند تسجيل الدخول */
   async init() {
     onAuthStateChanged(auth, async (u) => {
       if (u) {
         this.user = u;
         await this.loadUserBalance();
-        /* ✅ إشعار الشارت بأن المستخدم جاهز لتحميل الصفقات */
         if (window.chart) {
           if (window.chart.dataLoaded) {
             window.chart.loadOpenTrades();
@@ -273,18 +289,17 @@ class LocalStorageManager {
     try{
       localStorage.setItem(this._ck(pair),JSON.stringify(candles));
       localStorage.setItem(this._sk(pair),Date.now().toString());
-      console.log('✅ Candles saved:',candles.length,'pair:',pair||'default');
     }catch(e){console.error('❌ Save error:',e);}
   }
   loadCandles(pair){
     try{
       const data=localStorage.getItem(this._ck(pair));
-      if(data){const candles=JSON.parse(data);console.log('✅ Candles loaded:',candles.length,'pair:',pair||'default');return candles;}
+      if(data){const candles=JSON.parse(data);return candles;}
     }catch(e){console.error('❌ Load error:',e);}
     return null;
   }
   getLastSyncTime(){const t=localStorage.getItem(this.LAST_SYNC_KEY);return t?parseInt(t):0;}
-  clear(){localStorage.removeItem(this.CANDLES_KEY);localStorage.removeItem(this.LAST_SYNC_KEY);console.log('🗑️ Storage cleared');}
+  clear(){localStorage.removeItem(this.CANDLES_KEY);localStorage.removeItem(this.LAST_SYNC_KEY);}
 }
 
 /* ============================================================
@@ -309,12 +324,64 @@ class FirebaseManager {
       console.log('🔄 Firebase collection switched to:',key);
     }
   }
-  async saveCandles(candles){if(this.isSaving){console.log('⏳ Save in progress...');return false;}try{this.isSaving=true;console.log('💾 Saving candles:',candles.length);const batch=[];for(const candle of candles){const candleData={open:candle.open,high:candle.high,low:candle.low,close:candle.close,timestamp:candle.timestamp,savedAt:serverTimestamp()};batch.push(candleData);if(batch.length>=this.saveBatchSize){await this.saveBatch(batch);batch.length=0;await this.delay(100);}}if(batch.length>0){await this.saveBatch(batch);}this.lastSaveTime=Date.now();console.log('✅ Saved to Firebase');return true;}catch(e){console.error('❌ Save error:',e);return false;}finally{this.isSaving=false;}}
-  async saveBatch(batch){const promises=batch.map(candleData=>addDoc(collection(this.db,this.candlesCollection),candleData));await Promise.all(promises);console.log(`✅ Batch saved: ${batch.length}`);}
-  async loadCandles(maxCandles=200){try{console.log('📥 Loading from Firebase collection:',this.candlesCollection);const q=query(collection(this.db,this.candlesCollection),orderBy('timestamp','desc'),limit(maxCandles));const querySnapshot=await getDocs(q);const candles=[];querySnapshot.forEach((doc)=>{const data=doc.data();candles.push({open:data.open,high:data.high,low:data.low,close:data.close,timestamp:data.timestamp});});candles.reverse();console.log('✅ Loaded from Firebase:',candles.length);return candles;}catch(e){console.error('❌ Load error:',e);return null;}}
-  async clearOldCandles(daysToKeep=7){try{const cutoffTime=Date.now()-(daysToKeep*24*60*60*1000);const q=query(collection(this.db,this.candlesCollection),where('timestamp','<',cutoffTime));const querySnapshot=await getDocs(q);console.log(`🗑️ Found ${querySnapshot.size} old candles`);}catch(e){console.error('❌ Clear error:',e);}}
+  async saveCandles(candles){
+    if(this.isSaving){console.log('⏳ Save in progress...');return false;}
+    try{
+      this.isSaving=true;
+      const batch=[];
+      for(const candle of candles){
+        const candleData={open:candle.open,high:candle.high,low:candle.low,close:candle.close,timestamp:candle.timestamp,savedAt:serverTimestamp()};
+        batch.push(candleData);
+        if(batch.length>=this.saveBatchSize){await this.saveBatch(batch);batch.length=0;await this.delay(100);}
+      }
+      if(batch.length>0){await this.saveBatch(batch);}
+      this.lastSaveTime=Date.now();
+      return true;
+    }catch(e){console.error('❌ Save error:',e);return false;}
+    finally{this.isSaving=false;}
+  }
+  async saveBatch(batch){
+    const promises=batch.map(candleData=>addDoc(collection(this.db,this.candlesCollection),candleData));
+    await Promise.all(promises);
+  }
+  /* ✅ loadCandles مع دعم 10000 شمعة + إزالة التكرار */
+  async loadCandles(maxCandles=10000){
+    try{
+      console.log('📥 Loading from Firebase collection:',this.candlesCollection);
+      const q=query(collection(this.db,this.candlesCollection),orderBy('timestamp','desc'),limit(maxCandles));
+      const querySnapshot=await getDocs(q);
+      const candles=[];
+      const seen=new Set();
+      querySnapshot.forEach((docSnap)=>{
+        const data=docSnap.data();
+        if(!seen.has(data.timestamp)){
+          seen.add(data.timestamp);
+          candles.push({open:data.open,high:data.high,low:data.low,close:data.close,timestamp:data.timestamp});
+        }
+      });
+      candles.reverse();
+      console.log('✅ Loaded from Firebase:',candles.length,'(deduplicated)');
+      return candles;
+    }catch(e){console.error('❌ Load error:',e);return null;}
+  }
+  async clearOldCandles(daysToKeep=7){
+    try{
+      const cutoffTime=Date.now()-(daysToKeep*24*60*60*1000);
+      const q=query(collection(this.db,this.candlesCollection),where('timestamp','<',cutoffTime));
+      const querySnapshot=await getDocs(q);
+      console.log(`🗑️ Found ${querySnapshot.size} old candles`);
+    }catch(e){console.error('❌ Clear error:',e);}
+  }
   addPendingCandle(candle){this.pendingCandles.push(candle);}
-  startAutoSave(){setInterval(async()=>{if(this.pendingCandles.length>0&&!this.isSaving){const candlesToSave=[...this.pendingCandles];this.pendingCandles=[];await this.saveCandles(candlesToSave);}},this.saveInterval);}
+  startAutoSave(){
+    setInterval(async()=>{
+      if(this.pendingCandles.length>0&&!this.isSaving){
+        const candlesToSave=[...this.pendingCandles];
+        this.pendingCandles=[];
+        await this.saveCandles(candlesToSave);
+      }
+    },this.saveInterval);
+  }
   delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 }
 
@@ -365,7 +432,7 @@ class AdvancedTradingChart {
 
     this.candles=[];
     this.currentCandle=null;
-    this.maxCandles=200;
+    this.maxCandles=10000; /* ✅ 10,000 شمعة */
     this.basePrice=1.95;
     this.currentPrice=1.9518;
     this.seed=11001;
@@ -403,10 +470,341 @@ class AdvancedTradingChart {
 
     /* ✅ متغيرات إدارة الصفقات */
     this._tradeCounter = 0;
-    this._pendingTradeLoad = false; // ✅ انتظار Auth قبل تحميل الصفقات
+    this._pendingTradeLoad = false;
+
+    /* ✅ متغيرات نظام الماستر / المشاهد */
+    this.uid = 'uid_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
+    this.isMaster = false;
+    this._masterBroadcastInterval = null;
+    this._watchdogInterval = null;
+    this._liveUnsubscribe = null;
+    this._lastBroadcastedClose = null;
+    this.MASTER_TIMEOUT = 12000;   // 12 ثانية قبل اعتبار الماستر ميتاً
+    this.BROADCAST_INTERVAL = 1000; // بث كل ثانية
+
+    /* ✅ زر الإغلاق عند مغادرة الصفحة */
+    window.addEventListener('beforeunload', () => {
+      if (this.isMaster) {
+        try {
+          const stateRef = doc(db, 'trading_live', this._getPairKey());
+          updateDoc(stateRef, { masterUid: null, masterHeartbeat: 0 }).catch(()=>{});
+        } catch(e) {}
+      }
+    });
 
     this.setup();
     this.initData();
+  }
+
+  /* ============================================================
+     🔑 مفتاح الزوج للـ Firebase
+     ============================================================ */
+  _getPairKey() {
+    return this.currentPair.replace('/', '_');
+  }
+
+  _getLiveStateRef() {
+    return doc(db, 'trading_live', this._getPairKey());
+  }
+
+  /* ============================================================
+     ✅ تعيين شارة الدور
+     ============================================================ */
+  _setRoleBadge(role) {
+    let badge = document.getElementById('_qtRoleBadge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = '_qtRoleBadge';
+      document.body.appendChild(badge);
+    }
+    badge.className = role;
+    badge.textContent = role === 'master' ? '👑 MASTER' : '👁️ VIEWER';
+  }
+
+  /* ============================================================
+     ✅ تهيئة نظام الماستر / المشاهد
+     ============================================================ */
+  async _initMasterViewerSystem() {
+    try {
+      const claimed = await this._tryClaimMaster();
+      if (claimed) {
+        this.isMaster = true;
+        // ✅ ملء فجوة الشموع عند أخذ دور الماستر
+        this.candles = await this._fillAndSaveCandleGaps(this.candles);
+        this._startMasterBroadcast();
+        this._setRoleBadge('master');
+        console.log('👑 أنا الماستر - أبث الشمعة الحية');
+      } else {
+        this.isMaster = false;
+        this._startViewerSubscription();
+        this._startWatchdog();
+        this._setRoleBadge('viewer');
+        console.log('👁️ أنا مشاهد - أستقبل من الماستر');
+      }
+    } catch(e) {
+      console.error('❌ _initMasterViewerSystem error:', e);
+      // عند الخطأ: أصبح ماستراً لضمان عمل الشارت
+      this.isMaster = true;
+      this._startMasterBroadcast();
+      this._setRoleBadge('master');
+    }
+  }
+
+  /* ============================================================
+     ✅ محاولة الاستيلاء على دور الماستر
+     ============================================================ */
+  async _tryClaimMaster() {
+    try {
+      const stateRef = this._getLiveStateRef();
+      const snap = await getDoc(stateRef);
+
+      if (!snap.exists()) {
+        // أول شخص - أنشئ المستند وخذ دور الماستر
+        await setDoc(stateRef, {
+          masterUid: this.uid,
+          masterHeartbeat: Date.now(),
+          liveCandle: null,
+          liveT0: this.t0,
+          pair: this.currentPair
+        });
+        console.log('👑 استُولي على الماستر (مستند جديد)');
+        return true;
+      }
+
+      const data = snap.data();
+      const hb = data.masterHeartbeat || 0;
+      const isAlive = (Date.now() - hb) < this.MASTER_TIMEOUT;
+
+      if (!data.masterUid || !isAlive) {
+        // الماستر ميت - استولِ عليه
+        await updateDoc(stateRef, {
+          masterUid: this.uid,
+          masterHeartbeat: Date.now(),
+          liveT0: this.t0
+        });
+        console.log('👑 استُولي على الماستر (ماستر سابق مات)');
+        return true;
+      }
+
+      if (data.masterUid === this.uid) {
+        // نحن الماستر بالفعل
+        return true;
+      }
+
+      // يوجد ماستر حي - نصبح مشاهدين
+      // ✅ استرجاع الشمعة الحية من Firebase مباشرةً
+      if (data.liveCandle) {
+        this.currentCandle = { ...data.liveCandle };
+        this.currentPrice  = data.liveCandle.close;
+        window.__qt_price  = this.currentPrice;
+      }
+      if (data.liveT0) this.t0 = data.liveT0;
+
+      return false;
+    } catch(e) {
+      console.error('❌ _tryClaimMaster error:', e);
+      return true; // عند الخطأ: أصبح ماستراً
+    }
+  }
+
+  /* ============================================================
+     ✅ الاستيلاء على الماستر من الـ Watchdog
+     ============================================================ */
+  async _becomeMaster() {
+    if (this.isMaster) return;
+    try {
+      const stateRef = this._getLiveStateRef();
+      await setDoc(stateRef, {
+        masterUid: this.uid,
+        masterHeartbeat: Date.now(),
+        liveT0: this.t0
+      }, { merge: true });
+
+      this.isMaster = true;
+
+      // إيقاف الاشتراك كمشاهد
+      if (this._liveUnsubscribe) {
+        this._liveUnsubscribe();
+        this._liveUnsubscribe = null;
+      }
+      // إيقاف Watchdog
+      if (this._watchdogInterval) {
+        clearInterval(this._watchdogInterval);
+        this._watchdogInterval = null;
+      }
+
+      // ✅ ملء فجوة الشموع
+      this.candles = await this._fillAndSaveCandleGaps(this.candles);
+
+      this._startMasterBroadcast();
+      this._setRoleBadge('master');
+      console.log('👑 انتقلت إلى الماستر (watchdog)');
+    } catch(e) {
+      console.error('❌ _becomeMaster error:', e);
+    }
+  }
+
+  /* ============================================================
+     ✅ بث الشمعة الحية (الماستر فقط)
+     ============================================================ */
+  _startMasterBroadcast() {
+    if (this._masterBroadcastInterval) clearInterval(this._masterBroadcastInterval);
+    this._masterBroadcastInterval = setInterval(async () => {
+      if (!this.isMaster || this.isSwitching || !this.currentCandle) return;
+
+      // تخطّ إذا لم يتغير السعر
+      if (this.currentCandle.close === this._lastBroadcastedClose) return;
+      this._lastBroadcastedClose = this.currentCandle.close;
+
+      try {
+        const stateRef = this._getLiveStateRef();
+        await setDoc(stateRef, {
+          masterUid:        this.uid,
+          masterHeartbeat:  Date.now(),
+          liveCandle:       { ...this.currentCandle },
+          liveT0:           this.t0,
+          liveUpdatedAt:    Date.now(),
+          pair:             this.currentPair
+        }, { merge: true });
+      } catch(e) {
+        console.warn('⚠️ Broadcast error:', e);
+      }
+    }, this.BROADCAST_INTERVAL);
+  }
+
+  /* ============================================================
+     ✅ الاشتراك كمشاهد (onSnapshot)
+     ============================================================ */
+  _startViewerSubscription() {
+    if (this._liveUnsubscribe) { this._liveUnsubscribe(); this._liveUnsubscribe = null; }
+
+    const stateRef = this._getLiveStateRef();
+    this._liveUnsubscribe = onSnapshot(stateRef, (snap) => {
+      if (!snap.exists() || this.isMaster || this.isSwitching) return;
+      const data = snap.data();
+
+      // ✅ كشف تدوير الشمعة (ماستر بدأ شمعة جديدة)
+      if (data.liveT0 && data.liveT0 !== this.t0 && this.t0 > 0) {
+        // احفظ الشمعة الحالية في السجل
+        if (this.currentCandle &&
+            (!this.candles.length || this.currentCandle.timestamp !== this.candles[this.candles.length-1].timestamp)) {
+          const completed = { ...this.currentCandle };
+          this.candles.push(completed);
+          if (this.candles.length > this.maxCandles) this.candles.shift();
+          this.localStorageManager.saveCandles(this.candles, this.currentPair);
+        }
+      }
+
+      // ✅ تحديث t0
+      if (data.liveT0) this.t0 = data.liveT0;
+
+      // ✅ تحديث الشمعة الحية
+      if (data.liveCandle) {
+        this.currentCandle = { ...data.liveCandle };
+        this.currentPrice  = data.liveCandle.close;
+        window.__qt_price  = this.currentPrice;
+      }
+    }, (err) => {
+      console.warn('⚠️ onSnapshot viewer error:', err);
+    });
+  }
+
+  /* ============================================================
+     ✅ Watchdog - المشاهد يراقب الماستر
+     ============================================================ */
+  _startWatchdog() {
+    if (this._watchdogInterval) clearInterval(this._watchdogInterval);
+    this._watchdogInterval = setInterval(async () => {
+      if (this.isMaster || this.isSwitching) return;
+      try {
+        const stateRef = this._getLiveStateRef();
+        const snap = await getDoc(stateRef);
+
+        if (!snap.exists()) {
+          await this._becomeMaster();
+          return;
+        }
+
+        const data = snap.data();
+        const hb = data.masterHeartbeat || 0;
+        const isAlive = (Date.now() - hb) < this.MASTER_TIMEOUT;
+
+        if (!data.masterUid || !isAlive) {
+          console.log('⚠️ الماستر مات - أستولي على الدور...');
+          await this._becomeMaster();
+        }
+      } catch(e) {
+        console.warn('⚠️ Watchdog error:', e);
+      }
+    }, 5000); // فحص كل 5 ثوانٍ
+  }
+
+  /* ============================================================
+     ✅ تنظيف نظام الماستر/المشاهد (عند تبديل الزوج)
+     ============================================================ */
+  async _cleanupMasterViewer() {
+    if (this._masterBroadcastInterval) { clearInterval(this._masterBroadcastInterval); this._masterBroadcastInterval = null; }
+    if (this._watchdogInterval)         { clearInterval(this._watchdogInterval);         this._watchdogInterval = null; }
+    if (this._liveUnsubscribe)          { this._liveUnsubscribe();                        this._liveUnsubscribe = null; }
+
+    if (this.isMaster) {
+      try {
+        const stateRef = this._getLiveStateRef();
+        await updateDoc(stateRef, { masterUid: null, masterHeartbeat: 0 }).catch(()=>{});
+      } catch(e) {}
+    }
+    this.isMaster = false;
+    this._lastBroadcastedClose = null;
+  }
+
+  /* ============================================================
+     ✅ ملء فجوة الشموع الوهمية عند غياب الشارت
+     ============================================================ */
+  async _fillAndSaveCandleGaps(candles) {
+    if (!candles || candles.length === 0) return candles || [];
+
+    const lastCandle = candles[candles.length - 1];
+    const lastTs     = lastCandle.timestamp;
+    const currentT0  = Math.floor(Date.now() / this.timeframe) * this.timeframe;
+
+    if (currentT0 <= lastTs + this.timeframe) return candles; // لا فجوة
+
+    const gapCount = Math.floor((currentT0 - lastTs) / this.timeframe) - 1;
+    if (gapCount <= 0) return candles;
+
+    const maxFill = Math.min(gapCount, 1440); // حد أقصى: يوم واحد (1440 دقيقة)
+    console.log(`🔨 ملء ${gapCount} شمعة فائتة (سيتم توليد ${maxFill})...`);
+
+    let p = lastCandle.close;
+    let t = lastTs + this.timeframe;
+    const gaps = [];
+
+    for (let i = 0; i < maxFill; i++) {
+      const c = this.genCandle(t, p);
+      gaps.push(c);
+      p = c.close;
+      t += this.timeframe;
+    }
+
+    // ✅ حفظ شموع الفجوة في Firebase
+    if (gaps.length > 0) {
+      try {
+        await this.firebaseManager.saveCandles(gaps);
+        console.log(`✅ ${gaps.length} شمعة فجوة تم حفظها في Firebase`);
+      } catch(e) {
+        console.warn('⚠️ Gap candle save error:', e);
+        gaps.forEach(c => this.firebaseManager.addPendingCandle(c));
+      }
+
+      // ✅ إضافة شموع الفجوة للمصفوفة المحلية
+      const result = [...candles, ...gaps];
+      if (result.length > this.maxCandles) {
+        return result.slice(result.length - this.maxCandles);
+      }
+      return result;
+    }
+
+    return candles;
   }
 
   /* ============================================================
@@ -445,13 +843,16 @@ class AdvancedTradingChart {
       this.updatePriceLabel();
       this.dataLoaded=true;
 
-      /* ✅ مسح الصفقات الوهمية عند تهيئة الشارت */
+      /* ✅ مسح الصفقات الوهمية عند التهيئة */
       if (window.tradeHistory) {
         window.tradeHistory.setTrades([]);
       }
       this._updateTradeBadge(0);
 
-      /* ✅ تحميل الصفقات المفتوحة إذا كان المستخدم مسجلاً */
+      /* ✅ تهيئة نظام الماستر/المشاهد (تشمل ملء الفجوات) */
+      await this._initMasterViewerSystem();
+
+      /* ✅ تحميل الصفقات المفتوحة */
       if (this._pendingTradeLoad && this.authManager.user) {
         this._pendingTradeLoad = false;
         this.loadOpenTrades();
@@ -465,6 +866,9 @@ class AdvancedTradingChart {
       this.initHistoricalData();
       this.usingLocalStorage=true;
       this.dataLoaded=true;
+      this.isMaster=true; // عند الخطأ نصبح ماستراً
+      this._startMasterBroadcast();
+      this._setRoleBadge('master');
       this.initEvents();
       this.startRealtime();
       this.loop();
@@ -532,7 +936,6 @@ class AdvancedTradingChart {
   priceToY(p){const r=this.getPriceRange();const n=(p-r.min)/(r.max-r.min);return this.h*(1-n);}
   drawCandle(c,x,glow){const oy=this.priceToY(c.open);const cy=this.priceToY(c.close);const hy=this.priceToY(c.high);const ly=this.priceToY(c.low);const b=c.close>=c.open;const w=this.getCandleWidth();this.ctx.strokeStyle=b?"#0f0":"#f00";this.ctx.lineWidth=Math.max(1,0.18*w);this.ctx.beginPath();this.ctx.moveTo(x,hy);this.ctx.lineTo(x,ly);this.ctx.stroke();const bh=Math.max(1,Math.abs(cy-oy));const bt=Math.min(oy,cy);const g=this.ctx.createLinearGradient(x,bt,x,bt+bh);if(b){g.addColorStop(0,"#0f0");g.addColorStop(0.5,"#0f0");g.addColorStop(1,"#0c0");}else{g.addColorStop(0,"#f00");g.addColorStop(0.5,"#f00");g.addColorStop(1,"#c00");}this.ctx.fillStyle=g;if(glow){this.ctx.shadowColor=b?"rgba(0,255,0,.8)":"rgba(255,0,0,.8)";this.ctx.shadowBlur=12;}this.ctx.fillRect(x-w/2,bt,w,bh);if(glow){this.ctx.shadowBlur=0;}}
 
-  /* ✅ addMarker — يقبل tradeId الآن */
   addMarker(t, tradeId){
     const op=this.currentPrice;
     const c=this.currentCandle;
@@ -554,7 +957,6 @@ class AdvancedTradingChart {
     });
   }
 
-  /* ✅ drawMarker — يعرض نتيجة الصفقة على الشارت عند إغلاقها */
   drawMarker(m){
     let actualIdx=m.candleIndex;
     for(let i=0;i<this.candles.length;i++){
@@ -571,7 +973,6 @@ class AdvancedTradingChart {
     this.ctx.save();
     const lsx=x;
 
-    /* نقطة الدخول */
     this.ctx.shadowColor=cl;
     this.ctx.shadowBlur=9;
     this.ctx.fillStyle=cl;
@@ -580,7 +981,6 @@ class AdvancedTradingChart {
     this.ctx.fill();
     this.ctx.shadowBlur=0;
 
-    /* سهم الاتجاه */
     this.ctx.fillStyle="#fff";
     this.ctx.save();
     this.ctx.translate(x,y);
@@ -597,7 +997,6 @@ class AdvancedTradingChart {
     this.ctx.fill();
     this.ctx.restore();
 
-    /* الخط الأفقي الأول */
     const lx=lsx+w/2+3;
     const lw=Math.min(95,this.w-lx-22);
     this.ctx.strokeStyle=ib?"rgba(22,163,74,.7)":"rgba(255,59,59,.7)";
@@ -611,7 +1010,6 @@ class AdvancedTradingChart {
     this.ctx.lineTo(lx+lw,y);
     this.ctx.stroke();
 
-    /* دائرة الخروج */
     const ex=lx+lw;
     const er=5;
     this.ctx.strokeStyle=cl;
@@ -622,7 +1020,6 @@ class AdvancedTradingChart {
     this.ctx.fill();
     this.ctx.stroke();
 
-    /* الخط الثانوي */
     this.ctx.strokeStyle=ib?"rgba(22,163,74,.5)":"rgba(255,59,59,.5)";
     this.ctx.lineWidth=1.2;
     this.ctx.beginPath();
@@ -630,7 +1027,6 @@ class AdvancedTradingChart {
     this.ctx.lineTo(ex+65,y);
     this.ctx.stroke();
 
-    /* ✅ عرض نتيجة الصفقة على الشارت عند الإغلاق */
     if (m.closed && m.profitLoss !== null) {
       const pl = m.profitLoss;
       const isWin = pl >= 0;
@@ -643,16 +1039,13 @@ class AdvancedTradingChart {
       this.ctx.font = 'bold 11.5px Arial';
       const tw = this.ctx.measureText(plText).width;
 
-      /* خلفية النص */
       this.ctx.fillStyle = bgColor;
       this.ctx.fillRect(textX - 3, textY - 10, tw + 10, 17);
 
-      /* إطار */
       this.ctx.strokeStyle = plColor;
       this.ctx.lineWidth = 0.8;
       this.ctx.strokeRect(textX - 3, textY - 10, tw + 10, 17);
 
-      /* النص */
       this.ctx.fillStyle = plColor;
       this.ctx.shadowColor = plColor;
       this.ctx.shadowBlur = 4;
@@ -673,13 +1066,21 @@ class AdvancedTradingChart {
     window.__qt_price = this.currentPrice;
   }
 
+  /* ============================================================
+     ✅ startRealtime - الماستر يولّد، المشاهد يستقبل
+     ============================================================ */
   startRealtime(){
     setInterval(()=>{
       if(this.isSwitching) return;
+
+      /* ✅ المشاهد: لا يولّد شيئاً - يستقبل من Firebase فقط */
+      if (!this.isMaster) return;
+
+      /* ✅ الماستر: منطق تحديث الشمعة الكامل */
       const n=Date.now();
       const e=n-this.t0;
       if(e>=this.timeframe){
-        if(this.currentCandle&&(!this.candles.length||this.candles[this.candles.length-1].timestamp!==this.currentCandle.timestamp)){
+        if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){
           const completedCandle={...this.currentCandle};
           this.candles.push(completedCandle);
           this.saveCompletedCandle(completedCandle);
@@ -693,20 +1094,22 @@ class AdvancedTradingChart {
         this.currentCandle.high=lp;
         this.currentCandle.low=lp;
         this.currentPrice=lp;
+        /* ✅ بث الشمعة الجديدة فوراً */
+        this._lastBroadcastedClose = null;
       }else{
         this.updateCurrentCandle();
       }
     },200);
 
     setInterval(()=>{
-      if(!this.isSwitching){
+      if(!this.isSwitching && this.isMaster){
         this.localStorageManager.saveCandles(this.candles,this.currentPair);
       }
     },10000);
   }
 
   async saveCompletedCandle(candle){
-    try{this.firebaseManager.addPendingCandle(candle);console.log('🔨 Candle queued for pair:',this.currentPair);}
+    try{this.firebaseManager.addPendingCandle(candle);}
     catch(e){console.error('❌ Queue error:',e);}
   }
 
@@ -723,6 +1126,9 @@ class AdvancedTradingChart {
     this.isSwitching=true;
     this.showLoading(true);
     try{
+      /* ✅ تنظيف نظام الماستر/المشاهد للزوج القديم */
+      await this._cleanupMasterViewer();
+
       this.currentPair=pairName;
       const cfg=this.PAIR_CONFIG[pairName]||{base:1.0,digits:5,seed:Math.abs(pairName.split('').reduce((h,c)=>((h<<5)-h)+c.charCodeAt(0)|0,0))%90000+10000,volScale:1};
       this.basePrice=cfg.base;
@@ -739,9 +1145,9 @@ class AdvancedTradingChart {
       this.smax=null;
       this.velocity=0;
       this._fr=0;
+
       const firebaseCandles=await this.firebaseManager.loadCandles(this.maxCandles);
       if(firebaseCandles&&firebaseCandles.length>0){
-        console.log('✅ Firebase candles loaded for',pairName,':',firebaseCandles.length);
         this.candles=firebaseCandles;
         this.usingLocalStorage=false;
         this.localStorageManager.saveCandles(this.candles,pairName);
@@ -764,12 +1170,14 @@ class AdvancedTradingChart {
       this.updatePriceScale();
       this.updatePriceLabel();
 
-      /* ✅ إعادة تحميل الصفقات المفتوحة للزوج الجديد */
+      /* ✅ تهيئة نظام الماستر/المشاهد للزوج الجديد */
+      await this._initMasterViewerSystem();
+
+      /* ✅ تحميل الصفقات المفتوحة */
       if (this.authManager.user) {
         this.loadOpenTrades();
       }
 
-      console.log('✅ Pair switched successfully to:',pairName);
     }catch(e){
       console.error('❌ switchPair error:',e);
       try{this.initHistoricalData();}catch(_){}
@@ -780,37 +1188,21 @@ class AdvancedTradingChart {
   }
 
   /* ============================================================
-     ✅ إدارة الرصيد — فورية بدون تأخير
+     إدارة الرصيد
      ============================================================ */
-
-  /** الحساب النشط */
-  _getActiveAcc() {
-    return this.authManager.activeAccount || 'demo';
-  }
-
-  /** تنسيق رقم كرصيد */
+  _getActiveAcc() { return this.authManager.activeAccount || 'demo'; }
   _fmtBal(n) {
-    try {
-      return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
-    } catch(e) {
-      return (Math.round(n * 100) / 100).toFixed(2);
-    }
+    try { return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n); }
+    catch(e) { return (Math.round(n * 100) / 100).toFixed(2); }
   }
-
-  /** ✅ قراءة الرصيد من الذاكرة مباشرة — بدون DOM */
   _getBalance() {
     const acc = this._getActiveAcc();
-    return acc === 'real'
-      ? (this.authManager.realBalance || 0)
-      : (this.authManager.demoBalance || 10000);
+    return acc === 'real' ? (this.authManager.realBalance || 0) : (this.authManager.demoBalance || 10000);
   }
-
-  /** ✅ كتابة الرصيد فوراً في الذاكرة + DOM + Firebase */
   _setBalance(amount) {
     const safeAmt = Math.max(0, amount);
     const formatted = '$' + this._fmtBal(safeAmt);
     const acc = this._getActiveAcc();
-
     if (acc === 'demo') {
       this.authManager.demoBalance = safeAmt;
       const qtEl = document.getElementById('qtDemoAmt');
@@ -819,209 +1211,124 @@ class AdvancedTradingChart {
       this.authManager.realBalance = safeAmt;
       const qtEl = document.getElementById('qtRealAmt');
       if (qtEl) qtEl.textContent = formatted;
-      /* مزامنة Firebase للحساب الحقيقي (غير محجب) */
       if (this.authManager.user) {
         const userRef = doc(db, 'users', this.authManager.user.email);
         updateDoc(userRef, { balance: safeAmt }).catch(e => console.warn('⚠️ Firebase balance sync:', e));
       }
     }
-
-    /* ✅ تحديث شريط الرأس فوراً */
-    if (this.authManager.balanceEl) {
-      this.authManager.balanceEl.textContent = formatted;
-    }
+    if (this.authManager.balanceEl) this.authManager.balanceEl.textContent = formatted;
     const balAmount = document.getElementById('balAmount');
     if (balAmount) balAmount.textContent = formatted;
   }
 
   /* ============================================================
-     ✅ فتح صفقة حقيقية
+     فتح صفقة
      ============================================================ */
   openTrade(direction) {
-    /* 1. قراءة المبلغ */
     const amountEl = document.getElementById('amountDisplay');
     const rawVal = amountEl ? amountEl.value.replace(/[^0-9.]/g, '') : '50';
     const amount = parseFloat(rawVal) || 50;
-
-    /* 2. التحقق من الرصيد */
     const balance = this._getBalance();
-    if (balance < amount) {
-      this._showMsg('رصيد غير كافٍ ❌', '#dc2626');
-      return;
-    }
-
-    /* 3. خصم المبلغ فوراً */
+    if (balance < amount) { this._showMsg('رصيد غير كافٍ ❌', '#dc2626'); return; }
     this._setBalance(balance - amount);
 
-    /* 4. بيانات الأعلام */
     const parts = this.currentPair.split('/');
-    const flagMap = {
-      'AED':'ae','CNY':'cn','AUD':'au','CAD':'ca','CHF':'ch','BHD':'bh',
-      'EUR':'eu','RUB':'ru','USD':'us','KES':'ke','LBP':'lb','QAR':'qa',
-      'TRY':'tr','SYP':'sy','EGP':'eg','INR':'in','IRR':'ir'
-    };
+    const flagMap = {'AED':'ae','CNY':'cn','AUD':'au','CAD':'ca','CHF':'ch','BHD':'bh','EUR':'eu','RUB':'ru','USD':'us','KES':'ke','LBP':'lb','QAR':'qa','TRY':'tr','SYP':'sy','EGP':'eg','INR':'in','IRR':'ir'};
     const f1 = (flagMap[parts[0]] || parts[0]).toLowerCase();
     const f2 = (flagMap[parts[1]] || parts[1]).toLowerCase();
 
-    /* 5. نسبة العائد */
-    const payouts = {
-      'EUR/USD':0.92,'AUD/CAD':0.88,'AUD/CHF':0.92,'BHD/CNY':0.86,
-      'EUR/RUB':0.77,'KES/USD':0.84,'LBP/USD':0.79,'QAR/CNY':0.83,
-      'USD/CHF':0.89,'SYP/TRY':0.87,'EGP/USD':0.78,'USD/INR':0.90,'AED/CNY':0.83
-    };
+    const payouts = {'EUR/USD':0.92,'AUD/CAD':0.88,'AUD/CHF':0.92,'BHD/CNY':0.86,'EUR/RUB':0.77,'KES/USD':0.84,'LBP/USD':0.79,'QAR/CNY':0.83,'USD/CHF':0.89,'SYP/TRY':0.87,'EGP/USD':0.78,'USD/INR':0.90,'AED/CNY':0.83};
     const payout = payouts[this.currentPair] || 0.85;
 
-    /* 6. كائن الصفقة */
     const tradeId  = 'qt_' + Date.now() + '_' + (++this._tradeCounter);
     const duration = this.selectedTime || 5;
     const openTime = Date.now();
     const closeTime = openTime + duration * 1000;
 
     const trade = {
-      id:         tradeId,
-      dir:        direction === 'buy' ? 'up' : 'down',
-      pair:       this.currentPair + ' (OTC)',
-      flags:      [f1, f2],
-      amountTxt:  this._fmtBal(amount),
-      stake:      amount,
-      entry:      this.currentPrice,
-      payout:     payout,
-      remain:     duration,
-      duration:   duration,
-      openTime:   openTime,
-      closeTime:  closeTime,
-      open:       true,
-      status:     'open',
-      account:    this._getActiveAcc(),
-      markerCandleTimestamp: this.currentCandle ? this.currentCandle.timestamp : null,
-      markerPrice:           this.currentPrice,
-      markerCandleIndex:     this.candles.length
+      id:tradeId,dir:direction==='buy'?'up':'down',pair:this.currentPair+' (OTC)',
+      flags:[f1,f2],amountTxt:this._fmtBal(amount),stake:amount,
+      entry:this.currentPrice,payout,remain:duration,duration,
+      openTime,closeTime,open:true,status:'open',
+      account:this._getActiveAcc(),
+      markerCandleTimestamp:this.currentCandle?this.currentCandle.timestamp:null,
+      markerPrice:this.currentPrice,markerCandleIndex:this.candles.length
     };
 
-    /* 7. ✅ إضافة للسجل بدون فتحه تلقائياً */
     if (window.tradeHistory) {
       const current = window.tradeHistory.getTrades() || [];
       current.push(trade);
       window.tradeHistory.setTrades(current);
-      /* ❌ لا نفتح السجل تلقائياً */
     }
 
-    /* 8. رسم العلامة على الشارت مع tradeId */
     this.addMarker(direction, tradeId);
 
-    /* 9. ✅ حفظ الصفقة في Firebase (غير محجب) */
     if (this.authManager.user) {
       this._saveTradeToFirebase(trade).catch(e => console.warn('❌ Trade save error:', e));
     }
 
-    /* 10. تحديث شارة العداد */
     const allTrades = (window.tradeHistory ? window.tradeHistory.getTrades() : null) || [];
     this._updateTradeBadge(allTrades.length);
 
-    /* 11. جدولة إغلاق الصفقة */
     setTimeout(() => this._closeTrade(tradeId, trade), duration * 1000);
   }
 
   /* ============================================================
-     ✅ إغلاق الصفقة
+     إغلاق الصفقة
      ============================================================ */
   _closeTrade(tradeId, trade) {
     const currentP = this.currentPrice;
-    const win = (trade.dir === 'up'   && currentP >= trade.entry) ||
-                (trade.dir === 'down' && currentP <= trade.entry);
+    const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP <= trade.entry);
+    const profit = win ? trade.stake * trade.payout : 0;
+    const pl = win ? profit : -trade.stake;
 
-    const profit    = win ? trade.stake * trade.payout : 0;
-    const pl        = win ? profit : -trade.stake;
-
-    /* إزالة من السجل */
     if (window.tradeHistory) {
       const remaining = (window.tradeHistory.getTrades() || []).filter(t => t.id !== tradeId);
       window.tradeHistory.setTrades(remaining);
       this._updateTradeBadge(remaining.length);
     }
 
-    /* ✅ تحديث الرصيد فوراً */
-    if (win) {
-      this._setBalance(this._getBalance() + trade.stake + profit);
-    }
+    if (win) { this._setBalance(this._getBalance() + trade.stake + profit); }
 
-    /* ✅ تحديث الماركر بالنتيجة — يُعرض على الشارت */
     const mIdx = this.markers.findIndex(mk => mk.tradeId === tradeId);
-    if (mIdx >= 0) {
-      this.markers[mIdx].closed     = true;
-      this.markers[mIdx].profitLoss = pl;
-    }
+    if (mIdx >= 0) { this.markers[mIdx].closed = true; this.markers[mIdx].profitLoss = pl; }
 
-    /* ✅ تحديث Firebase (غير محجب) */
     if (this.authManager.user) {
-      this._updateTradeInFirebase(tradeId, {
-        status:     'closed',
-        result:     win ? 'win' : 'loss',
-        profit:     pl,
-        closedAt:   Date.now(),
-        closePrice: currentP
-      }).catch(e => console.warn('❌ Trade close update error:', e));
+      this._updateTradeInFirebase(tradeId, {status:'closed',result:win?'win':'loss',profit:pl,closedAt:Date.now(),closePrice:currentP}).catch(e=>console.warn('❌ Trade close update error:',e));
     }
   }
 
-  /* ============================================================
-     ✅ Firebase — حفظ الصفقة
-     ============================================================ */
   async _saveTradeToFirebase(trade) {
     if (!this.authManager.user) return;
     try {
-      const email    = this.authManager.user.email;
+      const email = this.authManager.user.email;
       const tradeRef = doc(db, 'users', email, 'trades', trade.id);
-      const payload  = { ...trade };
-      delete payload.open;    // لا نحتاجها في Firestore
+      const payload = { ...trade };
+      delete payload.open;
       payload.savedAt = serverTimestamp();
       await setDoc(tradeRef, payload);
-      console.log('✅ Trade saved to Firebase:', trade.id);
-    } catch(e) {
-      console.error('❌ _saveTradeToFirebase error:', e);
-      throw e;
-    }
+    } catch(e) { console.error('❌ _saveTradeToFirebase error:', e); throw e; }
   }
 
-  /* ============================================================
-     ✅ Firebase — تحديث الصفقة
-     ============================================================ */
   async _updateTradeInFirebase(tradeId, updates) {
     if (!this.authManager.user) return;
     try {
-      const email    = this.authManager.user.email;
+      const email = this.authManager.user.email;
       const tradeRef = doc(db, 'users', email, 'trades', tradeId);
       await updateDoc(tradeRef, updates);
-      console.log('✅ Trade updated in Firebase:', tradeId);
-    } catch(e) {
-      console.error('❌ _updateTradeInFirebase error:', e);
-      throw e;
-    }
+    } catch(e) { console.error('❌ _updateTradeInFirebase error:', e); throw e; }
   }
 
-  /* ============================================================
-     ✅ تحميل الصفقات المفتوحة من Firebase عند إعادة الفتح
-     ============================================================ */
   async loadOpenTrades() {
     if (!this.authManager.user) return;
-
     try {
-      console.log('📥 Loading open trades from Firebase...');
-      const email     = this.authManager.user.email;
+      const email = this.authManager.user.email;
       const tradesRef = collection(db, 'users', email, 'trades');
-      const q         = query(tradesRef, where('status', '==', 'open'));
-      const snapshot  = await getDocs(q);
+      const q = query(tradesRef, where('status', '==', 'open'));
+      const snapshot = await getDocs(q);
+      if (snapshot.empty) return;
 
-      if (snapshot.empty) {
-        console.log('ℹ️ No open trades found');
-        return;
-      }
-
-      /* ✅ مسح الصفقات الوهمية أولاً */
-      if (window.tradeHistory) {
-        window.tradeHistory.setTrades([]);
-      }
-      /* ✅ مسح الماركرز القديمة */
+      if (window.tradeHistory) window.tradeHistory.setTrades([]);
       this.markers = [];
 
       const now = Date.now();
@@ -1029,190 +1336,70 @@ class AdvancedTradingChart {
 
       for (const docSnap of snapshot.docs) {
         const trade = { ...docSnap.data(), id: docSnap.id };
-
         if (!trade.closeTime) continue;
-
         if (trade.closeTime <= now) {
-          /* ✅ الصفقة انتهت وقتها — أغلقها فوراً */
-          console.log('⏰ Expired trade:', trade.id);
           await this._closeExpiredTrade(trade);
         } else {
-          /* ✅ الصفقة لا تزال نشطة — أعد عرضها وجدول إغلاقها */
           const remaining = trade.closeTime - now;
-          trade.remain    = Math.ceil(remaining / 1000);
-          trade.open      = true;
-
+          trade.remain = Math.ceil(remaining / 1000);
+          trade.open = true;
           if (window.tradeHistory) {
             const current = window.tradeHistory.getTrades() || [];
-            if (!current.find(t => t.id === trade.id)) {
-              current.push(trade);
-              window.tradeHistory.setTrades(current);
-            }
+            if (!current.find(t => t.id === trade.id)) { current.push(trade); window.tradeHistory.setTrades(current); }
           }
-
-          /* ✅ استعادة الماركر على الشارت */
           this._restoreTradeMarker(trade);
-
-          /* ✅ جدولة الإغلاق بالوقت المتبقي الحقيقي */
           setTimeout(() => this._closeTrade(trade.id, trade), remaining);
           activeCount++;
-          console.log(`✅ Active trade restored: ${trade.id} | remaining: ${trade.remain}s`);
         }
       }
-
-      /* تحديث الشارة */
       this._updateTradeBadge(activeCount);
-      console.log(`✅ Trades loaded: ${activeCount} active`);
-
-    } catch(e) {
-      console.error('❌ loadOpenTrades error:', e);
-    }
+    } catch(e) { console.error('❌ loadOpenTrades error:', e); }
   }
 
-  /* ============================================================
-     ✅ استعادة ماركر الصفقة على الشارت
-     ============================================================ */
   _restoreTradeMarker(trade) {
     let candleIdx = trade.markerCandleIndex || 0;
     if (trade.markerCandleTimestamp) {
       for (let i = 0; i < this.candles.length; i++) {
-        if (this.candles[i].timestamp === trade.markerCandleTimestamp) {
-          candleIdx = i;
-          break;
-        }
+        if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
       }
     }
-    this.markers.push({
-      type:            trade.dir === 'up' ? 'buy' : 'sell',
-      ts:              trade.openTime || Date.now(),
-      price:           trade.markerPrice || trade.entry,
-      candleIndex:     candleIdx,
-      candleTimestamp: trade.markerCandleTimestamp,
-      tradeId:         trade.id,
-      closed:          false,
-      profitLoss:      null
-    });
+    this.markers.push({type:trade.dir==='up'?'buy':'sell',ts:trade.openTime||Date.now(),price:trade.markerPrice||trade.entry,candleIndex:candleIdx,candleTimestamp:trade.markerCandleTimestamp,tradeId:trade.id,closed:false,profitLoss:null});
   }
 
-  /* ============================================================
-     ✅ إغلاق صفقة منتهية الوقت عند إعادة الفتح
-     ============================================================ */
   async _closeExpiredTrade(trade) {
     const currentP = this.currentPrice;
-    const win = (trade.dir === 'up'   && currentP >= trade.entry) ||
-                (trade.dir === 'down' && currentP <= trade.entry);
-
+    const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP <= trade.entry);
     const profit = win ? trade.stake * trade.payout : 0;
-    const pl     = win ? profit : -trade.stake;
-
-    /* تحديث الرصيد */
-    if (win) {
-      this._setBalance(this._getBalance() + trade.stake + profit);
-    }
-
-    /* ✅ إضافة ماركر مغلق مع النتيجة */
+    const pl = win ? profit : -trade.stake;
+    if (win) { this._setBalance(this._getBalance() + trade.stake + profit); }
     let candleIdx = trade.markerCandleIndex || 0;
     if (trade.markerCandleTimestamp) {
       for (let i = 0; i < this.candles.length; i++) {
-        if (this.candles[i].timestamp === trade.markerCandleTimestamp) {
-          candleIdx = i;
-          break;
-        }
+        if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
       }
     }
-    this.markers.push({
-      type:            trade.dir === 'up' ? 'buy' : 'sell',
-      ts:              trade.openTime || Date.now(),
-      price:           trade.markerPrice || trade.entry,
-      candleIndex:     candleIdx,
-      candleTimestamp: trade.markerCandleTimestamp,
-      tradeId:         trade.id,
-      closed:          true,
-      profitLoss:      pl
-    });
-
-    /* تحديث Firebase */
+    this.markers.push({type:trade.dir==='up'?'buy':'sell',ts:trade.openTime||Date.now(),price:trade.markerPrice||trade.entry,candleIndex:candleIdx,candleTimestamp:trade.markerCandleTimestamp,tradeId:trade.id,closed:true,profitLoss:pl});
     try {
-      await this._updateTradeInFirebase(trade.id, {
-        status:     'closed',
-        result:     win ? 'win' : 'loss',
-        profit:     pl,
-        closedAt:   Date.now(),
-        closePrice: currentP
-      });
-    } catch(e) {
-      console.warn('⚠️ Expired trade Firebase update error:', e);
-    }
+      await this._updateTradeInFirebase(trade.id, {status:'closed',result:win?'win':'loss',profit:pl,closedAt:Date.now(),closePrice:currentP});
+    } catch(e) { console.warn('⚠️ Expired trade Firebase update error:', e); }
   }
 
-  /* ============================================================
-     ✅ شارة عدد الصفقات على أيقونة السجل
-     ============================================================ */
   _updateTradeBadge(count) {
     let badge = document.getElementById('_qtTradeBadge');
-
     if (!badge) {
-      /* البحث عن زر السجل بمحاولات متعددة */
-      let histBtn =
-        document.querySelector('#historyBtn') ||
-        document.querySelector('.historyBtn') ||
-        document.querySelector('[data-panel="history"]') ||
-        document.querySelector('#tradeHistoryBtn') ||
-        document.querySelector('.tradeHistBtn') ||
-        document.querySelector('[id*="hist" i]') ||
-        document.querySelector('[class*="hist" i]');
-
-      /* fallback: ابحث في كل الأزرار */
-      if (!histBtn) {
-        document.querySelectorAll('button').forEach(btn => {
-          if (!histBtn && (
-            (btn.id   && btn.id.toLowerCase().includes('hist')) ||
-            (btn.className && btn.className.toLowerCase().includes('hist'))
-          )) {
-            histBtn = btn;
-          }
-        });
-      }
-
-      if (!histBtn) return; /* لا يوجد زر — تخطَّ */
-
+      let histBtn = document.querySelector('#historyBtn')||document.querySelector('.historyBtn')||document.querySelector('[data-panel="history"]')||document.querySelector('#tradeHistoryBtn')||document.querySelector('.tradeHistBtn')||document.querySelector('[id*="hist" i]')||document.querySelector('[class*="hist" i]');
+      if (!histBtn) { document.querySelectorAll('button').forEach(btn => { if (!histBtn && ((btn.id&&btn.id.toLowerCase().includes('hist'))||(btn.className&&btn.className.toLowerCase().includes('hist')))) histBtn=btn; }); }
+      if (!histBtn) return;
       badge = document.createElement('span');
       badge.id = '_qtTradeBadge';
-      badge.style.cssText = [
-        'position:absolute',
-        'top:-6px',
-        'right:-6px',
-        'background:#ef4444',
-        'color:#fff',
-        'font-size:10px',
-        'font-weight:900',
-        'min-width:18px',
-        'height:18px',
-        'border-radius:9px',
-        'display:none',
-        'align-items:center',
-        'justify-content:center',
-        'padding:0 4px',
-        'z-index:10000',
-        'pointer-events:none',
-        'box-shadow:0 2px 6px rgba(0,0,0,.5)',
-        'line-height:1'
-      ].join(';');
+      badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;z-index:10000;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1';
       histBtn.style.position = 'relative';
       histBtn.appendChild(badge);
     }
-
-    if (count > 0) {
-      badge.textContent    = count > 99 ? '99+' : String(count);
-      badge.style.display  = 'flex';
-    } else {
-      badge.style.display  = 'none';
-    }
+    if (count > 0) { badge.textContent = count > 99 ? '99+' : String(count); badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
   }
 
-  /* ============================================================
-     ✅ إشعار بسيط — للأخطاء فقط (رصيد غير كافٍ)
-     ============================================================ */
   _showMsg(text, color) {
     if (!document.getElementById('_qtToastCSS')) {
       const s = document.createElement('style');
@@ -1226,7 +1413,6 @@ class AdvancedTradingChart {
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 2400);
   }
-
 }
 
 /* ============================================================
@@ -1247,19 +1433,91 @@ let savedTimeValue="00:05";
 timeSelector.addEventListener("click",e=>{e.stopPropagation();if(!isEditingTime){timeDropdown.classList.toggle("show");}});
 document.addEventListener("click",()=>{timeDropdown.classList.remove("show");if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});
 timeDropdown.addEventListener("click",e=>e.stopPropagation());
-tabCompensation.addEventListener("click",()=>{tabCompensation.classList.add("active");tabCustom.classList.remove("active");compensationList.style.display="grid";if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});
-tabCustom.addEventListener("click",()=>{tabCustom.classList.add("active");tabCompensation.classList.remove("active");compensationList.style.display="none";timeDisplay.textContent="";isEditingTime=true;setTimeout(()=>timeDisplay.focus(),50);});
-compensationList.addEventListener("click",e=>{if(e.target.classList.contains("dropdown-item")){savedTimeValue=e.target.textContent;timeDisplay.textContent=savedTimeValue;chart.selectedTime=parseInt(e.target.getAttribute("data-sec"));timeDropdown.classList.remove("show");}});
-timeDisplay.addEventListener("input",e=>{if(isEditingTime){let v=e.target.textContent.replace(/[^0-9]/g,"");if(v.length>4)v=v.slice(0,4);e.target.textContent=v;}});
-timeDisplay.addEventListener("blur",()=>{if(isEditingTime){let v=timeDisplay.textContent.replace(/[^0-9]/g,"");if(v.length===0)v="0005";v=v.padStart(4,"0");const h=v.slice(0,2);const m=v.slice(2,4);savedTimeValue=`${h}:${m}`;timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});
+
+tabCompensation.addEventListener("click",()=>{
+  tabCompensation.classList.add("active");
+  tabCustom.classList.remove("active");
+  compensationList.style.display="grid";
+  if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}
+});
+
+/* ✅ إصلاح زر Custom: يعرض الوقت الافتراضي مع مؤشر نص وامض */
+tabCustom.addEventListener("click",()=>{
+  tabCustom.classList.add("active");
+  tabCompensation.classList.remove("active");
+  compensationList.style.display="none";
+  isEditingTime=true;
+  /* ✅ عرض الوقت الافتراضي بدون النقطتين لسهولة التحرير */
+  const editVal = savedTimeValue.replace(':','');
+  timeDisplay.textContent = editVal;
+  setTimeout(()=>{
+    timeDisplay.focus();
+    /* ✅ تحديد كل النص ليُستبدل عند الكتابة */
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(timeDisplay);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch(e) {}
+  }, 30);
+});
+
+compensationList.addEventListener("click",e=>{
+  if(e.target.classList.contains("dropdown-item")){
+    savedTimeValue=e.target.textContent;
+    timeDisplay.textContent=savedTimeValue;
+    chart.selectedTime=parseInt(e.target.getAttribute("data-sec"));
+    timeDropdown.classList.remove("show");
+  }
+});
+
+timeDisplay.addEventListener("input",e=>{
+  if(isEditingTime){
+    let v=e.target.textContent.replace(/[^0-9]/g,"");
+    if(v.length>4)v=v.slice(0,4);
+    /* ✅ تحديث النص بدون تحريك المؤشر */
+    const sel=window.getSelection();
+    const pos=sel.focusOffset;
+    e.target.textContent=v;
+    /* استعادة موضع المؤشر */
+    try{
+      if(e.target.firstChild){
+        const r=document.createRange();
+        r.setStart(e.target.firstChild,Math.min(pos,v.length));
+        r.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+    }catch(_){}
+  }
+});
+
+timeDisplay.addEventListener("blur",()=>{
+  if(isEditingTime){
+    let v=timeDisplay.textContent.replace(/[^0-9]/g,"");
+    if(v.length===0)v="0005";
+    v=v.padStart(4,"0");
+    const h=v.slice(0,2);
+    const m=v.slice(2,4);
+    savedTimeValue=`${h}:${m}`;
+    timeDisplay.textContent=savedTimeValue;
+    /* ✅ تحديث الوقت المحدد بالثواني */
+    const totalSec = parseInt(h)*60 + parseInt(m);
+    chart.selectedTime = totalSec > 0 ? totalSec : 5;
+    isEditingTime=false;
+  }
+});
+
+timeDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
+
 amountContainer.addEventListener("click",()=>{amountDisplay.focus();});
 amountDisplay.addEventListener("focus",function(){let v=this.value.replace("$","");this.value=v;setTimeout(()=>{this.setSelectionRange(0,this.value.length);},10);});
 amountDisplay.addEventListener("input",function(){this.value=this.value.replace(/[^0-9]/g,"");});
 amountDisplay.addEventListener("blur",function(){let val=parseFloat(this.value)||50;this.value=val+"$";});
 amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
 
-/* ✅ أزرار BUY / SELL */
 document.getElementById("buyBtn").addEventListener("click",()=>chart.openTrade("buy"));
 document.getElementById("sellBtn").addEventListener("click",()=>chart.openTrade("sell"));
 
-console.log('🚀 QT Trading Chart v2 — Firebase Trades + Instant Balance + Chart P&L ✅');
+console.log('🚀 QT Trading Chart v3 — Live Shared Candle + Gap Fill + 10K Candles ✅');
