@@ -426,6 +426,11 @@ class AdvancedTradingChart {
     this.selectedTime=5;
     this.dataLoaded=false;
     this.usingLocalStorage=false;
+
+    /* ✅ [جديد] متغيرات إدارة الصفقات */
+    this._tradeCounter = 0;
+    this._realTradesInitialized = false;
+
     this.setup();
     this.initData();
   }
@@ -540,8 +545,14 @@ class AdvancedTradingChart {
   drawMarker(m){let actualIdx=m.candleIndex;for(let i=0;i<this.candles.length;i++){if(this.candles[i].timestamp===m.candleTimestamp){actualIdx=i;break;}}const x=this.indexToX(actualIdx);if(x<-200||x>this.w+50)return;const y=this.priceToY(m.price);const w=this.getCandleWidth();const ib=m.type==="buy";const cl=ib?"#16a34a":"#ff3b3b";const r=5.5;this.ctx.save();const lsx=x;this.ctx.shadowColor=cl;this.ctx.shadowBlur=9;this.ctx.fillStyle=cl;this.ctx.beginPath();this.ctx.arc(x,y,r,0,2*Math.PI);this.ctx.fill();this.ctx.shadowBlur=0;this.ctx.fillStyle="#fff";this.ctx.save();this.ctx.translate(x,y);if(!ib)this.ctx.rotate(Math.PI);this.ctx.beginPath();this.ctx.moveTo(0,-2.8);this.ctx.lineTo(-2,0.8);this.ctx.lineTo(-0.65,0.8);this.ctx.lineTo(-0.65,2.8);this.ctx.lineTo(0.65,2.8);this.ctx.lineTo(0.65,0.8);this.ctx.lineTo(2,0.8);this.ctx.closePath();this.ctx.fill();this.ctx.restore();const lx=lsx+w/2+3;const lw=Math.min(95,this.w-lx-22);this.ctx.strokeStyle=ib?"rgba(22,163,74,.7)":"rgba(255,59,59,.7)";this.ctx.lineWidth=1.2;this.ctx.beginPath();this.ctx.moveTo(lsx+w/2,y);this.ctx.lineTo(lx,y);this.ctx.stroke();this.ctx.beginPath();this.ctx.moveTo(lx,y);this.ctx.lineTo(lx+lw,y);this.ctx.stroke();const ex=lx+lw;const er=5;this.ctx.strokeStyle=cl;this.ctx.lineWidth=2;this.ctx.fillStyle="#fff";this.ctx.beginPath();this.ctx.arc(ex,y,er,0,2*Math.PI);this.ctx.fill();this.ctx.stroke();this.ctx.strokeStyle=ib?"rgba(22,163,74,.5)":"rgba(255,59,59,.5)";this.ctx.lineWidth=1.2;this.ctx.beginPath();this.ctx.moveTo(ex+er,y);this.ctx.lineTo(ex+65,y);this.ctx.stroke();this.ctx.restore();}
   draw(){this.tickZoom();this.updatePan();this.updatePriceRange();this.tickSR();this.ctx.clearRect(0,0,this.w,this.h);this.drawGrid();for(let i=0;i<this.candles.length;i++){const x=this.indexToX(i);if(x<-60||x>this.w+60)continue;this.drawCandle(this.candles[i],x,false);}if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){const lx=this.indexToX(this.candles.length);if(lx>=-60&&lx<=this.w+60){this.drawCandle(this.currentCandle,lx,true);}}for(let mk of this.markers){this.drawMarker(mk);}if(++this._fr%2===0){this.updatePriceScale();this.updateTimeLabels();}this.updatePriceLabel();this.updateCandleTimer();}
   stepTowards(c,t,m){const d=t-c;return Math.abs(d)<=m?t:c+Math.sign(d)*m;}
-  updateCurrentCandle(){if(!this.currentCandle){const lp=this.candles.length?this.candles[this.candles.length-1].close:this.currentPrice;this.currentCandle=this.genCandle(this.t0,lp);this.currentCandle.close=lp;this.currentCandle.high=Math.max(this.currentCandle.open,this.currentCandle.close);this.currentCandle.low=Math.min(this.currentCandle.open,this.currentCandle.close);return;}const n=Date.now();const r=this.rnd(this.seed+n);const dir=(r-0.5)*0.0004;const t=this.currentCandle.close+dir;const ms=0.0008*0.18*(this.volScale||1); // ✅
-  const nc=+this.stepTowards(this.currentCandle.close,t,ms).toFixed(this.digits);this.currentCandle.close=nc;this.currentCandle.high=+Math.max(this.currentCandle.high,nc).toFixed(this.digits);this.currentCandle.low=+Math.min(this.currentCandle.low,nc).toFixed(this.digits);this.currentPrice=nc;}
+
+  updateCurrentCandle(){
+    if(!this.currentCandle){const lp=this.candles.length?this.candles[this.candles.length-1].close:this.currentPrice;this.currentCandle=this.genCandle(this.t0,lp);this.currentCandle.close=lp;this.currentCandle.high=Math.max(this.currentCandle.open,this.currentCandle.close);this.currentCandle.low=Math.min(this.currentCandle.open,this.currentCandle.close);return;}
+    const n=Date.now();const r=this.rnd(this.seed+n);const dir=(r-0.5)*0.0004;const t=this.currentCandle.close+dir;const ms=0.0008*0.18*(this.volScale||1);
+    const nc=+this.stepTowards(this.currentCandle.close,t,ms).toFixed(this.digits);this.currentCandle.close=nc;this.currentCandle.high=+Math.max(this.currentCandle.high,nc).toFixed(this.digits);this.currentCandle.low=+Math.min(this.currentCandle.low,nc).toFixed(this.digits);this.currentPrice=nc;
+    /* ✅ [جديد] تحديث السعر العالمي لسجل الصفقات */
+    window.__qt_price = this.currentPrice;
+  }
 
   startRealtime(){
     setInterval(()=>{
@@ -670,9 +681,198 @@ class AdvancedTradingChart {
       this.showLoading(false);
     }
   }
+
+  /* ============================================================
+     ✅ [جديد] إدارة الرصيد
+     ============================================================ */
+
+  /** الحساب النشط حالياً (real / demo) */
+  _getActiveAcc() {
+    const btn = document.querySelector('.accSwitchBtn.active');
+    if (btn && btn.dataset.acc) return btn.dataset.acc;
+    const item = document.querySelector('.accItem.active');
+    if (item && item.dataset.type) return item.dataset.type;
+    return 'demo';
+  }
+
+  /** تنسيق رقم كرصيد */
+  _fmtBal(n) {
+    try {
+      return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n);
+    } catch(e) {
+      return (Math.round(n * 100) / 100).toFixed(2);
+    }
+  }
+
+  /** قراءة الرصيد الحالي من DOM */
+  _getBalance() {
+    const acc = this._getActiveAcc();
+    const elId = acc === 'real' ? 'realAmt' : 'demoAmt';
+    const el = document.getElementById(elId);
+    if (el) {
+      const val = parseFloat(el.textContent.replace(/[^0-9.]/g, ''));
+      if (!isNaN(val)) return val;
+    }
+    return acc === 'real' ? (this.authManager.realBalance || 0) : (this.authManager.demoBalance || 10000);
+  }
+
+  /** كتابة الرصيد الجديد في DOM + Firebase (للحساب الحقيقي) */
+  _setBalance(amount) {
+    const safeAmt = Math.max(0, amount);
+    const formatted = '$' + this._fmtBal(safeAmt);
+    const acc = this._getActiveAcc();
+
+    /* تحديث عنصر القائمة المنسدلة */
+    const elId = acc === 'real' ? 'realAmt' : 'demoAmt';
+    const el = document.getElementById(elId);
+    if (el) el.textContent = formatted;
+
+    /* تحديث شريط الرأس */
+    const balAmount = document.getElementById('balAmount');
+    if (balAmount) balAmount.textContent = formatted;
+
+    if (acc === 'demo') {
+      this.authManager.demoBalance = safeAmt;
+      const qtEl = document.getElementById('qtDemoAmt');
+      if (qtEl) qtEl.textContent = formatted;
+    } else {
+      this.authManager.realBalance = safeAmt;
+      const qtEl = document.getElementById('qtRealAmt');
+      if (qtEl) qtEl.textContent = formatted;
+      /* مزامنة Firebase للحساب الحقيقي */
+      if (this.authManager.user) {
+        const userRef = doc(db, 'users', this.authManager.user.email);
+        updateDoc(userRef, { balance: safeAmt }).catch(e => console.warn('⚠️ Firebase balance sync:', e));
+      }
+    }
+  }
+
+  /* ============================================================
+     ✅ [جديد] فتح صفقة حقيقية
+     ============================================================ */
+  openTrade(direction) {
+    /* 1. قراءة المبلغ */
+    const amountEl = document.getElementById('amountDisplay');
+    const rawVal = amountEl ? amountEl.value.replace(/[^0-9.]/g, '') : '50';
+    const amount = parseFloat(rawVal) || 50;
+
+    /* 2. التحقق من الرصيد */
+    const balance = this._getBalance();
+    if (balance < amount) {
+      this._showMsg('رصيد غير كافٍ ❌', '#dc2626');
+      return;
+    }
+
+    /* 3. مسح الصفقات الوهمية عند أول صفقة حقيقية */
+    if (!this._realTradesInitialized && window.tradeHistory) {
+      window.tradeHistory.setTrades([]);
+      this._realTradesInitialized = true;
+    }
+
+    /* 4. خصم المبلغ من الرصيد */
+    this._setBalance(balance - amount);
+
+    /* 5. بيانات الأعلام */
+    const parts = this.currentPair.split('/');
+    const flagMap = {
+      'AED':'ae','CNY':'cn','AUD':'au','CAD':'ca','CHF':'ch','BHD':'bh',
+      'EUR':'eu','RUB':'ru','USD':'us','KES':'ke','LBP':'lb','QAR':'qa',
+      'TRY':'tr','SYP':'sy','EGP':'eg','INR':'in','IRR':'ir'
+    };
+    const f1 = (flagMap[parts[0]] || parts[0]).toLowerCase();
+    const f2 = (flagMap[parts[1]] || parts[1]).toLowerCase();
+
+    /* 6. نسبة العائد للزوج */
+    const payouts = {
+      'EUR/USD':0.92,'AUD/CAD':0.88,'AUD/CHF':0.92,'BHD/CNY':0.86,
+      'EUR/RUB':0.77,'KES/USD':0.84,'LBP/USD':0.79,'QAR/CNY':0.83,
+      'USD/CHF':0.89,'SYP/TRY':0.87,'EGP/USD':0.78,'USD/INR':0.90,'AED/CNY':0.83
+    };
+    const payout = payouts[this.currentPair] || 0.85;
+
+    /* 7. إنشاء كائن الصفقة */
+    const tradeId  = 'qt_' + Date.now() + '_' + (++this._tradeCounter);
+    const duration = this.selectedTime || 5;
+
+    const trade = {
+      id:        tradeId,
+      dir:       direction === 'buy' ? 'up' : 'down',
+      pair:      this.currentPair + ' (OTC)',
+      flags:     [f1, f2],
+      amountTxt: this._fmtBal(amount),
+      stake:     amount,
+      entry:     this.currentPrice,
+      payout:    payout,
+      remain:    duration,
+      open:      true
+    };
+
+    /* 8. إضافة للسجل وفتحه */
+    if (window.tradeHistory) {
+      const current = window.tradeHistory.getTrades();
+      current.push(trade);
+      window.tradeHistory.setTrades(current);
+      window.tradeHistory.open();
+    }
+
+    /* 9. رسم العلامة على الشارت */
+    this.addMarker(direction);
+
+    /* 10. جدولة إغلاق الصفقة */
+    setTimeout(() => this._closeTrade(tradeId, trade), duration * 1000);
+  }
+
+  /* ============================================================
+     ✅ [جديد] إغلاق الصفقة عند انتهاء وقتها
+     ============================================================ */
+  _closeTrade(tradeId, trade) {
+    const currentP = this.currentPrice;
+    const win = (trade.dir === 'up'   && currentP >= trade.entry) ||
+                (trade.dir === 'down' && currentP <= trade.entry);
+
+    /* إزالة الصفقة من السجل */
+    if (window.tradeHistory) {
+      const remaining = window.tradeHistory.getTrades().filter(t => t.id !== tradeId);
+      window.tradeHistory.setTrades(remaining);
+    }
+
+    /* تحديث الرصيد */
+    if (win) {
+      const profit     = trade.stake * trade.payout;
+      const returnAmt  = trade.stake + profit;
+      this._setBalance(this._getBalance() + returnAmt);
+      this._showMsg(`✅ ربحت +$${this._fmtBal(profit)}`, '#16a34a');
+    } else {
+      this._showMsg(`❌ خسرت -$${this._fmtBal(trade.stake)}`, '#dc2626');
+    }
+  }
+
+  /* ============================================================
+     ✅ [جديد] إشعار منبثق بنتيجة الصفقة
+     ============================================================ */
+  _showMsg(text, color) {
+    if (!document.getElementById('_qtToastCSS')) {
+      const s = document.createElement('style');
+      s.id = '_qtToastCSS';
+      s.textContent = `@keyframes _qtFade{0%{opacity:0;transform:translateX(-50%) translateY(-14px)}12%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}}`;
+      document.head.appendChild(s);
+    }
+    const t = document.createElement('div');
+    t.style.cssText = `position:fixed;top:68px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:11px 26px;border-radius:14px;font-size:15px;font-weight:900;z-index:999999;box-shadow:0 4px 24px rgba(0,0,0,.55);white-space:nowrap;animation:_qtFade 2.8s forwards;pointer-events:none;letter-spacing:.3px;`;
+    t.textContent = text;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+  }
+
 }
 
 /* ============================================================
    🚀 تهيئة التطبيق — بدون تغيير
    ============================================================ */
-window.chart=new AdvancedTradingChart();const timeSelector=document.getElementById("timeSelector");const timeDropdown=document.getElementById("timeDropdown");const timeDisplay=document.getElementById("timeDisplay");const tabCompensation=document.getElementById("tabCompensation");const tabCustom=document.getElementById("tabCustom");const compensationList=document.getElementById("compensationList");const amountDisplay=document.getElementById("amountDisplay");const amountContainer=document.getElementById("amountContainer");let isEditingTime=false;let savedTimeValue="00:05";timeSelector.addEventListener("click",e=>{e.stopPropagation();if(!isEditingTime){timeDropdown.classList.toggle("show");}});document.addEventListener("click",()=>{timeDropdown.classList.remove("show");if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});timeDropdown.addEventListener("click",e=>e.stopPropagation());tabCompensation.addEventListener("click",()=>{tabCompensation.classList.add("active");tabCustom.classList.remove("active");compensationList.style.display="grid";if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});tabCustom.addEventListener("click",()=>{tabCustom.classList.add("active");tabCompensation.classList.remove("active");compensationList.style.display="none";timeDisplay.textContent="";isEditingTime=true;setTimeout(()=>timeDisplay.focus(),50);});compensationList.addEventListener("click",e=>{if(e.target.classList.contains("dropdown-item")){savedTimeValue=e.target.textContent;timeDisplay.textContent=savedTimeValue;chart.selectedTime=parseInt(e.target.getAttribute("data-sec"));timeDropdown.classList.remove("show");}});timeDisplay.addEventListener("input",e=>{if(isEditingTime){let v=e.target.textContent.replace(/[^0-9]/g,"");if(v.length>4)v=v.slice(0,4);e.target.textContent=v;}});timeDisplay.addEventListener("blur",()=>{if(isEditingTime){let v=timeDisplay.textContent.replace(/[^0-9]/g,"");if(v.length===0)v="0005";v=v.padStart(4,"0");const h=v.slice(0,2);const m=v.slice(2,4);savedTimeValue=`${h}:${m}`;timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});amountContainer.addEventListener("click",()=>{amountDisplay.focus();});amountDisplay.addEventListener("focus",function(){let v=this.value.replace("$","");this.value=v;setTimeout(()=>{this.setSelectionRange(0,this.value.length);},10);});amountDisplay.addEventListener("input",function(){this.value=this.value.replace(/[^0-9]/g,"");});amountDisplay.addEventListener("blur",function(){let val=parseFloat(this.value)||50;this.value=val+"$";});amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});document.getElementById("buyBtn").addEventListener("click",()=>chart.addMarker("buy"));document.getElementById("sellBtn").addEventListener("click",()=>chart.addMarker("sell"));console.log('🚀 QT Trading Chart — Pair Switching Ready ✅');
+window.chart=new AdvancedTradingChart();const timeSelector=document.getElementById("timeSelector");const timeDropdown=document.getElementById("timeDropdown");const timeDisplay=document.getElementById("timeDisplay");const tabCompensation=document.getElementById("tabCompensation");const tabCustom=document.getElementById("tabCustom");const compensationList=document.getElementById("compensationList");const amountDisplay=document.getElementById("amountDisplay");const amountContainer=document.getElementById("amountContainer");let isEditingTime=false;let savedTimeValue="00:05";timeSelector.addEventListener("click",e=>{e.stopPropagation();if(!isEditingTime){timeDropdown.classList.toggle("show");}});document.addEventListener("click",()=>{timeDropdown.classList.remove("show");if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});timeDropdown.addEventListener("click",e=>e.stopPropagation());tabCompensation.addEventListener("click",()=>{tabCompensation.classList.add("active");tabCustom.classList.remove("active");compensationList.style.display="grid";if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});tabCustom.addEventListener("click",()=>{tabCustom.classList.add("active");tabCompensation.classList.remove("active");compensationList.style.display="none";timeDisplay.textContent="";isEditingTime=true;setTimeout(()=>timeDisplay.focus(),50);});compensationList.addEventListener("click",e=>{if(e.target.classList.contains("dropdown-item")){savedTimeValue=e.target.textContent;timeDisplay.textContent=savedTimeValue;chart.selectedTime=parseInt(e.target.getAttribute("data-sec"));timeDropdown.classList.remove("show");}});timeDisplay.addEventListener("input",e=>{if(isEditingTime){let v=e.target.textContent.replace(/[^0-9]/g,"");if(v.length>4)v=v.slice(0,4);e.target.textContent=v;}});timeDisplay.addEventListener("blur",()=>{if(isEditingTime){let v=timeDisplay.textContent.replace(/[^0-9]/g,"");if(v.length===0)v="0005";v=v.padStart(4,"0");const h=v.slice(0,2);const m=v.slice(2,4);savedTimeValue=`${h}:${m}`;timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});amountContainer.addEventListener("click",()=>{amountDisplay.focus();});amountDisplay.addEventListener("focus",function(){let v=this.value.replace("$","");this.value=v;setTimeout(()=>{this.setSelectionRange(0,this.value.length);},10);});amountDisplay.addEventListener("input",function(){this.value=this.value.replace(/[^0-9]/g,"");});amountDisplay.addEventListener("blur",function(){let val=parseFloat(this.value)||50;this.value=val+"$";});amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
+
+/* ✅ [معدّل] أزرار BUY / SELL تفتح صفقات حقيقية */
+document.getElementById("buyBtn").addEventListener("click",()=>chart.openTrade("buy"));
+document.getElementById("sellBtn").addEventListener("click",()=>chart.openTrade("sell"));
+
+console.log('🚀 QT Trading Chart — Real Trades + Balance Management ✅');
