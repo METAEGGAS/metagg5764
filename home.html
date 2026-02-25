@@ -1,4 +1,11 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f1d35"><title>QT Real Trading</title><style>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f1d35">
+<title>QT Real Trading</title>
+<style>
 *{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}body{font-family:Arial,sans-serif;background:#0a1628;color:#fff;direction:rtl;display:flex;flex-direction:column;font-size:12.6px}
 .header{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:#0f1d35;position:relative}
 .header::after{content:'';position:absolute;bottom:-8px;left:0;right:0;height:8px;background:linear-gradient(to bottom,#0f1d35,transparent);pointer-events:none;z-index:5}
@@ -13,6 +20,17 @@
 .balance-content{display:flex;flex-direction:column;min-width:0}
 .balance-arrow{display:flex;align-items:center;justify-content:center;color:#8b9cb5;font-size:16px;transition:transform .2s}
 .balance-box.open .balance-arrow{transform:rotate(180deg)}
+.accMenu{position:absolute;top:calc(100% + 8px);right:0;width:260px;background:linear-gradient(145deg,#101a2f 0%,#0d1117 100%);border:2px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;padding:10px;z-index:99999;display:none}
+.accMenu.show{display:block}
+.accSwitch{display:flex;gap:8px;background:#0d1117;border-radius:10px;padding:4px;margin-bottom:12px}
+.accSwitchBtn{flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:900;transition:.2s;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px;background:transparent;color:#fff;cursor:pointer}
+.accSwitchBtn.live{color:#00ff41}.accSwitchBtn.demo{color:#ffd700}.accSwitchBtn.active{background:rgba(255,255,255,.1);border-color:currentColor}
+.accItem{background:rgba(255,255,255,.03);border:1.3px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 12px;margin-bottom:9px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.accItem.active{background:linear-gradient(135deg,rgba(66,153,225,.15) 0%,rgba(49,130,206,.1) 100%);border-color:#4299e1;box-shadow:0 0 12px rgba(66,153,225,.2)}
+.accL{display:flex;align-items:center;gap:10px;min-width:0}
+.accIco{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.accAmt{font-size:16px;font-weight:1000;color:#fff;white-space:nowrap}
+.refillBtn{width:100%;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);border:0;border-radius:10px;padding:10px;font-size:12px;font-weight:1000;color:#fff;letter-spacing:.5px;box-shadow:0 4px 12px rgba(66,153,225,.4);cursor:pointer}
 .wallet-btn{width:38px;height:38px;background:#16a34a;border-radius:8px;border:2px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden}
 .wallet-btn img{width:100%;height:100%;display:block;object-fit:cover}
 .time-display{position:absolute;left:8px;top:calc(100% + 8px);font-size:11px;color:#8b9cb5;font-weight:700;letter-spacing:.4px;background:rgba(15,29,53,.95);padding:6px 12px;border-radius:6px;z-index:180;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:6px}
@@ -68,12 +86,13 @@
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3.6px;color:#6b7a94;font-size:9px;cursor:pointer}
 .nav-item.active{color:#3b82f6}
 .nav-icon{width:21.6px;height:21.6px;display:flex;align-items:center;justify-content:center;font-size:16.2px}
-.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,22,40,.95);display:flex;align-items:center;justify-content:center;z-index:9999;display:none}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,22,40,.95);display:none;align-items:center;justify-content:center;z-index:9999}
 .loading-overlay.show{display:flex}
 .loading-content{text-align:center}
 .loading-spinner{width:50px;height:50px;border:4px solid rgba(59,130,246,.3);border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{color:#fff;font-size:14px;font-weight:600}
+
 /* ===== Pair HUD + Panel ===== */
 .pair-box{position:absolute;left:8px;bottom:32px;z-index:175;display:inline-flex;align-items:center;gap:6.6px;background:#0f1d35;border:1.1px solid rgba(255,255,255,.12);border-radius:11px;padding:5.5px 9.9px;cursor:pointer;user-select:none;backdrop-filter:blur(8px)}
 .pair-box .flags{display:flex;align-items:center;margin-inline:2px}
@@ -93,6 +112,7 @@
 .fg img{width:24.2px;height:24.2px;border-radius:999px;border:2.2px solid #101a2f;margin-left:-8.8px;background:#101a2f;object-fit:cover}
 .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:1000}
 .bad{margin-inline-start:6.6px;padding:2.2px 6.6px;border-radius:999px;background:rgba(255,255,255,.08);border:1.1px solid rgba(255,255,255,.12);font-size:11px;font-weight:1000}
+
 /* ===== سجل الصفقات ===== */
 :root{--histH:30vh}
 #hb{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);z-index:99996;display:none}
@@ -142,38 +162,100 @@
 #hs .result-badge.loss{background:rgba(225,83,83,.15);color:#e15353;border:1px solid rgba(225,83,83,.3)}
 #hs .empty-msg{text-align:center;padding:28px 20px;color:#6b7a94;font-size:13px;line-height:1.7}
 #hs .empty-msg span{font-size:26px;display:block;margin-bottom:8px;opacity:.5}
-</style></head><body>
-<div class="loading-overlay" id="loadingOverlay"><div class="loading-content"><div class="loading-spinner"></div><div class="loading-text">جاري تحميل البيانات...</div></div></div>
+#_qtRoleBadge{display:none !important;opacity:0 !important;visibility:hidden !important;}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جاري تحميل البيانات...</div>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-left">
     <div class="balance-box" id="balanceBox" aria-label="Account Switcher">
       <div class="balance-main">
         <img class="acc-top-icon" id="topAccIcon" src="https://flagcdn.com/w40/us.png" alt="account">
-        <div class="balance-content"><div class="balance-label" id="balLabel">QT Demo USD</div><div class="balance-amount" id="balAmount">$10,000.00</div></div>
+        <div class="balance-content">
+          <div class="balance-label" id="balLabel">QT Real USD</div>
+          <div class="balance-amount" id="balAmount">$0.00</div>
+        </div>
       </div>
-      <div class="balance-arrow" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="#8b9cb5"><path d="M7 10l5 5 5-5z"></path></svg></div>
-      <!-- القائمة هيتعملها Inject من chart.js (qtAccMenu) -->
+      <div class="balance-arrow" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#8b9cb5"><path d="M7 10l5 5 5-5z"/></svg>
+      </div>
+      <div class="accMenu" id="accMenu">
+        <div class="accSwitch">
+          <button class="accSwitchBtn live active" data-acc="real" type="button">LIVE</button>
+          <button class="accSwitchBtn demo" data-acc="demo" type="button">Demo</button>
+        </div>
+        <div class="accItem active" data-type="real">
+          <div class="accL">
+            <img class="accIco" src="https://flagcdn.com/w40/us.png" alt="USD">
+            <div class="accAmt" id="realAmt">$0.00</div>
+          </div>
+        </div>
+        <div class="accItem" data-type="demo">
+          <div class="accL">
+            <img class="accIco" src="https://cdn-icons-png.flaticon.com/128/1344/1344761.png" alt="Demo">
+            <div class="accAmt" id="demoAmt">$10,000.00</div>
+          </div>
+        </div>
+        <button class="refillBtn" id="refillBtn" type="button">🔄 Refill Demo Account</button>
+      </div>
     </div>
   </div>
   <div class="header-center">
-    <button class="wallet-btn" aria-label="Wallet" onclick="window.location.href='wallet.html'"><img src="https://cdn-icons-png.flaticon.com/128/10167/10167706.png" alt="Wallet"></button>
-    <button class="icon-btn logo-btn" aria-label="QT" onclick="window.location.href='profile.html'"><img id="userAvatarImg" src="https://cdn-icons-png.flaticon.com/128/18921/18921105.png" alt="QT"></button>
+    <button class="wallet-btn" aria-label="Wallet" onclick="window.location.href='wallet.html'">
+      <img src="https://cdn-icons-png.flaticon.com/128/10167/10167706.png" alt="Wallet">
+    </button>
+    <button class="icon-btn logo-btn" aria-label="QT" onclick="window.location.href='profile.html'">
+      <img id="userAvatarImg" src="https://cdn-icons-png.flaticon.com/128/18921/18921105.png" alt="QT">
+    </button>
   </div>
   <div class="time-display" id="liveTime">00:00:00 UTC+3</div>
 </div>
 
 <div class="chart-container">
   <div class="quick-actions">
-    <button class="qa-btn" id="openHistory" aria-label="Trade History"><svg width="42" height="42" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gradBag" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#4a90e2"></stop><stop offset="100%" stop-color="#357abd"></stop></linearGradient></defs><rect x="3" y="7" width="18" height="13" rx="3" stroke="url(#gradBag)" stroke-width="2" fill="none"></rect><path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="url(#gradBag)" stroke-width="2" stroke-linecap="round"></path><line x1="7" y1="12" x2="17" y2="12" stroke="url(#gradBag)" stroke-width="1.6" stroke-linecap="round"></line></svg></button>
-    <button class="qa-btn" aria-label="Options" style="color:#4a90e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><line x1="5" y1="7" x2="19" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="5" y1="17" x2="19" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg></button>
+    <button class="qa-btn" id="openHistory" aria-label="Trade History">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none">
+        <defs><linearGradient id="gradBag" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#4a90e2"/><stop offset="100%" stop-color="#357abd"/></linearGradient></defs>
+        <rect x="3" y="7" width="18" height="13" rx="3" stroke="url(#gradBag)" stroke-width="2" fill="none"/>
+        <path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="url(#gradBag)" stroke-width="2" stroke-linecap="round"/>
+        <line x1="7" y1="12" x2="17" y2="12" stroke="url(#gradBag)" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="qa-btn" aria-label="Options" style="color:#4a90e2">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <line x1="5" y1="7" x2="19" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="5" y1="17" x2="19" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
-  <div class="chart-frame"><div class="plot" id="plot">
-    <canvas id="chartCanvas"></canvas><div class="price-line" id="priceLine"></div><div class="candle-timer" id="candleTimer">59</div>
-    <div id="priceScale"><div id="priceScaleLabels"></div><div id="currentPrice"></div></div><div class="timeLabels" id="timeLabels"></div>
-    <div class="pair-box" id="pairHud"><span id="pairHudTxt">EUR/USD</span><span class="otc" id="otcHud">OTC</span><span class="flags" id="pairFlags"></span><span style="opacity:.7">▾</span></div>
-  </div></div>
+  <div class="chart-frame">
+    <div class="plot" id="plot">
+      <canvas id="chartCanvas"></canvas>
+      <div class="price-line" id="priceLine"></div>
+      <div class="candle-timer" id="candleTimer">59</div>
+      <div id="priceScale">
+        <div id="priceScaleLabels"></div>
+        <div id="currentPrice"></div>
+      </div>
+      <div class="timeLabels" id="timeLabels"></div>
+      <div class="pair-box" id="pairHud">
+        <span id="pairHudTxt">EUR/USD</span>
+        <span class="otc" id="otcHud">OTC</span>
+        <span class="flags" id="pairFlags"></span>
+        <span style="opacity:.7">&#9662;</span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="controls">
@@ -182,10 +264,29 @@
       <div class="control-label">Time</div>
       <div class="control-value" id="timeSelector">
         <span class="control-text" id="timeDisplay">00:05</span>
-        <div class="control-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
-        <div class="dropdown" id="timeDropdown"><div class="dropdown-header"><button class="dropdown-tab active" id="tabCompensation">Quick</button><button class="dropdown-tab" id="tabCustom">Custom</button></div>
+        <div class="control-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+          </svg>
+        </div>
+        <div class="dropdown" id="timeDropdown">
+          <div class="dropdown-header">
+            <button class="dropdown-tab active" id="tabCompensation">Quick</button>
+            <button class="dropdown-tab" id="tabCustom">Custom</button>
+          </div>
           <div class="dropdown-content" id="compensationList">
-            <div class="dropdown-item" data-sec="5">00:05</div><div class="dropdown-item" data-sec="10">00:10</div><div class="dropdown-item" data-sec="15">00:15</div><div class="dropdown-item" data-sec="30">00:30</div><div class="dropdown-item" data-sec="60">01:00</div><div class="dropdown-item" data-sec="120">02:00</div><div class="dropdown-item" data-sec="300">05:00</div><div class="dropdown-item" data-sec="600">10:00</div><div class="dropdown-item" data-sec="900">15:00</div><div class="dropdown-item" data-sec="1800">30:00</div><div class="dropdown-item" data-sec="3600">01:00:00</div><div class="dropdown-item" data-sec="7200">02:00:00</div>
+            <div class="dropdown-item" data-sec="5">00:05</div>
+            <div class="dropdown-item" data-sec="10">00:10</div>
+            <div class="dropdown-item" data-sec="15">00:15</div>
+            <div class="dropdown-item" data-sec="30">00:30</div>
+            <div class="dropdown-item" data-sec="60">01:00</div>
+            <div class="dropdown-item" data-sec="120">02:00</div>
+            <div class="dropdown-item" data-sec="300">05:00</div>
+            <div class="dropdown-item" data-sec="600">10:00</div>
+            <div class="dropdown-item" data-sec="900">15:00</div>
+            <div class="dropdown-item" data-sec="1800">30:00</div>
+            <div class="dropdown-item" data-sec="3600">01:00:00</div>
+            <div class="dropdown-item" data-sec="7200">02:00:00</div>
           </div>
         </div>
       </div>
@@ -194,29 +295,112 @@
       <div class="control-label">Amount</div>
       <div class="control-value" id="amountContainer">
         <input type="text" class="control-text" id="amountDisplay" value="50$">
-        <div class="control-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v12"></path><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path></svg></div>
+        <div class="control-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 6v12"/>
+            <path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/>
+          </svg>
+        </div>
       </div>
     </div>
   </div>
-  <div class="trade-buttons"><button class="trade-btn buy-btn" id="buyBtn">BUY</button><button class="trade-btn ai-trade-btn">TRADING</button><button class="trade-btn sell-btn" id="sellBtn">SELL</button></div>
+  <div class="trade-buttons">
+    <button class="trade-btn buy-btn" id="buyBtn">BUY</button>
+    <button class="trade-btn ai-trade-btn">TRADING</button>
+    <button class="trade-btn sell-btn" id="sellBtn">SELL</button>
+  </div>
 </div>
 
 <div class="bottom-nav">
-  <div class="nav-item active"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="2" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"></rect><line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width=".8"></line><line x1="4" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width=".8"></line><polyline points="4,16 8,12 12,14 16,8 20,10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="4" cy="16" r="1.2" fill="currentColor"></circle><circle cx="8" cy="12" r="1.2" fill="currentColor"></circle><circle cx="12" cy="14" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle><circle cx="20" cy="10" r="1.2" fill="currentColor"></circle></svg></div><div>Chart</div></div>
-  <div class="nav-item" id="navHistory"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="14" rx="2" ry="2" fill="currentColor"></rect><rect x="8" y="3" width="8" height="4" rx="1" ry="1" fill="currentColor"></rect><line x1="6" y1="11" x2="18" y2="11" stroke="#0a1628" stroke-width="1"></line><line x1="6" y1="14" x2="18" y2="14" stroke="#0a1628" stroke-width="1"></line><line x1="6" y1="17" x2="18" y2="17" stroke="#0a1628" stroke-width="1"></line></svg></div><div>History</div></div>
-  <div class="nav-item" onclick="window.location.href='profile.html'"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="2" fill="none"></circle><circle cx="12" cy="8" r="3" fill="currentColor"></circle><path d="M6 20c0-3.3 5-5 6-5s6 1.7 6 5" fill="currentColor"></path></svg></div><div>Profile</div></div>
-  <div class="nav-item"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"></rect><rect x="8" y="18" width="8" height="2" fill="currentColor"></rect><rect x="11" y="10" width="2" height="8" fill="currentColor"></rect><path d="M6 10 C6 6, 18 6, 18 10 C18 14, 6 14, 6 10 Z" fill="currentColor"></path><path d="M6 10 C4 10, 4 12, 6 12" stroke="currentColor" stroke-width="1.5" fill="none"></path><path d="M18 10 C20 10, 20 12, 18 12" stroke="currentColor" stroke-width="1.5" fill="none"></path></svg></div><div>Rank</div></div>
-  <div class="nav-item"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"></rect><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="currentColor"></circle><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="5" y1="5" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="17" y1="17" x2="19" y2="19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="5" y1="19" x2="7" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="17" y1="7" x2="19" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line></svg></div><div>Settings</div></div>
+  <div class="nav-item active">
+    <div class="nav-icon">
+      <svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="20" height="20" rx="2" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width=".8"/>
+        <line x1="4" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width=".8"/>
+        <polyline points="4,16 8,12 12,14 16,8 20,10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="4" cy="16" r="1.2" fill="currentColor"/>
+        <circle cx="8" cy="12" r="1.2" fill="currentColor"/>
+        <circle cx="12" cy="14" r="1.2" fill="currentColor"/>
+        <circle cx="16" cy="8" r="1.2" fill="currentColor"/>
+        <circle cx="20" cy="10" r="1.2" fill="currentColor"/>
+      </svg>
+    </div>
+    <div>Chart</div>
+  </div>
+  <div class="nav-item" id="navHistory">
+    <div class="nav-icon">
+      <svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="7" width="18" height="14" rx="2" ry="2" fill="currentColor"/>
+        <rect x="8" y="3" width="8" height="4" rx="1" ry="1" fill="currentColor"/>
+        <line x1="6" y1="11" x2="18" y2="11" stroke="#0a1628" stroke-width="1"/>
+        <line x1="6" y1="14" x2="18" y2="14" stroke="#0a1628" stroke-width="1"/>
+        <line x1="6" y1="17" x2="18" y2="17" stroke="#0a1628" stroke-width="1"/>
+      </svg>
+    </div>
+    <div>History</div>
+  </div>
+  <div class="nav-item" onclick="window.location.href='profile.html'">
+    <div class="nav-icon">
+      <svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="2" fill="none"/>
+        <circle cx="12" cy="8" r="3" fill="currentColor"/>
+        <path d="M6 20c0-3.3 5-5 6-5s6 1.7 6 5" fill="currentColor"/>
+      </svg>
+    </div>
+    <div>Profile</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <rect x="8" y="18" width="8" height="2" fill="currentColor"/>
+        <rect x="11" y="10" width="2" height="8" fill="currentColor"/>
+        <path d="M6 10 C6 6, 18 6, 18 10 C18 14, 6 14, 6 10 Z" fill="currentColor"/>
+        <path d="M6 10 C4 10, 4 12, 6 12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <path d="M18 10 C20 10, 20 12, 18 12" stroke="currentColor" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div>
+    <div>Rank</div>
+  </div>
+  <div class="nav-item">
+    <div class="nav-icon">
+      <svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="currentColor"/>
+        <line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="5" y1="5" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="17" y1="17" x2="19" y2="19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="5" y1="19" x2="7" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="17" y1="7" x2="19" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>Settings</div>
+  </div>
 </div>
 
-<div class="pairPanel" id="pairPanel"><div class="pairHead"><b>الازواج</b><button class="pairClose" id="pairClose" type="button">×</button></div><div class="pairList" id="pairList"></div></div>
+<!-- Pair Panel -->
+<div class="pairPanel" id="pairPanel">
+  <div class="pairHead"><b>الازواج</b><button class="pairClose" id="pairClose" type="button">&#215;</button></div>
+  <div class="pairList" id="pairList"></div>
+</div>
 
+<!-- سجل الصفقات -->
 <div id="hb"></div>
 <div id="hs">
   <div class="hh">
-    <div class="hhL"><span class="ic" id="hOpenCnt">0</span><span class="ic">🕒</span></div>
-    <div class="hhC"><span class="bdg" id="hCnt">0</span><span class="ttl">التداولات</span></div>
-    <div class="hhR"><button id="hX" type="button">×</button></div>
+    <div class="hhL">
+      <span class="ic" id="hOpenCnt">0</span>
+      <span class="ic">&#128338;</span>
+    </div>
+    <div class="hhC">
+      <span class="bdg" id="hCnt">0</span>
+      <span class="ttl">التداولات</span>
+    </div>
+    <div class="hhR"><button id="hX" type="button">&#215;</button></div>
   </div>
   <div class="htabs">
     <button class="htab active" id="htabOpen" type="button">مفتوحة <span class="tc" id="tcOpen">0</span></button>
@@ -225,112 +409,89 @@
   <div class="hlst" id="hList"></div>
 </div>
 
-<!-- Pair switch UI -->
+<!-- ============================================================
+     Pair switch UI — مستقل تماماً لا يتعارض مع أي شيء
+     ============================================================ -->
 <script>
 (function(){
-var hud=document.getElementById("pairHud"),panel=document.getElementById("pairPanel"),closeBtn=document.getElementById("pairClose"),list=document.getElementById("pairList");
-var hudTxt=document.getElementById("pairHudTxt"),otc=document.getElementById("otcHud"),flagsBox=document.getElementById("pairFlags");
-if(!hud||!panel||!list||!hudTxt||!flagsBox)return;
-var fM={AED:"ae",CNY:"cn",AUD:"au",CAD:"ca",CHF:"ch",BHD:"bh",EUR:"eu",RUB:"ru",USD:"us",KES:"ke",LBP:"lb",QAR:"qa",TRY:"tr",SYP:"sy",EGP:"eg",INR:"in",IRR:"ir"};
-var mkF=function(c){c=(c||"un").toUpperCase();return "https://flagcdn.com/w40/"+String((fM[c]||c)).toLowerCase()+".png"};
-var pairs=[{pair:"AED/CNY",otc:1,payout:.91,flags:["AED","CNY"]},{pair:"AUD/CAD",otc:1,payout:.88,flags:["AUD","CAD"]},{pair:"AUD/CHF",otc:1,payout:.92,flags:["AUD","CHF"]},{pair:"BHD/CNY",otc:1,payout:.86,flags:["BHD","CNY"]},{pair:"EUR/RUB",otc:1,payout:.77,flags:["EUR","RUB"]},{pair:"EUR/USD",otc:1,payout:.92,flags:["EUR","USD"]},{pair:"KES/USD",otc:1,payout:.84,flags:["KES","USD"]},{pair:"LBP/USD",otc:1,payout:.79,flags:["LBP","USD"]},{pair:"QAR/CNY",otc:1,payout:.83,flags:["QAR","CNY"]},{pair:"USD/CHF",otc:1,payout:.89,flags:["USD","CHF"]},{pair:"SYP/TRY",otc:1,payout:.87,flags:["SYP","TRY"]},{pair:"EGP/USD",otc:1,payout:.78,flags:["EGP","USD"]},{pair:"USD/INR",otc:1,payout:.90,flags:["USD","INR"]}];
-var fav=new Set(),fmtP=function(x){return Math.round((+x||0)*100)+"%"};
-var setHud=function(p){
-hudTxt.textContent=p.pair;
-if(otc){otc.textContent=p.otc?"OTC":"";otc.style.display=p.otc?"inline-flex":"none"}
-var f=p.flags||String(p.pair).split("/");
-flagsBox.innerHTML='<img src="'+mkF(f[0])+'" alt=""><img src="'+mkF(f[1])+'" alt="">';
-};
-var render=function(){
-pairs.sort(function(a,b){var fa=fav.has(a.pair)?1:0,fb=fav.has(b.pair)?1:0;if(fa!==fb)return fb-fa;return a.pair.localeCompare(b.pair)});
-list.innerHTML=pairs.map(function(x){
-var ab=String(x.pair).split("/"),st=fav.has(x.pair)?"★":"☆";
-return '<button class="pit" data-p="'+x.pair+'" type="button"><span class="pitL"><span class="star" data-s="1">'+st+'</span><span class="fg"><img src="'+mkF(ab[0])+'" alt=""><img src="'+mkF(ab[1])+'" alt=""></span><span class="nm">'+x.pair+'<span class="bad">OTC</span></span></span><span>+'+fmtP(x.payout)+'</span></button>';
-}).join("");
-};
-hud.addEventListener("click",function(e){e.stopPropagation();panel.classList.toggle("on");render()});
-if(closeBtn)closeBtn.addEventListener("click",function(){panel.classList.remove("on")});
-document.addEventListener("click",function(e){if(panel.classList.contains("on")&&!e.target.closest("#pairPanel")&&!e.target.closest("#pairHud"))panel.classList.remove("on")});
-list.addEventListener("click",function(e){
-var b=e.target.closest("button.pit");if(!b)return;
-var p=b.getAttribute("data-p");
-if(e.target&&e.target.getAttribute&&e.target.getAttribute("data-s")){fav.has(p)?fav.delete(p):fav.add(p);render();return;}
-panel.classList.remove("on");
-var obj=pairs.find(function(x){return x.pair===p})||{pair:p,otc:1,flags:p.split("/")};setHud(obj);
-try{if(window.chart&&typeof window.chart.switchPair==="function")window.chart.switchPair(p)}catch(_){}
-});
-setHud(pairs.find(function(x){return x.pair==="EUR/USD"})||pairs[0]);
-render();
+  var hud=document.getElementById("pairHud"),panel=document.getElementById("pairPanel"),closeBtn=document.getElementById("pairClose"),list=document.getElementById("pairList");
+  var hudTxt=document.getElementById("pairHudTxt"),otc=document.getElementById("otcHud"),flagsBox=document.getElementById("pairFlags");
+  if(!hud||!panel||!list||!hudTxt||!flagsBox)return;
+  var fM={AED:"ae",CNY:"cn",AUD:"au",CAD:"ca",CHF:"ch",BHD:"bh",EUR:"eu",RUB:"ru",USD:"us",KES:"ke",LBP:"lb",QAR:"qa",TRY:"tr",SYP:"sy",EGP:"eg",INR:"in",IRR:"ir"};
+  var mkF=function(c){c=(c||"un").toUpperCase();return "https://flagcdn.com/w40/"+String((fM[c]||c)).toLowerCase()+".png"};
+  var pairs=[{pair:"AED/CNY",otc:1,payout:.91,flags:["AED","CNY"]},{pair:"AUD/CAD",otc:1,payout:.88,flags:["AUD","CAD"]},{pair:"AUD/CHF",otc:1,payout:.92,flags:["AUD","CHF"]},{pair:"BHD/CNY",otc:1,payout:.86,flags:["BHD","CNY"]},{pair:"EUR/RUB",otc:1,payout:.77,flags:["EUR","RUB"]},{pair:"EUR/USD",otc:1,payout:.92,flags:["EUR","USD"]},{pair:"KES/USD",otc:1,payout:.84,flags:["KES","USD"]},{pair:"LBP/USD",otc:1,payout:.79,flags:["LBP","USD"]},{pair:"QAR/CNY",otc:1,payout:.83,flags:["QAR","CNY"]},{pair:"USD/CHF",otc:1,payout:.89,flags:["USD","CHF"]},{pair:"SYP/TRY",otc:1,payout:.87,flags:["SYP","TRY"]},{pair:"EGP/USD",otc:1,payout:.78,flags:["EGP","USD"]},{pair:"USD/INR",otc:1,payout:.90,flags:["USD","INR"]}];
+  var fav=new Set(),fmtP=function(x){return Math.round((+x||0)*100)+"%"};
+  var setHud=function(p){
+    hudTxt.textContent=p.pair;
+    if(otc){otc.textContent=p.otc?"OTC":"";otc.style.display=p.otc?"inline-flex":"none"}
+    var f=p.flags||String(p.pair).split("/");
+    flagsBox.innerHTML='<img src="'+mkF(f[0])+'" alt=""><img src="'+mkF(f[1])+'" alt="">';
+  };
+  var render=function(){
+    pairs.sort(function(a,b){var fa=fav.has(a.pair)?1:0,fb=fav.has(b.pair)?1:0;if(fa!==fb)return fb-fa;return a.pair.localeCompare(b.pair)});
+    list.innerHTML=pairs.map(function(x){
+      var ab=String(x.pair).split("/"),st=fav.has(x.pair)?"&#9733;":"&#9734;";
+      return '<button class="pit" data-p="'+x.pair+'" type="button"><span class="pitL"><span class="star" data-s="1">'+st+'</span><span class="fg"><img src="'+mkF(ab[0])+'" alt=""><img src="'+mkF(ab[1])+'" alt=""></span><span class="nm">'+x.pair+'<span class="bad">OTC</span></span></span><span>+'+fmtP(x.payout)+'</span></button>';
+    }).join("");
+  };
+  hud.addEventListener("click",function(e){e.stopPropagation();panel.classList.toggle("on");render()});
+  if(closeBtn)closeBtn.addEventListener("click",function(){panel.classList.remove("on")});
+  document.addEventListener("click",function(e){if(panel.classList.contains("on")&&!e.target.closest("#pairPanel")&&!e.target.closest("#pairHud"))panel.classList.remove("on")});
+  list.addEventListener("click",function(e){
+    var b=e.target.closest("button.pit");if(!b)return;
+    var p=b.getAttribute("data-p");
+    if(e.target&&e.target.getAttribute&&e.target.getAttribute("data-s")){fav.has(p)?fav.delete(p):fav.add(p);render();return;}
+    panel.classList.remove("on");
+    var obj=pairs.find(function(x){return x.pair===p})||{pair:p,otc:1,flags:p.split("/")};setHud(obj);
+    try{if(window.chart&&typeof window.chart.switchPair==="function")window.chart.switchPair(p)}catch(_){}
+  });
+  setHud(pairs.find(function(x){return x.pair==="EUR/USD"})||pairs[0]);
+  render();
 })();
 </script>
 
-<!-- سجل الصفقات -->
+<!-- ============================================================
+     سجل الصفقات — منطق متكامل
+     ============================================================ -->
 <script>
 (function(){
-  var hb=document.getElementById("hb"),hs=document.getElementById("hs"),xBtn=document.getElementById("hX"),btn=document.getElementById("openHistory"),nav=document.getElementById("navHistory");
-  var lst=document.getElementById("hList"),cnt=document.getElementById("hCnt"),hOpenCnt=document.getElementById("hOpenCnt"),tcOpen=document.getElementById("tcOpen"),tcClosed=document.getElementById("tcClosed");
-  var tabOpen=document.getElementById("htabOpen"),tabClosed=document.getElementById("htabClosed");
-  if(!hb||!hs||!lst) return;
-
+  var hb=document.getElementById("hb"),hs=document.getElementById("hs"),xBtn=document.getElementById("hX"),btn=document.getElementById("openHistory"),nav=document.getElementById("navHistory"),lst=document.getElementById("hList"),cnt=document.getElementById("hCnt"),hOpenCnt=document.getElementById("hOpenCnt"),tcOpen=document.getElementById("tcOpen"),tcClosed=document.getElementById("tcClosed"),tabOpen=document.getElementById("htabOpen"),tabClosed=document.getElementById("htabClosed");
+  if(!hb||!hs||!lst)return;
   var state={openTrades:[],closedTrades:[],price:null,timer:null,activeTab:"open"};
   var F=function(cc){return "https://flagcdn.com/w40/"+cc+".png";};
-  function z(n){return(n<10?"0":"")+n;}
+  function z(n){return (n<10?"0":"")+n;}
   function fmtCountdown(sec){sec=Math.max(0,sec|0);var h=(sec/3600)|0,m=((sec%3600)/60)|0,s=sec%60;return z(h)+":"+z(m)+":"+z(s);}
-  function fmtCloseTime(ts){if(!ts)return"--:--";var d=new Date(ts);return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());}
+  function fmtCloseTime(ts){if(!ts)return "--:--";var d=new Date(ts);return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());}
   function num(x,d){x=+x;return isFinite(x)?x:d;}
-  function fmt2(x){return(Math.round(num(x,0)*100)/100).toFixed(2);}
-
+  function fmt2(x){return (Math.round(num(x,0)*100)/100).toFixed(2);}
   function rowOpen(t){
     var p=state.price,entry=num(t.entry,null),pv={v:0,pos:false};
     if(p!=null&&entry!=null){var dir=(t.dir||"down")==="up"?"up":"down";var ok=(dir==="up")?(p>=entry):(p<=entry);pv=ok?{v:num(t.stake,10)*num(t.payout,0.85),pos:true}:{v:0,pos:false};}
     var dir=(t.dir||"down")==="up"?"up":"dn";
-    return'<div class="hrw" data-id="'+(t.id||"")+'"><div class="lft"><span class="car">▾</span><div><div class="tm">'+fmtCountdown(num(t.remain,60))+'</div><div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span></div></div></div>';
+    return '<div class="hrw" data-id="'+(t.id||"")+'"><div class="lft"><span class="car">&#9662;</span><div><div class="tm">'+fmtCountdown(num(t.remain,60))+'</div><div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"&#8599;":"&#8600;")+'</span></span></div></div></div>';
   }
-
   function rowClosed(t){
-    var pl=num(t.profitLoss||t.profit,0),isWin=(t.result==="win")||pl>0,dir=(t.dir||"down")==="up"?"up":"dn";
-    var timeStr=fmtCloseTime(t.closedAt||t.openTime),plTxt=isWin?"+"+fmt2(Math.abs(pl)):"-"+fmt2(Math.abs(pl));
-    var carIco=isWin?'<span class="car" style="color:#22c55e;font-size:18px">✓</span>':'<span class="car" style="color:#e15353;font-size:18px">✗</span>';
-    return'<div class="hrw closed" data-id="'+(t.id||"")+'"><div class="lft">'+carIco+'<div><div class="tm">'+timeStr+'</div><div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span></div><div><span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN ✓':'LOSS ✗')+'</span></div></div></div>';
+    var pl=num(t.profitLoss||t.profit,0),isWin=(t.result==="win")||pl>0,dir=(t.dir||"down")==="up"?"up":"dn",timeStr=fmtCloseTime(t.closedAt||t.openTime),plTxt=isWin?"+"+fmt2(Math.abs(pl)):"-"+fmt2(Math.abs(pl));
+    var carIco=isWin?'<span class="car" style="color:#22c55e;font-size:18px">&#10003;</span>':'<span class="car" style="color:#e15353;font-size:18px">&#10007;</span>';
+    return '<div class="hrw closed" data-id="'+(t.id||"")+'"><div class="lft">'+carIco+'<div><div class="tm">'+timeStr+'</div><div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"&#8599;":"&#8600;")+'</span></span></div><div><span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN &#10003;':'LOSS &#10007;')+'</span></div></div></div>';
   }
-
   function render(){
     var nOpen=state.openTrades.length,nClosed=state.closedTrades.length,nTotal=nOpen+nClosed;
-    if(cnt)cnt.textContent=String(nTotal);
-    if(hOpenCnt)hOpenCnt.textContent=String(nOpen);
-    if(tcOpen)tcOpen.textContent=String(nOpen);
-    if(tcClosed)tcClosed.textContent=String(nClosed);
-
+    if(cnt)cnt.textContent=String(nTotal);if(hOpenCnt)hOpenCnt.textContent=String(nOpen);if(tcOpen)tcOpen.textContent=String(nOpen);if(tcClosed)tcClosed.textContent=String(nClosed);
     var html="";
-    if(state.activeTab==="open"){
-      html=nOpen===0?'<div class="empty-msg"><span>📂</span>لا توجد صفقات مفتوحة حالياً</div>':state.openTrades.map(rowOpen).join("");
-    }else{
-      html=nClosed===0?'<div class="empty-msg"><span>📜</span>لا يوجد سجل صفقات منتهية بعد</div>':state.closedTrades.map(rowClosed).join("");
-    }
+    if(state.activeTab==="open"){html=nOpen===0?'<div class="empty-msg"><span>&#128194;</span>لا توجد صفقات مفتوحة حالياً</div>':state.openTrades.map(rowOpen).join("");}
+    else{html=nClosed===0?'<div class="empty-msg"><span>&#128220;</span>لا يوجد سجل صفقات منتهية بعد</div>':state.closedTrades.map(rowClosed).join("");}
     lst.innerHTML=html;
   }
-
   function tick(){state.openTrades.forEach(function(t){if(t.open===false)return;t.remain=Math.max(0,num(t.remain,0)-1);});if(state.activeTab==="open")render();}
   function ensureTimer(){if(state.timer)return;state.timer=setInterval(tick,1000);}
-
   function openPanel(){hb.classList.add("on");hs.classList.add("on");}
   function closePanel(){hb.classList.remove("on");hs.classList.remove("on");}
   function toggle(){hs.classList.contains("on")?closePanel():openPanel();}
-
   function setTrades(arr){state.openTrades=(Array.isArray(arr)?arr:[]).slice();render();ensureTimer();}
   function getTrades(){return state.openTrades.slice();}
   function updateTrade(id,patch){var t=state.openTrades.find(function(x){return String(x.id)===String(id);});if(!t)return;for(var k in patch)t[k]=patch[k];render();}
   function updatePrice(p){state.price=num(p,null);if(state.activeTab==="open")render();}
-
-  function switchTab(tab){
-    state.activeTab=tab;
-    if(tabOpen)tabOpen.classList.toggle("active",tab==="open");
-    if(tabClosed)tabClosed.classList.toggle("active",tab==="closed");
-    render();
-  }
-  if(tabOpen)tabOpen.addEventListener("click",function(){switchTab("open");});
-  if(tabClosed)tabClosed.addEventListener("click",function(){switchTab("closed");});
-
   function addClosedTrade(trade){
     if(!trade)return;
     state.openTrades=state.openTrades.filter(function(t){return String(t.id)!==String(trade.id);});
@@ -341,15 +502,20 @@ render();
   function setHistory(arr){state.closedTrades=(Array.isArray(arr)?arr:[]).slice();render();}
   function loadHistory(arr){setHistory(arr);}
   function addHistory(trade){addClosedTrade(trade);}
-
+  function switchTab(tab){
+    state.activeTab=tab;
+    if(tabOpen)tabOpen.classList.toggle("active",tab==="open");
+    if(tabClosed)tabClosed.classList.toggle("active",tab==="closed");
+    render();
+  }
+  if(tabOpen)tabOpen.addEventListener("click",function(){switchTab("open");});
+  if(tabClosed)tabClosed.addEventListener("click",function(){switchTab("closed");});
   if(btn)btn.addEventListener("click",function(e){e.stopPropagation();toggle();});
   if(nav)nav.addEventListener("click",function(e){e.stopPropagation();toggle();});
   hb.addEventListener("click",closePanel);
   if(xBtn)xBtn.addEventListener("click",closePanel);
   document.addEventListener("keydown",function(e){if(e.key==="Escape")closePanel();});
-
   setInterval(function(){if(typeof window.__qt_price==="number")updatePrice(window.__qt_price);},250);
-
   window.addEventListener("qt_trade_closed",function(e){if(e&&e.detail&&e.detail.trade)addClosedTrade(e.detail.trade);});
   window.addEventListener("qt_history_loaded",function(e){
     if(e&&e.detail&&Array.isArray(e.detail)){
@@ -357,12 +523,20 @@ render();
       if(e.detail.length>0)switchTab("closed");
     }
   });
-
-  window.tradeHistory={open:openPanel,close:closePanel,toggle:toggle,setTrades:setTrades,getTrades:getTrades,updateTrade:updateTrade,updatePrice:updatePrice,addHistory:addHistory,addClosedTrade:addClosedTrade,setHistory:setHistory,loadHistory:loadHistory,setPriceFromChartVar:function(varName){setInterval(function(){var v=window[varName];if(typeof v==="number")updatePrice(v);},250);}};
+  window.tradeHistory={
+    open:openPanel,close:closePanel,toggle:toggle,
+    setTrades:setTrades,getTrades:getTrades,updateTrade:updateTrade,
+    updatePrice:updatePrice,addHistory:addHistory,addClosedTrade:addClosedTrade,
+    setHistory:setHistory,loadHistory:loadHistory,
+    setPriceFromChartVar:function(varName){setInterval(function(){var v=window[varName];if(typeof v==="number")updatePrice(v);},250);}
+  };
   render();ensureTimer();
 })();
 </script>
 
-<!-- chart.js -->
-<script type="module" src="chart.js"></script>
-</body></html>
+<!-- ============================================================
+     Main Chart Script
+     ============================================================ -->
+<script type="module" src="./script.js"></script>
+</body>
+</html>
