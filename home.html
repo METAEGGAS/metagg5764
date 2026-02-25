@@ -13,17 +13,6 @@
 .balance-content{display:flex;flex-direction:column;min-width:0}
 .balance-arrow{display:flex;align-items:center;justify-content:center;color:#8b9cb5;font-size:16px;transition:transform .2s}
 .balance-box.open .balance-arrow{transform:rotate(180deg)}
-.accMenu{position:absolute;top:calc(100% + 8px);right:0;width:260px;background:linear-gradient(145deg,#101a2f 0%,#0d1117 100%);border:2px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;padding:10px;z-index:99999;display:none}
-.accMenu.show{display:block}
-.accSwitch{display:flex;gap:8px;background:#0d1117;border-radius:10px;padding:4px;margin-bottom:12px}
-.accSwitchBtn{flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:900;transition:.2s;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px;background:transparent;color:#fff;cursor:pointer}
-.accSwitchBtn.live{color:#00ff41}.accSwitchBtn.demo{color:#ffd700}.accSwitchBtn.active{background:rgba(255,255,255,.1);border-color:currentColor}
-.accItem{background:rgba(255,255,255,.03);border:1.3px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 12px;margin-bottom:9px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.accItem.active{background:linear-gradient(135deg,rgba(66,153,225,.15) 0%,rgba(49,130,206,.1) 100%);border-color:#4299e1;box-shadow:0 0 12px rgba(66,153,225,.2)}
-.accL{display:flex;align-items:center;gap:10px;min-width:0}
-.accIco{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
-.accAmt{font-size:16px;font-weight:1000;color:#fff;white-space:nowrap}
-.refillBtn{width:100%;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);border:0;border-radius:10px;padding:10px;font-size:12px;font-weight:1000;color:#fff;letter-spacing:.5px;box-shadow:0 4px 12px rgba(66,153,225,.4);cursor:pointer}
 .wallet-btn{width:38px;height:38px;background:#16a34a;border-radius:8px;border:2px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden}
 .wallet-btn img{width:100%;height:100%;display:block;object-fit:cover}
 .time-display{position:absolute;left:8px;top:calc(100% + 8px);font-size:11px;color:#8b9cb5;font-weight:700;letter-spacing:.4px;background:rgba(15,29,53,.95);padding:6px 12px;border-radius:6px;z-index:180;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:6px}
@@ -85,7 +74,6 @@
 .loading-spinner{width:50px;height:50px;border:4px solid rgba(59,130,246,.3);border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-text{color:#fff;font-size:14px;font-weight:600}
-
 /* ===== Pair HUD + Panel ===== */
 .pair-box{position:absolute;left:8px;bottom:32px;z-index:175;display:inline-flex;align-items:center;gap:6.6px;background:#0f1d35;border:1.1px solid rgba(255,255,255,.12);border-radius:11px;padding:5.5px 9.9px;cursor:pointer;user-select:none;backdrop-filter:blur(8px)}
 .pair-box .flags{display:flex;align-items:center;margin-inline:2px}
@@ -105,7 +93,6 @@
 .fg img{width:24.2px;height:24.2px;border-radius:999px;border:2.2px solid #101a2f;margin-left:-8.8px;background:#101a2f;object-fit:cover}
 .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:1000}
 .bad{margin-inline-start:6.6px;padding:2.2px 6.6px;border-radius:999px;background:rgba(255,255,255,.08);border:1.1px solid rgba(255,255,255,.12);font-size:11px;font-weight:1000}
-
 /* ===== سجل الصفقات ===== */
 :root{--histH:30vh}
 #hb{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);z-index:99996;display:none}
@@ -122,15 +109,11 @@
 #hs .hhR{display:flex;justify-content:flex-end}
 #hs .hhR button{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#b8c3d6;font-size:18px;font-weight:900;cursor:pointer}
 #hs .hlst{height:calc(100% - 44px);overflow:auto;padding-top:6px}
-
-/* صفوف التاب */
 #hs .htabs{display:flex;gap:4px;padding:6px 12px 4px;border-bottom:1px solid #2e384b;background:#1a2330}
 #hs .htab{flex:1;padding:5px 8px;border-radius:7px;font-size:10.5px;font-weight:900;letter-spacing:.3px;background:transparent;border:1px solid rgba(255,255,255,.10);color:#6b7a94;cursor:pointer;transition:.2s;text-align:center}
 #hs .htab.active{background:rgba(46,123,239,.18);border-color:#2e7bef;color:#e9eef7}
 #hs .htab .tc{display:inline-block;min-width:16px;height:16px;border-radius:999px;background:#3a465c;font-size:10px;font-weight:900;line-height:16px;text-align:center;margin-inline-start:4px;padding:0 3px}
 #hs .htab.active .tc{background:#2e7bef}
-
-/* صف صفقة مفتوحة */
 #hs .hrw{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;background:#242d3e;border-top:1px solid #2e384b}
 #hs .hrw:first-child{border-top:0}
 #hs .lft{display:flex;gap:10px;min-width:0;align-items:flex-start}
@@ -152,15 +135,11 @@
 #hs .amt .d span{font-size:16px;line-height:1}
 #hs .amt .d.up span{color:#22c55e}
 #hs .amt .d.dn span{color:#e15353}
-
-/* صف صفقة منتهية */
 #hs .hrw.closed{background:#1e2a3a}
 #hs .hrw.closed .tm{font-size:13px;color:#8b9cb5}
 #hs .result-badge{font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;letter-spacing:.4px;margin-top:2px;display:inline-block}
 #hs .result-badge.win{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
 #hs .result-badge.loss{background:rgba(225,83,83,.15);color:#e15353;border:1px solid rgba(225,83,83,.3)}
-
-/* رسالة فارغ */
 #hs .empty-msg{text-align:center;padding:28px 20px;color:#6b7a94;font-size:13px;line-height:1.7}
 #hs .empty-msg span{font-size:26px;display:block;margin-bottom:8px;opacity:.5}
 </style></head><body>
@@ -171,18 +150,10 @@
     <div class="balance-box" id="balanceBox" aria-label="Account Switcher">
       <div class="balance-main">
         <img class="acc-top-icon" id="topAccIcon" src="https://flagcdn.com/w40/us.png" alt="account">
-        <div class="balance-content"><div class="balance-label" id="balLabel">QT Real USD</div><div class="balance-amount" id="balAmount">$10,000.00</div></div>
+        <div class="balance-content"><div class="balance-label" id="balLabel">QT Demo USD</div><div class="balance-amount" id="balAmount">$10,000.00</div></div>
       </div>
       <div class="balance-arrow" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="#8b9cb5"><path d="M7 10l5 5 5-5z"></path></svg></div>
-      <div class="accMenu" id="accMenu">
-        <div class="accSwitch">
-          <button class="accSwitchBtn live active" data-acc="real" type="button">LIVE</button>
-          <button class="accSwitchBtn demo" data-acc="demo" type="button">Demo</button>
-        </div>
-        <div class="accItem active" data-type="real"><div class="accL"><img class="accIco" src="https://flagcdn.com/w40/us.png" alt="USD"><div class="accAmt" id="realAmt">$10,000.00</div></div></div>
-        <div class="accItem" data-type="demo"><div class="accL"><img class="accIco" src="https://cdn-icons-png.flaticon.com/128/1344/1344761.png" alt="Demo"><div class="accAmt" id="demoAmt">$10,000.00</div></div></div>
-        <button class="refillBtn" id="refillBtn" type="button">🔄 Refill Demo Account</button>
-      </div>
+      <!-- القائمة هيتعملها Inject من chart.js (qtAccMenu) -->
     </div>
   </div>
   <div class="header-center">
@@ -240,106 +211,21 @@
 
 <div class="pairPanel" id="pairPanel"><div class="pairHead"><b>الازواج</b><button class="pairClose" id="pairClose" type="button">×</button></div><div class="pairList" id="pairList"></div></div>
 
-<!-- ============================================================
-     سجل الصفقات - لوحة منزلقة
-     ============================================================ -->
 <div id="hb"></div>
 <div id="hs">
-  <!-- رأس اللوحة -->
   <div class="hh">
-    <div class="hhL">
-      <span class="ic" id="hOpenCnt">0</span>
-      <span class="ic">🕒</span>
-    </div>
-    <div class="hhC">
-      <span class="bdg" id="hCnt">0</span>
-      <span class="ttl">التداولات</span>
-    </div>
+    <div class="hhL"><span class="ic" id="hOpenCnt">0</span><span class="ic">🕒</span></div>
+    <div class="hhC"><span class="bdg" id="hCnt">0</span><span class="ttl">التداولات</span></div>
     <div class="hhR"><button id="hX" type="button">×</button></div>
   </div>
-  <!-- تابات: مفتوحة / منتهية -->
   <div class="htabs">
     <button class="htab active" id="htabOpen" type="button">مفتوحة <span class="tc" id="tcOpen">0</span></button>
     <button class="htab" id="htabClosed" type="button">منتهية <span class="tc" id="tcClosed">0</span></button>
   </div>
-  <!-- القائمة -->
   <div class="hlst" id="hList"></div>
 </div>
 
-<!-- ============================================================
-     Firebase + Account Switcher
-     ============================================================ -->
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import{getAnalytics}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
-import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-const firebaseConfig={apiKey:"AIzaSyBOUqLixfphg3b8hajc4hkwV-VJmldGBVw",authDomain:"randers-c640b.firebaseapp.com",projectId:"randers-c640b",storageBucket:"randers-c640b.firebasestorage.app",messagingSenderId:"391496092929",appId:"1:391496092929:web:58208b4eb3e6f9a8571f00",measurementId:"G-DBDSVVF7PS"};
-const app=initializeApp(firebaseConfig);try{getAnalytics(app)}catch(e){}const auth=getAuth(app),db=getFirestore(app);
-(function(){
-var balanceBox=document.getElementById("balanceBox");if(!balanceBox)return;
-var accMenu=document.getElementById("accMenu"),refillBtn=document.getElementById("refillBtn");
-var demoAmtEl=document.getElementById("demoAmt"),realAmtEl=document.getElementById("realAmt");
-var balLabel=document.getElementById("balLabel"),balAmount=document.getElementById("balAmount"),topAccIcon=document.getElementById("topAccIcon");
-var avatarImg=document.getElementById("userAvatarImg"),defaultAvatarSrc=avatarImg?avatarImg.src:"";
-var activeAcc="real",uRef=null,unsub=null,realBal=0,demoBal=10000;
-function fmt(n){try{return new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)}catch(e){return (Math.round(n*100)/100).toFixed(2)}}
-function toNum(v,def){if(typeof v==="number"&&isFinite(v))return v;if(typeof v==="string"){var n=parseFloat(v.replace(/[^0-9.\-]/g,""));return isFinite(n)?n:def}return def}
-function renderAmounts(){if(realAmtEl)realAmtEl.textContent="$"+fmt(realBal);if(demoAmtEl)demoAmtEl.textContent="$"+fmt(demoBal)}
-function updateTopBar(){
-renderAmounts();
-var amountTxt=(activeAcc==="real")?"$"+fmt(realBal):"$"+fmt(demoBal);
-if(balAmount)balAmount.textContent=amountTxt;
-if(balLabel)balLabel.textContent=(activeAcc==="real")?"QT Real USD":"QT Demo USD";
-if(topAccIcon)topAccIcon.src=(activeAcc==="real")?"https://flagcdn.com/w40/us.png":"https://cdn-icons-png.flaticon.com/128/1344/1344761.png";
-document.querySelectorAll(".accSwitchBtn").forEach(function(btn){btn.classList.toggle("active",(btn.dataset.acc||"demo")===activeAcc)});
-document.querySelectorAll(".accItem").forEach(function(it){it.classList.toggle("active",(it.dataset.type||"demo")===activeAcc)});
-}
-function openMenu(){if(accMenu)accMenu.classList.add("show");balanceBox.classList.add("open")}
-function closeMenu(){if(accMenu)accMenu.classList.remove("show");balanceBox.classList.remove("open")}
-function toggleMenu(){if(!accMenu)return;accMenu.classList.contains("show")?closeMenu():openMenu()}
-balanceBox.addEventListener("click",function(e){if(e.target&&e.target.closest&&e.target.closest("#accMenu"))return;e.stopPropagation();toggleMenu()});
-document.addEventListener("click",function(e){if(!e.target||!e.target.closest||!e.target.closest("#balanceBox"))closeMenu()});
-if(accMenu)accMenu.addEventListener("click",function(e){e.stopPropagation()});
-document.querySelectorAll(".accSwitchBtn").forEach(function(btn){btn.addEventListener("click",function(){activeAcc=btn.dataset.acc||"demo";updateTopBar();closeMenu()})});
-document.querySelectorAll(".accItem").forEach(function(it){it.addEventListener("click",function(){activeAcc=it.dataset.type||"demo";updateTopBar();closeMenu()})});
-if(refillBtn)refillBtn.addEventListener("click",async function(){
-demoBal=10000;renderAmounts();updateTopBar();
-if(uRef)try{await updateDoc(uRef,{demobalance:10000})}catch(e){try{await setDoc(uRef,{demobalance:10000},{merge:true})}catch(_){}} 
-refillBtn.textContent="✅";setTimeout(function(){refillBtn.textContent="🔄 Refill Demo Account"},900);
-});
-function applyUserData(d){
-realBal=toNum(d&&d.balance,0);demoBal=toNum(d&&d.demobalance,10000);
-var av=(d&&d.avatar)?String(d.avatar).trim():"";
-if(avatarImg)avatarImg.src=av?av:defaultAvatarSrc;
-updateTopBar();
-}
-async function ensureFields(user){
-uRef=doc(db,"users",user.uid);
-var defaults={email:user.email||"",balance:0,demobalance:10000,avatar:""};
-var snap=await getDoc(uRef);
-if(!snap.exists()){await setDoc(uRef,defaults);return defaults;}
-var data=snap.data()||{},patch={};
-if(data.email==null&&user.email)patch.email=user.email;
-if(data.balance==null)patch.balance=0;
-if(data.demobalance==null)patch.demobalance=10000;
-if(data.avatar==null)patch.avatar="";
-if(Object.keys(patch).length)await setDoc(uRef,patch,{merge:true});
-return Object.assign({},defaults,data,patch);
-}
-onAuthStateChanged(auth,async function(user){
-if(unsub){try{unsub()}catch(e){}unsub=null}
-if(!user||!user.email){uRef=null;applyUserData({balance:0,demobalance:10000,avatar:""});return;}
-try{var base=await ensureFields(user);applyUserData(base);unsub=onSnapshot(uRef,function(s){if(s.exists())applyUserData(s.data()||{})});}
-catch(e){uRef=null;applyUserData({balance:0,demobalance:10000,avatar:""})}
-});
-updateTopBar();
-})();
-</script>
-
-<!-- ============================================================
-     Pair switch UI
-     ============================================================ -->
+<!-- Pair switch UI -->
 <script>
 (function(){
 var hud=document.getElementById("pairHud"),panel=document.getElementById("pairPanel"),closeBtn=document.getElementById("pairClose"),list=document.getElementById("pairList");
@@ -378,274 +264,105 @@ render();
 })();
 </script>
 
-<!-- ============================================================
-     سجل الصفقات — منطق متكامل مع Firebase
-     ============================================================ -->
+<!-- سجل الصفقات -->
 <script>
 (function(){
-  /* ── العناصر ── */
-  var hb  = document.getElementById("hb");
-  var hs  = document.getElementById("hs");
-  var xBtn= document.getElementById("hX");
-  var btn = document.getElementById("openHistory");
-  var nav = document.getElementById("navHistory");
-  var lst = document.getElementById("hList");
-  var cnt = document.getElementById("hCnt");           /* شارة الرأس الكلية */
-  var hOpenCnt = document.getElementById("hOpenCnt"); /* عدد المفتوحة في الأيقونة */
-  var tcOpen   = document.getElementById("tcOpen");   /* تاب مفتوحة */
-  var tcClosed = document.getElementById("tcClosed"); /* تاب منتهية */
-  var tabOpen  = document.getElementById("htabOpen");
-  var tabClosed= document.getElementById("htabClosed");
+  var hb=document.getElementById("hb"),hs=document.getElementById("hs"),xBtn=document.getElementById("hX"),btn=document.getElementById("openHistory"),nav=document.getElementById("navHistory");
+  var lst=document.getElementById("hList"),cnt=document.getElementById("hCnt"),hOpenCnt=document.getElementById("hOpenCnt"),tcOpen=document.getElementById("tcOpen"),tcClosed=document.getElementById("tcClosed");
+  var tabOpen=document.getElementById("htabOpen"),tabClosed=document.getElementById("htabClosed");
   if(!hb||!hs||!lst) return;
 
-  /* ── الحالة ── */
-  var state = {
-    openTrades:   [],   /* صفقات مفتوحة  */
-    closedTrades: [],   /* صفقات منتهية  */
-    price: null,
-    timer: null,
-    activeTab: "open"   /* "open" | "closed" */
-  };
+  var state={openTrades:[],closedTrades:[],price:null,timer:null,activeTab:"open"};
+  var F=function(cc){return "https://flagcdn.com/w40/"+cc+".png";};
+  function z(n){return(n<10?"0":"")+n;}
+  function fmtCountdown(sec){sec=Math.max(0,sec|0);var h=(sec/3600)|0,m=((sec%3600)/60)|0,s=sec%60;return z(h)+":"+z(m)+":"+z(s);}
+  function fmtCloseTime(ts){if(!ts)return"--:--";var d=new Date(ts);return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());}
+  function num(x,d){x=+x;return isFinite(x)?x:d;}
+  function fmt2(x){return(Math.round(num(x,0)*100)/100).toFixed(2);}
 
-  /* ── مساعدات ── */
-  var F   = function(cc){ return "https://flagcdn.com/w40/"+cc+".png"; };
-  function z(n){ return (n<10?"0":"")+n; }
-  function fmtCountdown(sec){
-    sec=Math.max(0,sec|0);
-    var h=(sec/3600)|0, m=((sec%3600)/60)|0, s=sec%60;
-    return z(h)+":"+z(m)+":"+z(s);
-  }
-  function fmtCloseTime(ts){
-    if(!ts) return "--:--";
-    var d=new Date(ts);
-    return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());
-  }
-  function num(x,d){ x=+x; return isFinite(x)?x:d; }
-  function fmt2(x){ return (Math.round(num(x,0)*100)/100).toFixed(2); }
-
-  /* ── بناء صف صفقة مفتوحة ── */
   function rowOpen(t){
-    var p     = state.price;
-    var entry = num(t.entry,null);
-    var pv    = {v:0, pos:false};
-    if(p!=null && entry!=null){
-      var dir = (t.dir||"down")==="up" ? "up":"down";
-      var ok  = (dir==="up")?(p>=entry):(p<=entry);
-      pv = ok ? {v:num(t.stake,10)*num(t.payout,0.85), pos:true} : {v:0, pos:false};
-    }
-    var dir = (t.dir||"down")==="up" ? "up":"dn";
-    return(
-      '<div class="hrw" data-id="'+(t.id||"")+'">'+
-        '<div class="lft"><span class="car">▾</span>'+
-          '<div>'+
-            '<div class="tm">'+fmtCountdown(num(t.remain,60))+'</div>'+
-            '<div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="rgt">'+
-          '<div class="pr">'+
-            '<span class="pair">'+(t.pair||"---")+'</span>'+
-            '<span class="flg">'+
-              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
-              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
-            '</span>'+
-          '</div>'+
-          '<div class="amt">'+
-            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
-            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
-          '</div>'+
-        '</div>'+
-      '</div>'
-    );
+    var p=state.price,entry=num(t.entry,null),pv={v:0,pos:false};
+    if(p!=null&&entry!=null){var dir=(t.dir||"down")==="up"?"up":"down";var ok=(dir==="up")?(p>=entry):(p<=entry);pv=ok?{v:num(t.stake,10)*num(t.payout,0.85),pos:true}:{v:0,pos:false};}
+    var dir=(t.dir||"down")==="up"?"up":"dn";
+    return'<div class="hrw" data-id="'+(t.id||"")+'"><div class="lft"><span class="car">▾</span><div><div class="tm">'+fmtCountdown(num(t.remain,60))+'</div><div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span></div></div></div>';
   }
 
-  /* ── بناء صف صفقة منتهية ── */
   function rowClosed(t){
-    var pl    = num(t.profitLoss||t.profit, 0);
-    var isWin = (t.result==="win") || pl>0;
-    var dir   = (t.dir||"down")==="up" ? "up":"dn";
-    var timeStr = fmtCloseTime(t.closedAt || t.openTime);
-    var plTxt = isWin ? "+"+fmt2(Math.abs(pl)) : "-"+fmt2(Math.abs(pl));
-    var carIco= isWin
-      ? '<span class="car" style="color:#22c55e;font-size:18px">✓</span>'
-      : '<span class="car" style="color:#e15353;font-size:18px">✗</span>';
-    return(
-      '<div class="hrw closed" data-id="'+(t.id||"")+'">'+
-        '<div class="lft">'+carIco+
-          '<div>'+
-            '<div class="tm">'+timeStr+'</div>'+
-            '<div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div>'+
-          '</div>'+
-        '</div>'+
-        '<div class="rgt">'+
-          '<div class="pr">'+
-            '<span class="pair">'+(t.pair||"---")+'</span>'+
-            '<span class="flg">'+
-              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
-              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
-            '</span>'+
-          '</div>'+
-          '<div class="amt">'+
-            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
-            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
-          '</div>'+
-          '<div>'+
-            '<span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN ✓':'LOSS ✗')+'</span>'+
-          '</div>'+
-        '</div>'+
-      '</div>'
-    );
+    var pl=num(t.profitLoss||t.profit,0),isWin=(t.result==="win")||pl>0,dir=(t.dir||"down")==="up"?"up":"dn";
+    var timeStr=fmtCloseTime(t.closedAt||t.openTime),plTxt=isWin?"+"+fmt2(Math.abs(pl)):"-"+fmt2(Math.abs(pl));
+    var carIco=isWin?'<span class="car" style="color:#22c55e;font-size:18px">✓</span>':'<span class="car" style="color:#e15353;font-size:18px">✗</span>';
+    return'<div class="hrw closed" data-id="'+(t.id||"")+'"><div class="lft">'+carIco+'<div><div class="tm">'+timeStr+'</div><div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"---")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"us")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span></div><div><span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN ✓':'LOSS ✗')+'</span></div></div></div>';
   }
 
-  /* ── إعادة الرسم ── */
   function render(){
-    /* تحديث الأعداد */
-    var nOpen   = state.openTrades.length;
-    var nClosed = state.closedTrades.length;
-    var nTotal  = nOpen + nClosed;
+    var nOpen=state.openTrades.length,nClosed=state.closedTrades.length,nTotal=nOpen+nClosed;
+    if(cnt)cnt.textContent=String(nTotal);
+    if(hOpenCnt)hOpenCnt.textContent=String(nOpen);
+    if(tcOpen)tcOpen.textContent=String(nOpen);
+    if(tcClosed)tcClosed.textContent=String(nClosed);
 
-    if(cnt)      cnt.textContent      = String(nTotal);
-    if(hOpenCnt) hOpenCnt.textContent = String(nOpen);
-    if(tcOpen)   tcOpen.textContent   = String(nOpen);
-    if(tcClosed) tcClosed.textContent = String(nClosed);
-
-    /* رسم القائمة حسب التاب النشطة */
-    var html = "";
-    if(state.activeTab === "open"){
-      if(nOpen === 0){
-        html = '<div class="empty-msg"><span>📂</span>لا توجد صفقات مفتوحة حالياً</div>';
-      } else {
-        html = state.openTrades.map(rowOpen).join("");
-      }
-    } else {
-      if(nClosed === 0){
-        html = '<div class="empty-msg"><span>📜</span>لا يوجد سجل صفقات منتهية بعد</div>';
-      } else {
-        html = state.closedTrades.map(rowClosed).join("");
-      }
+    var html="";
+    if(state.activeTab==="open"){
+      html=nOpen===0?'<div class="empty-msg"><span>📂</span>لا توجد صفقات مفتوحة حالياً</div>':state.openTrades.map(rowOpen).join("");
+    }else{
+      html=nClosed===0?'<div class="empty-msg"><span>📜</span>لا يوجد سجل صفقات منتهية بعد</div>':state.closedTrades.map(rowClosed).join("");
     }
-    lst.innerHTML = html;
+    lst.innerHTML=html;
   }
 
-  /* ── تيك كل ثانية للمفتوحة ── */
-  function tick(){
-    state.openTrades.forEach(function(t){
-      if(t.open===false) return;
-      t.remain = Math.max(0, num(t.remain,0)-1);
-    });
-    if(state.activeTab==="open") render();
-  }
-  function ensureTimer(){
-    if(state.timer) return;
-    state.timer = setInterval(tick, 1000);
-  }
+  function tick(){state.openTrades.forEach(function(t){if(t.open===false)return;t.remain=Math.max(0,num(t.remain,0)-1);});if(state.activeTab==="open")render();}
+  function ensureTimer(){if(state.timer)return;state.timer=setInterval(tick,1000);}
 
-  /* ── فتح / إغلاق اللوحة ── */
-  function openPanel(){ hb.classList.add("on"); hs.classList.add("on"); }
-  function closePanel(){ hb.classList.remove("on"); hs.classList.remove("on"); }
-  function toggle(){ hs.classList.contains("on") ? closePanel() : openPanel(); }
+  function openPanel(){hb.classList.add("on");hs.classList.add("on");}
+  function closePanel(){hb.classList.remove("on");hs.classList.remove("on");}
+  function toggle(){hs.classList.contains("on")?closePanel():openPanel();}
 
-  /* ── API: صفقات مفتوحة ── */
-  function setTrades(arr){
-    state.openTrades = (Array.isArray(arr)?arr:[]).slice();
-    render(); ensureTimer();
-  }
-  function getTrades(){ return state.openTrades.slice(); }
-  function updateTrade(id, patch){
-    var t = state.openTrades.find(function(x){ return String(x.id)===String(id); });
-    if(!t) return;
-    for(var k in patch) t[k]=patch[k];
-    render();
-  }
-  function updatePrice(p){ state.price = num(p,null); if(state.activeTab==="open") render(); }
+  function setTrades(arr){state.openTrades=(Array.isArray(arr)?arr:[]).slice();render();ensureTimer();}
+  function getTrades(){return state.openTrades.slice();}
+  function updateTrade(id,patch){var t=state.openTrades.find(function(x){return String(x.id)===String(id);});if(!t)return;for(var k in patch)t[k]=patch[k];render();}
+  function updatePrice(p){state.price=num(p,null);if(state.activeTab==="open")render();}
 
-  /* ── API: صفقة منتهية واحدة ── */
-  function addClosedTrade(trade){
-    if(!trade) return;
-    /* إزالة من المفتوحة */
-    state.openTrades = state.openTrades.filter(function(t){ return String(t.id)!==String(trade.id); });
-    /* إضافة للمنتهية (بدون تكرار) */
-    var exists = state.closedTrades.find(function(t){ return String(t.id)===String(trade.id); });
-    if(!exists) state.closedTrades.unshift(trade);
-    render();
-    /* ✅ انتقال تلقائي لتاب المنتهية عند إتمام صفقة */
-    switchTab("closed");
-  }
-
-  /* ── API: تحميل / ضبط كل السجل ── */
-  function setHistory(arr){
-    state.closedTrades = (Array.isArray(arr)?arr:[]).slice();
-    render();
-  }
-  function loadHistory(arr){ setHistory(arr); }
-  function addHistory(trade){ addClosedTrade(trade); }
-
-  /* ── تبديل التابات ── */
   function switchTab(tab){
-    state.activeTab = tab;
-    if(tabOpen)   tabOpen.classList.toggle("active",   tab==="open");
-    if(tabClosed) tabClosed.classList.toggle("active", tab==="closed");
+    state.activeTab=tab;
+    if(tabOpen)tabOpen.classList.toggle("active",tab==="open");
+    if(tabClosed)tabClosed.classList.toggle("active",tab==="closed");
     render();
   }
-  if(tabOpen)   tabOpen.addEventListener("click",   function(){ switchTab("open"); });
-  if(tabClosed) tabClosed.addEventListener("click", function(){ switchTab("closed"); });
+  if(tabOpen)tabOpen.addEventListener("click",function(){switchTab("open");});
+  if(tabClosed)tabClosed.addEventListener("click",function(){switchTab("closed");});
 
-  /* ── أحداث الأزرار ── */
-  if(btn) btn.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
-  if(nav) nav.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
-  hb.addEventListener("click", closePanel);
-  if(xBtn) xBtn.addEventListener("click", closePanel);
-  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closePanel(); });
+  function addClosedTrade(trade){
+    if(!trade)return;
+    state.openTrades=state.openTrades.filter(function(t){return String(t.id)!==String(trade.id);});
+    var exists=state.closedTrades.find(function(t){return String(t.id)===String(trade.id);});
+    if(!exists)state.closedTrades.unshift(trade);
+    render();switchTab("closed");
+  }
+  function setHistory(arr){state.closedTrades=(Array.isArray(arr)?arr:[]).slice();render();}
+  function loadHistory(arr){setHistory(arr);}
+  function addHistory(trade){addClosedTrade(trade);}
 
-  /* ── مزامنة السعر من chart.js ── */
-  setInterval(function(){
-    if(typeof window.__qt_price==="number") updatePrice(window.__qt_price);
-  }, 250);
+  if(btn)btn.addEventListener("click",function(e){e.stopPropagation();toggle();});
+  if(nav)nav.addEventListener("click",function(e){e.stopPropagation();toggle();});
+  hb.addEventListener("click",closePanel);
+  if(xBtn)xBtn.addEventListener("click",closePanel);
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closePanel();});
 
-  /* ── ✅ الاستماع لأحداث chart.js ── */
+  setInterval(function(){if(typeof window.__qt_price==="number")updatePrice(window.__qt_price);},250);
 
-  /* صفقة أُغلقت للتو */
-  window.addEventListener("qt_trade_closed", function(e){
-    if(e && e.detail && e.detail.trade){
-      addClosedTrade(e.detail.trade);
-    }
-  });
-
-  /* تحميل السجل الكامل من Firebase بعد تسجيل الدخول */
-  window.addEventListener("qt_history_loaded", function(e){
-    if(e && e.detail && Array.isArray(e.detail)){
+  window.addEventListener("qt_trade_closed",function(e){if(e&&e.detail&&e.detail.trade)addClosedTrade(e.detail.trade);});
+  window.addEventListener("qt_history_loaded",function(e){
+    if(e&&e.detail&&Array.isArray(e.detail)){
       setHistory(e.detail);
-      /* إذا كان السجل يحتوي صفقات، انتقل لتاب المنتهية */
-      if(e.detail.length > 0) switchTab("closed");
+      if(e.detail.length>0)switchTab("closed");
     }
   });
 
-  /* ── الـ API العامة ── */
-  window.tradeHistory = {
-    open:  openPanel,
-    close: closePanel,
-    toggle: toggle,
-    setTrades:      setTrades,
-    getTrades:      getTrades,
-    updateTrade:    updateTrade,
-    updatePrice:    updatePrice,
-    addHistory:     addHistory,
-    addClosedTrade: addClosedTrade,
-    setHistory:     setHistory,
-    loadHistory:    loadHistory,
-    setPriceFromChartVar: function(varName){
-      setInterval(function(){ var v=window[varName]; if(typeof v==="number") updatePrice(v); }, 250);
-    }
-  };
-
-  /* ── تهيئة أولية ── */
-  render();
-  ensureTimer();
+  window.tradeHistory={open:openPanel,close:closePanel,toggle:toggle,setTrades:setTrades,getTrades:getTrades,updateTrade:updateTrade,updatePrice:updatePrice,addHistory:addHistory,addClosedTrade:addClosedTrade,setHistory:setHistory,loadHistory:loadHistory,setPriceFromChartVar:function(varName){setInterval(function(){var v=window[varName];if(typeof v==="number")updatePrice(v);},250);}};
+  render();ensureTimer();
 })();
 </script>
 
-<!-- ============================================================
-     Chart.js
-     ============================================================ -->
+<!-- chart.js -->
 <script type="module" src="chart.js"></script>
 </body></html>
