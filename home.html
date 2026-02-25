@@ -106,10 +106,10 @@
 .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:1000}
 .bad{margin-inline-start:6.6px;padding:2.2px 6.6px;border-radius:999px;background:rgba(255,255,255,.08);border:1.1px solid rgba(255,255,255,.12);font-size:11px;font-weight:1000}
 
-/* ===== سجل الصفقات (مطابق روح الصورة + ديناميكي) ===== */
-:root{--histH:30vh}/* كان 20vh - كده طالع لفوق أكبر */
+/* ===== سجل الصفقات ===== */
+:root{--histH:30vh}
 #hb{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);z-index:99996;display:none}
-#hs{position:fixed;left:0;right:0;bottom:0;height:var(--histH);min-height:190px;max-height:330px;background:#1f2736;color:#e9eef7;z-index:99997;transform:translateY(105%);transition:transform .22s ease;border-top:1px solid #2e384b;box-shadow:0 -10px 30px rgba(0,0,0,.55)}
+#hs{position:fixed;left:0;right:0;bottom:0;height:var(--histH);min-height:190px;max-height:360px;background:#1f2736;color:#e9eef7;z-index:99997;transform:translateY(105%);transition:transform .22s ease;border-top:1px solid #2e384b;box-shadow:0 -10px 30px rgba(0,0,0,.55)}
 #hs.on{transform:translateY(0)}
 #hb.on{display:block}
 #hs .hh{height:44px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 12px;background:#1f2736;border-bottom:1px solid #2e384b;position:relative}
@@ -121,8 +121,17 @@
 #hs .hhC .bdg{min-width:22px;height:22px;border-radius:999px;background:#3a465c;display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff}
 #hs .hhR{display:flex;justify-content:flex-end}
 #hs .hhR button{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#b8c3d6;font-size:18px;font-weight:900;cursor:pointer}
-#hs .hlst{height:calc(100% - 44px);overflow:auto;padding-top:10px}/* مسافة فوق أكبر شوية */
-#hs .hrw{display:flex;justify-content:space-between;gap:12px;padding:12px 14px;background:#242d3e;border-top:1px solid #2e384b}
+#hs .hlst{height:calc(100% - 44px);overflow:auto;padding-top:6px}
+
+/* صفوف التاب */
+#hs .htabs{display:flex;gap:4px;padding:6px 12px 4px;border-bottom:1px solid #2e384b;background:#1a2330}
+#hs .htab{flex:1;padding:5px 8px;border-radius:7px;font-size:10.5px;font-weight:900;letter-spacing:.3px;background:transparent;border:1px solid rgba(255,255,255,.10);color:#6b7a94;cursor:pointer;transition:.2s;text-align:center}
+#hs .htab.active{background:rgba(46,123,239,.18);border-color:#2e7bef;color:#e9eef7}
+#hs .htab .tc{display:inline-block;min-width:16px;height:16px;border-radius:999px;background:#3a465c;font-size:10px;font-weight:900;line-height:16px;text-align:center;margin-inline-start:4px;padding:0 3px}
+#hs .htab.active .tc{background:#2e7bef}
+
+/* صف صفقة مفتوحة */
+#hs .hrw{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;background:#242d3e;border-top:1px solid #2e384b}
 #hs .hrw:first-child{border-top:0}
 #hs .lft{display:flex;gap:10px;min-width:0;align-items:flex-start}
 #hs .car{color:#b7c2d6;font-size:16px;line-height:1;margin-top:2px}
@@ -143,6 +152,17 @@
 #hs .amt .d span{font-size:16px;line-height:1}
 #hs .amt .d.up span{color:#22c55e}
 #hs .amt .d.dn span{color:#e15353}
+
+/* صف صفقة منتهية */
+#hs .hrw.closed{background:#1e2a3a}
+#hs .hrw.closed .tm{font-size:13px;color:#8b9cb5}
+#hs .result-badge{font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;letter-spacing:.4px;margin-top:2px;display:inline-block}
+#hs .result-badge.win{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+#hs .result-badge.loss{background:rgba(225,83,83,.15);color:#e15353;border:1px solid rgba(225,83,83,.3)}
+
+/* رسالة فارغ */
+#hs .empty-msg{text-align:center;padding:28px 20px;color:#6b7a94;font-size:13px;line-height:1.7}
+#hs .empty-msg span{font-size:26px;display:block;margin-bottom:8px;opacity:.5}
 </style></head><body>
 <div class="loading-overlay" id="loadingOverlay"><div class="loading-content"><div class="loading-spinner"></div><div class="loading-text">جاري تحميل البيانات...</div></div></div>
 
@@ -220,18 +240,35 @@
 
 <div class="pairPanel" id="pairPanel"><div class="pairHead"><b>الازواج</b><button class="pairClose" id="pairClose" type="button">×</button></div><div class="pairList" id="pairList"></div></div>
 
-<!-- سجل الصفقات -->
+<!-- ============================================================
+     سجل الصفقات - لوحة منزلقة
+     ============================================================ -->
 <div id="hb"></div>
 <div id="hs">
+  <!-- رأس اللوحة -->
   <div class="hh">
-    <div class="hhL"><span class="ic">0</span><span class="ic">🕒</span></div>
-    <div class="hhC"><span class="bdg" id="hCnt">2</span><span class="ttl">التداولات</span></div>
+    <div class="hhL">
+      <span class="ic" id="hOpenCnt">0</span>
+      <span class="ic">🕒</span>
+    </div>
+    <div class="hhC">
+      <span class="bdg" id="hCnt">0</span>
+      <span class="ttl">التداولات</span>
+    </div>
     <div class="hhR"><button id="hX" type="button">×</button></div>
   </div>
+  <!-- تابات: مفتوحة / منتهية -->
+  <div class="htabs">
+    <button class="htab active" id="htabOpen" type="button">مفتوحة <span class="tc" id="tcOpen">0</span></button>
+    <button class="htab" id="htabClosed" type="button">منتهية <span class="tc" id="tcClosed">0</span></button>
+  </div>
+  <!-- القائمة -->
   <div class="hlst" id="hList"></div>
 </div>
 
-<!-- Firebase + Account Switcher -->
+<!-- ============================================================
+     Firebase + Account Switcher
+     ============================================================ -->
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import{getAnalytics}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
@@ -300,7 +337,9 @@ updateTopBar();
 })();
 </script>
 
-<!-- Pair switch UI -->
+<!-- ============================================================
+     Pair switch UI
+     ============================================================ -->
 <script>
 (function(){
 var hud=document.getElementById("pairHud"),panel=document.getElementById("pairPanel"),closeBtn=document.getElementById("pairClose"),list=document.getElementById("pairList");
@@ -339,60 +378,274 @@ render();
 })();
 </script>
 
-<!-- Trade History Logic + Dynamic API -->
+<!-- ============================================================
+     سجل الصفقات — منطق متكامل مع Firebase
+     ============================================================ -->
 <script>
 (function(){
-var hb=document.getElementById("hb"),hs=document.getElementById("hs"),x=document.getElementById("hX"),btn=document.getElementById("openHistory"),nav=document.getElementById("navHistory"),lst=document.getElementById("hList"),cnt=document.getElementById("hCnt");
-if(!hb||!hs||!lst)return;
-var F=function(cc){return "https://flagcdn.com/w40/"+cc+".png"};
-var state={trades:[],price:null,timer:null};
-function z(n){return(n<10?"0":"")+n}
-function fmtTime(sec){sec=Math.max(0,sec|0);var h=(sec/3600)|0,m=((sec%3600)/60)|0,s=sec%60;return z(h)+":"+z(m)+":"+z(s)}
-function num(x,d){x=+x;return isFinite(x)?x:d}
-function fmt2(x){return(Math.round(num(x,0)*100)/100).toFixed(2)}
-function pnl(t){
-var p=state.price,entry=num(t.entry,null);if(p==null||entry==null)return{v:0,pos:false};
-var dir=(t.dir||"down")==="up"?"up":"down";
-var ok=(dir==="up")?(p>=entry):(p<=entry);
-return ok?{v:num(t.stake,10),pos:true}:{v:0,pos:false};
-}
-function render(){
-if(cnt)cnt.textContent=String(state.trades.length||0);
-lst.innerHTML=(state.trades||[]).map(function(t){
-var dir=(t.dir||"down")==="up"?"up":"dn",pv=pnl(t);
-return'<div class="hrw" data-id="'+(t.id||"")+'"><div class="lft"><span class="car">▾</span><div><div class="tm">'+fmtTime(num(t.remain,60))+'</div><div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div></div></div><div class="rgt"><div class="pr"><span class="pair">'+(t.pair||"USD/CAD (OTC)")+'</span><span class="flg"><img src="'+F((t.flags&&t.flags[0])||"ca")+'" alt=""><img src="'+F((t.flags&&t.flags[1])||"us")+'" alt=""></span></div><div class="amt"><span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"1,500")+'</span><span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span></div></div></div>';
-}).join("");
-}
-function tick(){state.trades.forEach(function(t){if(t.open===false)return;t.remain=Math.max(0,num(t.remain,0)-1)});render()}
-function ensureTimer(){if(state.timer)return;state.timer=setInterval(tick,1000)}
-function open(){hb.classList.add("on");hs.classList.add("on")}
-function close(){hb.classList.remove("on");hs.classList.remove("on")}
-function toggle(){hs.classList.contains("on")?close():open()}
-function setTrades(arr){state.trades=(Array.isArray(arr)?arr:[]).slice();render();ensureTimer()}
-function updateTrade(id,patch){var t=state.trades.find(function(x){return String(x.id)===String(id)});if(!t)return;for(var k in patch)t[k]=patch[k];render()}
-function updatePrice(p){state.price=num(p,null);render()}
+  /* ── العناصر ── */
+  var hb  = document.getElementById("hb");
+  var hs  = document.getElementById("hs");
+  var xBtn= document.getElementById("hX");
+  var btn = document.getElementById("openHistory");
+  var nav = document.getElementById("navHistory");
+  var lst = document.getElementById("hList");
+  var cnt = document.getElementById("hCnt");           /* شارة الرأس الكلية */
+  var hOpenCnt = document.getElementById("hOpenCnt"); /* عدد المفتوحة في الأيقونة */
+  var tcOpen   = document.getElementById("tcOpen");   /* تاب مفتوحة */
+  var tcClosed = document.getElementById("tcClosed"); /* تاب منتهية */
+  var tabOpen  = document.getElementById("htabOpen");
+  var tabClosed= document.getElementById("htabClosed");
+  if(!hb||!hs||!lst) return;
 
-/* افتراضي: صفقتين (صعود/هبوط) */
-setTrades([
-{id:"t1",dir:"up",pair:"USD/CAD (OTC)",flags:["ca","us"],amountTxt:"1,500",stake:10,entry:1.0000,remain:60,open:true},
-{id:"t2",dir:"down",pair:"USD/CAD (OTC)",flags:["ca","us"],amountTxt:"1,500",stake:10,entry:1.0000,remain:60,open:true}
-]);
+  /* ── الحالة ── */
+  var state = {
+    openTrades:   [],   /* صفقات مفتوحة  */
+    closedTrades: [],   /* صفقات منتهية  */
+    price: null,
+    timer: null,
+    activeTab: "open"   /* "open" | "closed" */
+  };
 
-/* فتح/قفل */
-if(btn)btn.addEventListener("click",function(e){e.stopPropagation();toggle()});
-if(nav)nav.addEventListener("click",function(e){e.stopPropagation();toggle()});
-hb.addEventListener("click",close);
-if(x)x.addEventListener("click",close);
-document.addEventListener("keydown",function(e){if(e.key==="Escape")close()});
+  /* ── مساعدات ── */
+  var F   = function(cc){ return "https://flagcdn.com/w40/"+cc+".png"; };
+  function z(n){ return (n<10?"0":"")+n; }
+  function fmtCountdown(sec){
+    sec=Math.max(0,sec|0);
+    var h=(sec/3600)|0, m=((sec%3600)/60)|0, s=sec%60;
+    return z(h)+":"+z(m)+":"+z(s);
+  }
+  function fmtCloseTime(ts){
+    if(!ts) return "--:--";
+    var d=new Date(ts);
+    return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());
+  }
+  function num(x,d){ x=+x; return isFinite(x)?x:d; }
+  function fmt2(x){ return (Math.round(num(x,0)*100)/100).toFixed(2); }
 
-/* ربط اختياري لو chart.js يحط السعر في متغير عالمي */
-setInterval(function(){if(typeof window.__qt_price==="number")updatePrice(window.__qt_price)},250);
+  /* ── بناء صف صفقة مفتوحة ── */
+  function rowOpen(t){
+    var p     = state.price;
+    var entry = num(t.entry,null);
+    var pv    = {v:0, pos:false};
+    if(p!=null && entry!=null){
+      var dir = (t.dir||"down")==="up" ? "up":"down";
+      var ok  = (dir==="up")?(p>=entry):(p<=entry);
+      pv = ok ? {v:num(t.stake,10)*num(t.payout,0.85), pos:true} : {v:0, pos:false};
+    }
+    var dir = (t.dir||"down")==="up" ? "up":"dn";
+    return(
+      '<div class="hrw" data-id="'+(t.id||"")+'">'+
+        '<div class="lft"><span class="car">▾</span>'+
+          '<div>'+
+            '<div class="tm">'+fmtCountdown(num(t.remain,60))+'</div>'+
+            '<div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="rgt">'+
+          '<div class="pr">'+
+            '<span class="pair">'+(t.pair||"---")+'</span>'+
+            '<span class="flg">'+
+              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
+              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
+            '</span>'+
+          '</div>'+
+          '<div class="amt">'+
+            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
+            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    );
+  }
 
-/* API خارجي */
-window.tradeHistory={open:open,close:close,toggle:toggle,setTrades:setTrades,updateTrade:updateTrade,updatePrice:updatePrice,getTrades:function(){return state.trades.slice()},setPriceFromChartVar:function(varName){setInterval(function(){var v=window[varName];if(typeof v==="number")updatePrice(v)},250)}};
+  /* ── بناء صف صفقة منتهية ── */
+  function rowClosed(t){
+    var pl    = num(t.profitLoss||t.profit, 0);
+    var isWin = (t.result==="win") || pl>0;
+    var dir   = (t.dir||"down")==="up" ? "up":"dn";
+    var timeStr = fmtCloseTime(t.closedAt || t.openTime);
+    var plTxt = isWin ? "+"+fmt2(Math.abs(pl)) : "-"+fmt2(Math.abs(pl));
+    var carIco= isWin
+      ? '<span class="car" style="color:#22c55e;font-size:18px">✓</span>'
+      : '<span class="car" style="color:#e15353;font-size:18px">✗</span>';
+    return(
+      '<div class="hrw closed" data-id="'+(t.id||"")+'">'+
+        '<div class="lft">'+carIco+
+          '<div>'+
+            '<div class="tm">'+timeStr+'</div>'+
+            '<div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="rgt">'+
+          '<div class="pr">'+
+            '<span class="pair">'+(t.pair||"---")+'</span>'+
+            '<span class="flg">'+
+              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
+              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
+            '</span>'+
+          '</div>'+
+          '<div class="amt">'+
+            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
+            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
+          '</div>'+
+          '<div>'+
+            '<span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN ✓':'LOSS ✗')+'</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    );
+  }
+
+  /* ── إعادة الرسم ── */
+  function render(){
+    /* تحديث الأعداد */
+    var nOpen   = state.openTrades.length;
+    var nClosed = state.closedTrades.length;
+    var nTotal  = nOpen + nClosed;
+
+    if(cnt)      cnt.textContent      = String(nTotal);
+    if(hOpenCnt) hOpenCnt.textContent = String(nOpen);
+    if(tcOpen)   tcOpen.textContent   = String(nOpen);
+    if(tcClosed) tcClosed.textContent = String(nClosed);
+
+    /* رسم القائمة حسب التاب النشطة */
+    var html = "";
+    if(state.activeTab === "open"){
+      if(nOpen === 0){
+        html = '<div class="empty-msg"><span>📂</span>لا توجد صفقات مفتوحة حالياً</div>';
+      } else {
+        html = state.openTrades.map(rowOpen).join("");
+      }
+    } else {
+      if(nClosed === 0){
+        html = '<div class="empty-msg"><span>📜</span>لا يوجد سجل صفقات منتهية بعد</div>';
+      } else {
+        html = state.closedTrades.map(rowClosed).join("");
+      }
+    }
+    lst.innerHTML = html;
+  }
+
+  /* ── تيك كل ثانية للمفتوحة ── */
+  function tick(){
+    state.openTrades.forEach(function(t){
+      if(t.open===false) return;
+      t.remain = Math.max(0, num(t.remain,0)-1);
+    });
+    if(state.activeTab==="open") render();
+  }
+  function ensureTimer(){
+    if(state.timer) return;
+    state.timer = setInterval(tick, 1000);
+  }
+
+  /* ── فتح / إغلاق اللوحة ── */
+  function openPanel(){ hb.classList.add("on"); hs.classList.add("on"); }
+  function closePanel(){ hb.classList.remove("on"); hs.classList.remove("on"); }
+  function toggle(){ hs.classList.contains("on") ? closePanel() : openPanel(); }
+
+  /* ── API: صفقات مفتوحة ── */
+  function setTrades(arr){
+    state.openTrades = (Array.isArray(arr)?arr:[]).slice();
+    render(); ensureTimer();
+  }
+  function getTrades(){ return state.openTrades.slice(); }
+  function updateTrade(id, patch){
+    var t = state.openTrades.find(function(x){ return String(x.id)===String(id); });
+    if(!t) return;
+    for(var k in patch) t[k]=patch[k];
+    render();
+  }
+  function updatePrice(p){ state.price = num(p,null); if(state.activeTab==="open") render(); }
+
+  /* ── API: صفقة منتهية واحدة ── */
+  function addClosedTrade(trade){
+    if(!trade) return;
+    /* إزالة من المفتوحة */
+    state.openTrades = state.openTrades.filter(function(t){ return String(t.id)!==String(trade.id); });
+    /* إضافة للمنتهية (بدون تكرار) */
+    var exists = state.closedTrades.find(function(t){ return String(t.id)===String(trade.id); });
+    if(!exists) state.closedTrades.unshift(trade);
+    render();
+    /* ✅ انتقال تلقائي لتاب المنتهية عند إتمام صفقة */
+    switchTab("closed");
+  }
+
+  /* ── API: تحميل / ضبط كل السجل ── */
+  function setHistory(arr){
+    state.closedTrades = (Array.isArray(arr)?arr:[]).slice();
+    render();
+  }
+  function loadHistory(arr){ setHistory(arr); }
+  function addHistory(trade){ addClosedTrade(trade); }
+
+  /* ── تبديل التابات ── */
+  function switchTab(tab){
+    state.activeTab = tab;
+    if(tabOpen)   tabOpen.classList.toggle("active",   tab==="open");
+    if(tabClosed) tabClosed.classList.toggle("active", tab==="closed");
+    render();
+  }
+  if(tabOpen)   tabOpen.addEventListener("click",   function(){ switchTab("open"); });
+  if(tabClosed) tabClosed.addEventListener("click", function(){ switchTab("closed"); });
+
+  /* ── أحداث الأزرار ── */
+  if(btn) btn.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
+  if(nav) nav.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
+  hb.addEventListener("click", closePanel);
+  if(xBtn) xBtn.addEventListener("click", closePanel);
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closePanel(); });
+
+  /* ── مزامنة السعر من chart.js ── */
+  setInterval(function(){
+    if(typeof window.__qt_price==="number") updatePrice(window.__qt_price);
+  }, 250);
+
+  /* ── ✅ الاستماع لأحداث chart.js ── */
+
+  /* صفقة أُغلقت للتو */
+  window.addEventListener("qt_trade_closed", function(e){
+    if(e && e.detail && e.detail.trade){
+      addClosedTrade(e.detail.trade);
+    }
+  });
+
+  /* تحميل السجل الكامل من Firebase بعد تسجيل الدخول */
+  window.addEventListener("qt_history_loaded", function(e){
+    if(e && e.detail && Array.isArray(e.detail)){
+      setHistory(e.detail);
+      /* إذا كان السجل يحتوي صفقات، انتقل لتاب المنتهية */
+      if(e.detail.length > 0) switchTab("closed");
+    }
+  });
+
+  /* ── الـ API العامة ── */
+  window.tradeHistory = {
+    open:  openPanel,
+    close: closePanel,
+    toggle: toggle,
+    setTrades:      setTrades,
+    getTrades:      getTrades,
+    updateTrade:    updateTrade,
+    updatePrice:    updatePrice,
+    addHistory:     addHistory,
+    addClosedTrade: addClosedTrade,
+    setHistory:     setHistory,
+    loadHistory:    loadHistory,
+    setPriceFromChartVar: function(varName){
+      setInterval(function(){ var v=window[varName]; if(typeof v==="number") updatePrice(v); }, 250);
+    }
+  };
+
+  /* ── تهيئة أولية ── */
+  render();
+  ensureTimer();
 })();
 </script>
 
-<!-- Chart -->
+<!-- ============================================================
+     Chart.js
+     ============================================================ -->
 <script type="module" src="chart.js"></script>
 </body></html>
