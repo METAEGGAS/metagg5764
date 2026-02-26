@@ -173,28 +173,28 @@ class AuthManager {
     menu.className = 'qt-acc-menu';
     menu.innerHTML = `
       <div class="qt-acc-switch">
-        <button class="qt-sw-btn qt-live"  data-acc="real">● LIVE</button>
-        <button class="qt-sw-btn qt-demo active" data-acc="demo">◆ Demo</button>
+        <button class="qt-sw-btn qt-live active" data-acc="real">● LIVE</button>
+        <button class="qt-sw-btn qt-demo" data-acc="demo">◆ Demo</button>
       </div>
-      <div class="qt-acc-item" data-type="real">
+      <div class="qt-acc-item active" data-type="real">
         <div class="qt-acc-left">
-          <img class="qt-acc-ico" src="https://flagcdn.com/w40/us.png" alt="USD">
+          <img src="https://img.icons8.com/fluency/48/000000/bank-card-back-side.png" alt="Real" class="qt-acc-ico">
           <div class="qt-acc-info">
             <div class="qt-acc-label">Real Account</div>
             <div class="qt-acc-amt" id="qtRealAmt">$0.00</div>
           </div>
         </div>
-        <div class="qt-acc-badge live">LIVE</div>
+        <span class="qt-acc-badge live">LIVE</span>
       </div>
-      <div class="qt-acc-item active" data-type="demo">
+      <div class="qt-acc-item" data-type="demo">
         <div class="qt-acc-left">
-          <img class="qt-acc-ico" src="https://cdn-icons-png.flaticon.com/128/1344/1344761.png" alt="Demo">
+          <img src="https://img.icons8.com/fluency/48/000000/test-tube.png" alt="Demo" class="qt-acc-ico">
           <div class="qt-acc-info">
             <div class="qt-acc-label">Demo Account</div>
             <div class="qt-acc-amt" id="qtDemoAmt">$10,000.00</div>
           </div>
         </div>
-        <div class="qt-acc-badge demo">DEMO</div>
+        <span class="qt-acc-badge demo">DEMO</span>
       </div>
       <button class="qt-refill-btn" id="qtRefillBtn">🔄 Refill Demo Account</button>
     `;
@@ -283,7 +283,6 @@ class AuthManager {
         if (window.chart) {
           if (window.chart.dataLoaded) {
             window.chart.loadOpenTrades();
-            // ✅ تحميل سجل الصفقات المنتهية من Firebase
             window.chart.loadTradeHistory();
           } else {
             window.chart._pendingTradeLoad = true;
@@ -298,7 +297,6 @@ class AuthManager {
           this.balanceEl.textContent = this._fmtMoney(showAmt);
         }
 
-        // ✅ مسح سجل التاريخ عند الخروج
         window.dispatchEvent(new CustomEvent('qt_history_loaded', { detail: [] }));
       }
     });
@@ -430,6 +428,7 @@ class FirebaseManager {
       console.log('🔄 Firebase collection switched to:',key);
     }
   }
+  addPendingCandle(candle){this.pendingCandles.push(candle);}
   async saveCandles(candles){
     if(this.isSaving){console.log('⏳ Save in progress...');return false;}
     try{
@@ -473,11 +472,13 @@ class FirebaseManager {
     try{
       const cutoffTime=Date.now()-(daysToKeep*24*60*60*1000);
       const q=query(collection(this.db,this.candlesCollection),where('timestamp','<',cutoffTime));
-      const querySnapshot=await getDocs(q);
-      console.log(`🗑️ Found ${querySnapshot.size} old candles`);
-    }catch(e){console.error('❌ Clear error:',e);}
+      const snapshot=await getDocs(q);
+      const deletePromises=[];
+      snapshot.forEach((docSnap)=>{deletePromises.push(deleteDoc(docSnap.ref));});
+      await Promise.all(deletePromises);
+      console.log(`✅ Deleted ${deletePromises.length} old candles`);
+    }catch(e){console.error('❌ Cleanup error:',e);}
   }
-  addPendingCandle(candle){this.pendingCandles.push(candle);}
   startAutoSave(){
     setInterval(async()=>{
       if(this.pendingCandles.length>0&&!this.isSaving){
@@ -575,8 +576,6 @@ class AdvancedTradingChart {
 
     this._tradeCounter = 0;
     this._pendingTradeLoad = false;
-
-    // ✅ مصفوفة الصفقات المنتهية المحلية
     this._closedTrades = [];
 
     this.uid = 'uid_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
@@ -665,27 +664,18 @@ class AdvancedTradingChart {
       const hb = data.masterHeartbeat || 0;
       const isAlive = (Date.now() - hb) < this.MASTER_TIMEOUT;
 
-      if (!data.masterUid || !isAlive) {
+      if (!isAlive) {
         await updateDoc(stateRef, {
           masterUid: this.uid,
           masterHeartbeat: Date.now(),
-          liveT0: this.t0
+          liveT0: this.t0,
+          pair: this.currentPair
         });
-        console.log('👑 استُولي على الماستر (ماستر سابق مات)');
+        console.log('👑 استُولي على الماستر (ماستر ميت)');
         return true;
       }
 
-      if (data.masterUid === this.uid) {
-        return true;
-      }
-
-      if (data.liveCandle) {
-        this.currentCandle = { ...data.liveCandle };
-        this.currentPrice  = data.liveCandle.close;
-        window.__qt_price  = this.currentPrice;
-      }
-      if (data.liveT0) this.t0 = data.liveT0;
-
+      console.log('👁️ ماستر حي موجود');
       return false;
     } catch(e) {
       console.error('❌ _tryClaimMaster error:', e);
@@ -694,33 +684,72 @@ class AdvancedTradingChart {
   }
 
   async _becomeMaster() {
-    if (this.isMaster) return;
-    try {
-      const stateRef = this._getLiveStateRef();
-      await setDoc(stateRef, {
-        masterUid: this.uid,
-        masterHeartbeat: Date.now(),
-        liveT0: this.t0
-      }, { merge: true });
-
+    console.log('🔄 محاولة أن أصبح ماستر...');
+    const claimed = await this._tryClaimMaster();
+    if (claimed) {
+      if (this._liveUnsubscribe) { this._liveUnsubscribe(); this._liveUnsubscribe = null; }
+      if (this._watchdogInterval) { clearInterval(this._watchdogInterval); this._watchdogInterval = null; }
       this.isMaster = true;
-
-      if (this._liveUnsubscribe) {
-        this._liveUnsubscribe();
-        this._liveUnsubscribe = null;
-      }
-      if (this._watchdogInterval) {
-        clearInterval(this._watchdogInterval);
-        this._watchdogInterval = null;
-      }
-
       this.candles = await this._fillAndSaveCandleGaps(this.candles);
       this._startMasterBroadcast();
       this._setRoleBadge('master');
-      console.log('👑 انتقلت إلى الماستر (watchdog)');
-    } catch(e) {
-      console.error('❌ _becomeMaster error:', e);
+      console.log('👑 أصبحت الماستر الآن');
     }
+  }
+
+  async _cleanupMasterViewer() {
+    if (this._masterBroadcastInterval) {
+      clearInterval(this._masterBroadcastInterval);
+      this._masterBroadcastInterval = null;
+    }
+    if (this._watchdogInterval) {
+      clearInterval(this._watchdogInterval);
+      this._watchdogInterval = null;
+    }
+    if (this._liveUnsubscribe) {
+      try { this._liveUnsubscribe(); } catch(e) {}
+      this._liveUnsubscribe = null;
+    }
+    if (this.isMaster) {
+      try {
+        const stateRef = doc(db, 'trading_live', this._getPairKey());
+        await updateDoc(stateRef, { masterUid: null, masterHeartbeat: 0 }).catch(()=>{});
+      } catch(e) {}
+    }
+    this.isMaster = false;
+    this._lastBroadcastedClose = null;
+  }
+
+  async _fillAndSaveCandleGaps(candles) {
+    if (!candles || candles.length === 0) return candles || [];
+    const lastCandle = candles[candles.length - 1];
+    const lastTs     = lastCandle.timestamp;
+    const currentT0  = Math.floor(Date.now() / this.timeframe) * this.timeframe;
+    if (currentT0 <= lastTs) return candles;
+    const gaps = [];
+    let t = lastTs + this.timeframe;
+    let p = lastCandle.close;
+    while (t < currentT0) {
+      const gapCandle = this.genCandle(t, p);
+      gaps.push(gapCandle);
+      p = gapCandle.close;
+      t += this.timeframe;
+    }
+    if (gaps.length > 0) {
+      try {
+        await this.firebaseManager.saveCandles(gaps);
+        console.log(`✅ ${gaps.length} شمعة فجوة تم حفظها في Firebase`);
+      } catch(e) {
+        console.warn('⚠️ Gap candle save error:', e);
+        gaps.forEach(c => this.firebaseManager.addPendingCandle(c));
+      }
+      const result = [...candles, ...gaps];
+      if (result.length > this.maxCandles) {
+        return result.slice(result.length - this.maxCandles);
+      }
+      return result;
+    }
+    return candles;
   }
 
   _startMasterBroadcast() {
@@ -782,64 +811,11 @@ class AdvancedTradingChart {
         const data = snap.data();
         const hb = data.masterHeartbeat || 0;
         const isAlive = (Date.now() - hb) < this.MASTER_TIMEOUT;
-        if (!data.masterUid || !isAlive) {
-          console.log('⚠️ الماستر مات - أستولي على الدور...');
-          await this._becomeMaster();
-        }
+        if (!isAlive) { await this._becomeMaster(); }
       } catch(e) {
         console.warn('⚠️ Watchdog error:', e);
       }
-    }, 5000);
-  }
-
-  async _cleanupMasterViewer() {
-    if (this._masterBroadcastInterval) { clearInterval(this._masterBroadcastInterval); this._masterBroadcastInterval = null; }
-    if (this._watchdogInterval)         { clearInterval(this._watchdogInterval);         this._watchdogInterval = null; }
-    if (this._liveUnsubscribe)          { this._liveUnsubscribe();                        this._liveUnsubscribe = null; }
-    if (this.isMaster) {
-      try {
-        const stateRef = this._getLiveStateRef();
-        await updateDoc(stateRef, { masterUid: null, masterHeartbeat: 0 }).catch(()=>{});
-      } catch(e) {}
-    }
-    this.isMaster = false;
-    this._lastBroadcastedClose = null;
-  }
-
-  async _fillAndSaveCandleGaps(candles) {
-    if (!candles || candles.length === 0) return candles || [];
-    const lastCandle = candles[candles.length - 1];
-    const lastTs     = lastCandle.timestamp;
-    const currentT0  = Math.floor(Date.now() / this.timeframe) * this.timeframe;
-    if (currentT0 <= lastTs + this.timeframe) return candles;
-    const gapCount = Math.floor((currentT0 - lastTs) / this.timeframe) - 1;
-    if (gapCount <= 0) return candles;
-    const maxFill = Math.min(gapCount, 1440);
-    console.log(`🔨 ملء ${gapCount} شمعة فائتة (سيتم توليد ${maxFill})...`);
-    let p = lastCandle.close;
-    let t = lastTs + this.timeframe;
-    const gaps = [];
-    for (let i = 0; i < maxFill; i++) {
-      const c = this.genCandle(t, p);
-      gaps.push(c);
-      p = c.close;
-      t += this.timeframe;
-    }
-    if (gaps.length > 0) {
-      try {
-        await this.firebaseManager.saveCandles(gaps);
-        console.log(`✅ ${gaps.length} شمعة فجوة تم حفظها في Firebase`);
-      } catch(e) {
-        console.warn('⚠️ Gap candle save error:', e);
-        gaps.forEach(c => this.firebaseManager.addPendingCandle(c));
-      }
-      const result = [...candles, ...gaps];
-      if (result.length > this.maxCandles) {
-        return result.slice(result.length - this.maxCandles);
-      }
-      return result;
-    }
-    return candles;
+    }, 3000);
   }
 
   async initData(){
@@ -885,7 +861,7 @@ class AdvancedTradingChart {
       if (this._pendingTradeLoad && this.authManager.user) {
         this._pendingTradeLoad = false;
         this.loadOpenTrades();
-        this.loadTradeHistory(); // ✅ تحميل السجل أيضاً
+        this.loadTradeHistory();
       }
 
       this.initEvents();
@@ -916,8 +892,12 @@ class AdvancedTradingChart {
     const s=this.seed+Math.floor(t/this.timeframe);
     const vb=0.0008*(this.volScale||1);
     const tb=0.00005*(this.volScale||1);
-    const r1=this.rndG(s);const r2=this.rndG(s+1);const r3=this.rndG(s+2);
-    const r4=this.rnd(s+3);const r5=this.rnd(s+4);const r6=this.rnd(s+5);
+    const r1=this.rndG(s);
+    const r2=this.rndG(s+1);
+    const r3=this.rndG(s+2);
+    const r4=this.rnd(s+3);
+    const r5=this.rnd(s+4);
+    const r6=this.rnd(s+5);
     const v=vb*(0.7+Math.abs(r1)*0.8);
     const tr=tb*r2*0.6;
     const dir=r3>0?1:-1;
@@ -927,7 +907,13 @@ class AdvancedTradingChart {
     const lm=rg*(0.3+(1-r5)*0.7);
     const c=+(tc+(r6-0.5)*v*0.1).toFixed(this.digits);
     const op=+o.toFixed(this.digits);
-    return{open:op,close:c,high:+Math.max(op,c,op+hm,c+hm).toFixed(this.digits),low:+Math.min(op,c,op-lm,c-lm).toFixed(this.digits),timestamp:t};
+    return{
+      open:op,
+      close:c,
+      high:+Math.max(op,c,op+hm,c+hm).toFixed(this.digits),
+      low:+Math.min(op,c,op-lm,c-lm).toFixed(this.digits),
+      timestamp:t
+    };
   }
 
   initHistoricalData(){
@@ -939,32 +925,166 @@ class AdvancedTradingChart {
       p=c.close;
       t+=this.timeframe;
     }
-    this.currentPrice=this.candles[this.candles.length-1].close;
-    this.localStorageManager.saveCandles(this.candles,this.currentPair);
   }
 
+  updateCurrentCandle(){
+    if(!this.currentCandle)return;
+    const lp=this.currentCandle.close;
+    const nc=this.genCandle(this.t0,lp);
+    this.currentCandle.close=nc.close;
+    this.currentCandle.high=Math.max(this.currentCandle.open,this.currentCandle.close,nc.high);
+    this.currentCandle.low=Math.min(this.currentCandle.open,this.currentCandle.close,nc.low);
+    this.currentPrice=this.currentCandle.close;
+    window.__qt_price=this.currentPrice;
+  }
+
+  calcNiceGrid(){
+    const r=this.getPriceRange();
+    const rg=r.max-r.min;
+    const targetLevels=10;
+    const rawStep=rg/targetLevels;
+    const mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
+    const norm=rawStep/mag;
+    let nice=1;
+    if(norm<=1.5)nice=1;
+    else if(norm<=3)nice=2;
+    else if(norm<=7)nice=5;
+    else nice=10;
+    const step=nice*mag;
+    const min=Math.floor(r.min/step)*step;
+    const max=Math.ceil(r.max/step)*step;
+    const count=Math.round((max-min)/step)+1;
+    return{min,max,step,count};
+  }
+
+  getPriceRange(){return{min:this.smin!==null?this.smin:this.priceRange.min,max:this.smax!==null?this.smax:this.priceRange.max};}
   getSpacing(){return this.baseSpacing*this.zoom;}
-  getCandleWidth(){return this.getSpacing()*0.8;}
-  getMinOffset(){return this.w/2-this.candles.length*this.getSpacing();}
-  getMaxOffset(){return this.w/2;}
-  clampPan(){const mn=this.getMinOffset();const mx=this.getMaxOffset();this.targetOffsetX=Math.max(mn,Math.min(mx,this.targetOffsetX));this.offsetX=Math.max(mn,Math.min(mx,this.offsetX));}
-  snapToLive(){this.targetOffsetX=this.getMinOffset();this.offsetX=this.targetOffsetX;this.velocity=0;this.clampPan();}
-  updatePan(){const diff=this.targetOffsetX-this.offsetX;if(Math.abs(diff)>0.003){this.offsetX+=diff*this.panEase;}else{this.offsetX=this.targetOffsetX;}if(Math.abs(this.velocity)>0.01){this.targetOffsetX+=this.velocity;this.velocity*=0.972;this.clampPan();}else{this.velocity=0;}}
+  getCandleWidth(){return Math.max(1,this.getSpacing()*0.75);}
+  indexToX(i){return this.w/2+this.getSpacing()*(i-(this.candles.length-1))+this.offsetX;}
+  xToIndex(x){return(x-this.w/2-this.offsetX)/this.getSpacing()+(this.candles.length-1);}
+  snapToLive(){const lastX=this.indexToX(this.candles.length-1);const need=this.w-100;const diff=need-lastX;this.targetOffsetX+=diff;this.offsetX=this.targetOffsetX;}
+  clampPan(){const minX=-(this.candles.length*this.getSpacing()-this.w/2-200);const maxX=this.w/2;this.targetOffsetX=Math.max(minX,Math.min(maxX,this.targetOffsetX));}
+  updatePan(){
+    const diff=this.targetOffsetX-this.offsetX;
+    if(Math.abs(diff)>0.003){this.offsetX+=diff*this.panEase;}else{this.offsetX=this.targetOffsetX;}
+    if(Math.abs(this.velocity)>0.01){this.targetOffsetX+=this.velocity;this.velocity*=0.972;this.clampPan();}else{this.velocity=0;}
+  }
   tickZoom(){const d=this.targetZoom-this.zoom;if(Math.abs(d)>0.0001){this.zoom+=d*this.zoomEase;}else{this.zoom=this.targetZoom;}}
   tickSR(){const r=this.priceRange;if(this.smin===null){this.smin=r.min;this.smax=r.max;return;}this.smin+=(r.min-this.smin)*this.sre;this.smax+=(r.max-this.smax)*this.sre;}
-  applyZoomAround(mx,my,sc){const oz=this.targetZoom;const nz=Math.max(this.minZoom,Math.min(this.maxZoom,oz*sc));if(Math.abs(nz-oz)<0.000001)return;const idx=this.xToIndex(mx);this.targetZoom=nz;this.zoom=nz;const nx=mx-idx*this.getSpacing();this.targetOffsetX=nx;this.offsetX=nx;this.clampPan();this.updateTimeLabels();}
-  indexToX(i){return this.offsetX+i*this.getSpacing();}
-  xToIndex(x){return(x-this.offsetX)/this.getSpacing();}
-  getPriceRange(){const mn=this.smin!==null?this.smin:this.priceRange.min;const mx=this.smax!==null?this.smax:this.priceRange.max;return{min:mn,max:mx};}
-  niceNum(v,rnd){const e=Math.floor(Math.log10(v));const p=Math.pow(10,e);const f=v/p;let nf;if(rnd){if(f<1.5)nf=1;else if(f<3)nf=2;else if(f<7)nf=5;else nf=10;}else{if(f<=1)nf=1;else if(f<=2)nf=2;else if(f<=5)nf=5;else nf=10;}return nf*p;}
-  calcNiceGrid(){const r=this.getPriceRange();const rng=r.max-r.min;const d=this.niceNum(rng/7,false);const g0=Math.floor(r.min/d)*d;const g1=Math.ceil(r.max/d)*d;return{min:g0,max:g1,step:d,count:Math.round((g1-g0)/d)};}
-  drawGrid(){const{min,max,step,count}=this.calcNiceGrid();for(let i=0;i<=count;i++){const p=min+i*step;const y=this.priceToY(p);if(y<-5||y>this.h+5)continue;const mj=i%5===0;this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";this.ctx.lineWidth=mj?1:0.8;this.ctx.beginPath();this.ctx.moveTo(0,y+0.5);this.ctx.lineTo(this.w,y+0.5);this.ctx.stroke();}const visC=this.w/this.getSpacing();const targetL=9;const stepC=Math.max(1,Math.round(visC/targetL));const s=Math.floor(this.xToIndex(0));const e=Math.ceil(this.xToIndex(this.w));for(let i=s;i<=e;i++){if(i%stepC!==0)continue;const x=this.indexToX(i);if(x<-5||x>this.w+5)continue;const mj=i%Math.round(stepC*5)===0;this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";this.ctx.lineWidth=mj?1:0.8;this.ctx.beginPath();this.ctx.moveTo(x+0.5,0);this.ctx.lineTo(x+0.5,this.h);this.ctx.stroke();}}
-  updateTimeLabels(){const tl=this.timeLabels;tl.innerHTML="";const visC=this.w/this.getSpacing();const targetL=9;const stepC=Math.max(1,Math.round(visC/targetL));const s=Math.floor(this.xToIndex(0));const e=Math.ceil(this.xToIndex(this.w));const tS=this.candles.length?this.candles[0].timestamp:this.t0;for(let i=s;i<=e;i++){if(i%stepC!==0)continue;const x=this.indexToX(i);if(x<5||x>this.w-5)continue;const t=tS+i*this.timeframe;const d=new Date(t);const hh=String(d.getHours()).padStart(2,"0");const mm=String(d.getMinutes()).padStart(2,"0");const lb=document.createElement("div");lb.className="timeLabel";if(i%Math.round(stepC*5)===0){lb.classList.add("major");}lb.style.left=x+"px";lb.textContent=`${hh}:${mm}`;tl.appendChild(lb);}}
-  updatePriceScale(){const{min,step,count}=this.calcNiceGrid();let h="";for(let i=0;i<=count;i++){const p=min+i*step;const y=this.priceToY(p);if(y<-8||y>this.h+8)continue;const mj=i%5===0;h+=`<div class="pLabel${mj?" major":""}" style="top:${y}px">${p.toFixed(this.digits)}</div>`;}this.priceScaleLabels.innerHTML=h;}
-  updatePriceLabel(){const py=this.priceToY(this.currentPrice);this.priceLine.style.top=py+"px";this.currentPriceEl.style.top=py+"px";this.currentPriceEl.textContent=this.currentPrice.toFixed(this.digits);}
-  updateCandleTimer(){if(!this.currentCandle)return;const n=Date.now();const e=n-this.t0;const r=this.timeframe-e;const s=Math.floor(r/1000);this.candleTimer.textContent=s>=0?s:0;const cx=this.indexToX(this.candles.length);this.candleTimer.style.left=cx+15+"px";this.candleTimer.style.top="10px";this.candleTimer.style.display='block';}
-  priceToY(p){const r=this.getPriceRange();const n=(p-r.min)/(r.max-r.min);return this.h*(1-n);}
-  drawCandle(c,x,glow){const oy=this.priceToY(c.open);const cy=this.priceToY(c.close);const hy=this.priceToY(c.high);const ly=this.priceToY(c.low);const b=c.close>=c.open;const w=this.getCandleWidth();this.ctx.strokeStyle=b?"#0f0":"#f00";this.ctx.lineWidth=Math.max(1,0.18*w);this.ctx.beginPath();this.ctx.moveTo(x,hy);this.ctx.lineTo(x,ly);this.ctx.stroke();const bh=Math.max(1,Math.abs(cy-oy));const bt=Math.min(oy,cy);const g=this.ctx.createLinearGradient(x,bt,x,bt+bh);if(b){g.addColorStop(0,"#0f0");g.addColorStop(0.5,"#0f0");g.addColorStop(1,"#0c0");}else{g.addColorStop(0,"#f00");g.addColorStop(0.5,"#f00");g.addColorStop(1,"#c00");}this.ctx.fillStyle=g;if(glow){this.ctx.shadowColor=b?"rgba(0,255,0,.8)":"rgba(255,0,0,.8)";this.ctx.shadowBlur=12;}this.ctx.fillRect(x-w/2,bt,w,bh);if(glow){this.ctx.shadowBlur=0;}}
+  applyZoomAround(mx,my,sc){const oz=this.targetZoom;const nz=Math.max(this.minZoom,Math.min(this.maxZoom,oz*sc));if(Math.abs(nz-oz)<0.0001)return;const oi=this.xToIndex(mx);this.targetZoom=nz;const ni=this.xToIndex(mx);const shift=(ni-oi)*this.getSpacing();this.targetOffsetX+=shift;this.clampPan();}
+  drawGrid(){
+    const{min,step,count}=this.calcNiceGrid();
+    for(let i=0;i<count;i++){
+      const p=min+i*step;
+      const y=this.priceToY(p);
+      if(y<-5||y>this.h+5)continue;
+      const mj=i%5===0;
+      this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";
+      this.ctx.lineWidth=mj?1:0.8;
+      this.ctx.beginPath();
+      this.ctx.moveTo(0,y+0.5);
+      this.ctx.lineTo(this.w,y+0.5);
+      this.ctx.stroke();
+    }
+    const visC=this.w/this.getSpacing();
+    const targetL=9;
+    const stepC=Math.max(1,Math.round(visC/targetL));
+    const s=Math.floor(this.xToIndex(0));
+    const e=Math.ceil(this.xToIndex(this.w));
+    for(let i=s;i<=e;i++){
+      const x=this.indexToX(i);
+      if(x<-5||x>this.w+5)continue;
+      const mj=i%Math.round(stepC*5)===0;
+      this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";
+      this.ctx.lineWidth=mj?1:0.8;
+      this.ctx.beginPath();
+      this.ctx.moveTo(x+0.5,0);
+      this.ctx.lineTo(x+0.5,this.h);
+      this.ctx.stroke();
+    }
+  }
+  updateTimeLabels(){
+    const tl=this.timeLabels;
+    tl.innerHTML="";
+    const visC=this.w/this.getSpacing();
+    const targetL=9;
+    const stepC=Math.max(1,Math.round(visC/targetL));
+    const s=Math.floor(this.xToIndex(0));
+    const e=Math.ceil(this.xToIndex(this.w));
+    const tS=this.candles.length?this.candles[0].timestamp:this.t0;
+    for(let i=s;i<=e;i++){
+      const x=this.indexToX(i);
+      if(x<-5||x>this.w-5)continue;
+      const t=tS+i*this.timeframe;
+      const d=new Date(t);
+      const hh=String(d.getHours()).padStart(2,"0");
+      const mm=String(d.getMinutes()).padStart(2,"0");
+      const lb=document.createElement("div");
+      lb.className="timeLabel";
+      if(i%Math.round(stepC*5)===0){lb.classList.add("major");}
+      lb.style.left=x+"px";
+      lb.textContent=`${hh}:${mm}`;
+      tl.appendChild(lb);
+    }
+  }
+  updatePriceScale(){
+    const{min,step,count}=this.calcNiceGrid();
+    let h="";
+    for(let i=0;i<count;i++){
+      const p=min+i*step;
+      const y=this.priceToY(p);
+      if(y<-8||y>this.h+8)continue;
+      const mj=i%5===0;
+      h+=`<div class="priceLabel${mj?' major':''}" style="top:${y}px">${p.toFixed(this.digits)}</div>`;
+    }
+    this.priceScaleLabels.innerHTML=h;
+  }
+  updatePriceLabel(){
+    const py=this.priceToY(this.currentPrice);
+    this.priceLine.style.top=py+"px";
+    this.currentPriceEl.style.top=py+"px";
+    this.currentPriceEl.textContent=this.currentPrice.toFixed(this.digits);
+  }
+  updateCandleTimer(){
+    if(!this.currentCandle)return;
+    const n=Date.now();
+    const e=n-this.t0;
+    const r=this.timeframe-e;
+    const s=Math.floor(r/1000);
+    this.candleTimer.textContent=s>=0?s:0;
+    const cx=this.indexToX(this.candles.length);
+    this.candleTimer.style.left=cx+15+"px";
+    this.candleTimer.style.top="10px";
+    this.candleTimer.style.display='block';
+  }
+  priceToY(p){
+    const r=this.getPriceRange();
+    const n=(p-r.min)/(r.max-r.min);
+    return this.h*(1-n);
+  }
+  drawCandle(c,x,glow){
+    const oy=this.priceToY(c.open);
+    const cy=this.priceToY(c.close);
+    const hy=this.priceToY(c.high);
+    const ly=this.priceToY(c.low);
+    const b=c.close>=c.open;
+    const w=this.getCandleWidth();
+    this.ctx.strokeStyle=b?"#0f0":"#f00";
+    this.ctx.lineWidth=Math.max(1,0.18*w);
+    this.ctx.beginPath();
+    this.ctx.moveTo(x,hy);
+    this.ctx.lineTo(x,ly);
+    this.ctx.stroke();
+    const bh=Math.max(1,Math.abs(cy-oy));
+    const bt=Math.min(oy,cy);
+    const g=this.ctx.createLinearGradient(x,bt,x,bt+bh);
+    if(b){g.addColorStop(0,"#0f0");g.addColorStop(0.5,"#0f0");g.addColorStop(1,"#0c0");}
+    else{g.addColorStop(0,"#f00");g.addColorStop(0.5,"#f00");g.addColorStop(1,"#c00");}
+    this.ctx.fillStyle=g;
+    if(glow){this.ctx.shadowColor=b?"rgba(0,255,0,.8)":"rgba(255,0,0,.8)";this.ctx.shadowBlur=12;}
+    this.ctx.fillRect(x-w/2,bt,w,bh);
+    if(glow){this.ctx.shadowBlur=0;}
+  }
 
   addMarker(t, tradeId, account){
     const op=this.currentPrice;
@@ -974,27 +1094,24 @@ class AdvancedTradingChart {
     const bb=Math.min(c.open,c.close);
     let fp=op;
     if(op>bt){fp=bt;}else if(op<bb){fp=bb;}
-    const fi=this.candles.length;
+    const candleIdx=this.candles.length;
+    const candleTs=c.timestamp;
     this.markers.push({
       type:t,
-      ts:Date.now(),
       price:fp,
-      candleIndex:fi,
-      candleTimestamp:c.timestamp,
-      tradeId: tradeId || null,
-      account: account || this._getActiveAcc(),
-      closed: false,
-      profitLoss: null
+      candleIndex:candleIdx,
+      candleTimestamp:candleTs,
+      tradeId,
+      account,
+      closed:false,
+      profitLoss:null
     });
   }
 
   drawMarker(m){
-    let actualIdx=m.candleIndex;
-    for(let i=0;i<this.candles.length;i++){
-      if(this.candles[i].timestamp===m.candleTimestamp){actualIdx=i;break;}
-    }
-    const x=this.indexToX(actualIdx);
-    if(x<-200||x>this.w+50)return;
+    const ci=m.candleIndex;
+    const x=this.indexToX(ci);
+    if(x<-60||x>this.w+50)return;
     const y=this.priceToY(m.price);
     const w=this.getCandleWidth();
     const ib=m.type==="buy";
@@ -1103,29 +1220,12 @@ class AdvancedTradingChart {
 
     if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){
       const lx=this.indexToX(this.candles.length);
-      if(lx>=-60&&lx<=this.w+60){
-        this.drawCandle(this.currentCandle,lx,true);
-      }
+      if(lx>=-60&&lx<=this.w+60){this.drawCandle(this.currentCandle,lx,true);}
     }
 
-    const activeAcc = this._getActiveAcc();
-    for(let mk of this.markers){
-      if ((mk.account || 'demo') !== activeAcc) continue;
-      this.drawMarker(mk);
-    }
-
-    if(++this._fr%2===0){this.updatePriceScale();this.updateTimeLabels();}
+    this.markers.forEach(m=>this.drawMarker(m));
     this.updatePriceLabel();
     this.updateCandleTimer();
-  }
-
-  stepTowards(c,t,m){const d=t-c;return Math.abs(d)<=m?t:c+Math.sign(d)*m;}
-
-  updateCurrentCandle(){
-    if(!this.currentCandle){const lp=this.candles.length?this.candles[this.candles.length-1].close:this.currentPrice;this.currentCandle=this.genCandle(this.t0,lp);this.currentCandle.close=lp;this.currentCandle.high=Math.max(this.currentCandle.open,this.currentCandle.close);this.currentCandle.low=Math.min(this.currentCandle.open,this.currentCandle.close);return;}
-    const n=Date.now();const r=this.rnd(this.seed+n);const dir=(r-0.5)*0.0004;const t=this.currentCandle.close+dir;const ms=0.0008*0.18*(this.volScale||1);
-    const nc=+this.stepTowards(this.currentCandle.close,t,ms).toFixed(this.digits);this.currentCandle.close=nc;this.currentCandle.high=+Math.max(this.currentCandle.high,nc).toFixed(this.digits);this.currentCandle.low=+Math.min(this.currentCandle.low,nc).toFixed(this.digits);this.currentPrice=nc;
-    window.__qt_price = this.currentPrice;
   }
 
   startRealtime(){
@@ -1168,8 +1268,43 @@ class AdvancedTradingChart {
     catch(e){console.error('❌ Queue error:',e);}
   }
 
-  updatePriceRange(){let v=[...this.candles];if(this.currentCandle&&(!v.length||this.currentCandle.timestamp!==v[v.length-1].timestamp)){v.push(this.currentCandle);}if(!v.length){this.priceRange={min:0.95*this.basePrice,max:1.05*this.basePrice};return;}const si=Math.floor(this.xToIndex(0));const ei=Math.ceil(this.xToIndex(this.w));const sl=v.slice(Math.max(0,si-5),Math.min(v.length,ei+5));if(!sl.length){this.priceRange={min:0.95*this.basePrice,max:1.05*this.basePrice};return;}const lo=sl.map(c=>c.low);const hi=sl.map(c=>c.high);const mn=Math.min(...lo);const mx=Math.max(...hi);const pd=0.15*(mx-mn)||0.000000001;this.priceRange={min:mn-pd,max:mx+pd};}
-  initEvents(){addEventListener("resize",()=>this.setup());this.canvas.addEventListener("wheel",e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect();const x=e.clientX-r.left;const y=e.clientY-r.top;const sc=e.deltaY>0?1/1.1:1.1;this.applyZoomAround(x,y,sc);},{passive:false});const md=(x,t)=>{this.drag=1;this.dragStartX=x;this.dragStartOffset=this.targetOffsetX;this.velocity=0;this.lastDragX=x;this.lastDragTime=t;};const mm=(x,t)=>{if(this.drag){const d=x-this.dragStartX;this.targetOffsetX=this.dragStartOffset+d;this.clampPan();const dt=t-this.lastDragTime;if(dt>0&&dt<80){this.velocity=(x-this.lastDragX)/dt*26;}this.lastDragX=x;this.lastDragTime=t;}};const mu=()=>{this.drag=0;this.updateTimeLabels();};this.canvas.addEventListener("mousedown",e=>{const r=this.canvas.getBoundingClientRect();md(e.clientX-r.left,Date.now());});addEventListener("mousemove",e=>{const r=this.canvas.getBoundingClientRect();mm(e.clientX-r.left,Date.now());});addEventListener("mouseup",mu);const db=(a,b)=>Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);this.canvas.addEventListener("touchstart",e=>{const r=this.canvas.getBoundingClientRect();if(e.touches.length===1){md(e.touches[0].clientX-r.left,Date.now());}else if(e.touches.length===2){this.drag=0;this.pinch=1;this.p0=db(e.touches[0],e.touches[1]);this.pMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;this.pMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;}},{passive:false});this.canvas.addEventListener("touchmove",e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect();if(this.pinch&&e.touches.length===2){const d=db(e.touches[0],e.touches[1]);if(this.p0>0){const sc=Math.max(0.2,Math.min(5,d/(this.p0||d)));this.applyZoomAround(this.pMidX,this.pMidY,sc);}this.p0=d;}else if(!this.pinch&&e.touches.length===1){mm(e.touches[0].clientX-r.left,Date.now());}},{passive:false});this.canvas.addEventListener("touchend",e=>{if(e.touches.length<2){this.pinch=0;this.p0=0;}if(e.touches.length===0){mu();}},{passive:false});this.canvas.addEventListener("touchcancel",()=>{this.pinch=0;this.p0=0;mu();},{passive:false});}
+  updatePriceRange(){
+    let v=[...this.candles];
+    if(this.currentCandle&&(!v.length||this.currentCandle.timestamp!==v[v.length-1].timestamp)){v.push(this.currentCandle);}
+    if(!v.length){this.priceRange={min:0.95*this.basePrice,max:1.05*this.basePrice};return;}
+    const si=Math.floor(this.xToIndex(0));
+    const ei=Math.ceil(this.xToIndex(this.w));
+    const sl=v.slice(Math.max(0,si-5),Math.min(v.length,ei+5));
+    if(!sl.length){this.priceRange={min:0.95*this.basePrice,max:1.05*this.basePrice};return;}
+    const lo=sl.map(c=>c.low);
+    const hi=sl.map(c=>c.high);
+    const mn=Math.min(...lo);
+    const mx=Math.max(...hi);
+    const pd=0.15*(mx-mn)||0.000000001;
+    this.priceRange={min:mn-pd,max:mx+pd};
+  }
+
+  initEvents(){
+    addEventListener("resize",()=>this.setup());
+    this.canvas.addEventListener("wheel",e=>{
+      e.preventDefault();
+      const r=this.canvas.getBoundingClientRect();
+      const x=e.clientX-r.left;
+      const y=e.clientY-r.top;
+      const sc=e.deltaY>0?1/1.1:1.1;
+      this.applyZoomAround(x,y,sc);
+    },{passive:false});
+    const md=(x,t)=>{this.drag=1;this.dragStartX=x;this.dragStartOffset=this.targetOffsetX;this.velocity=0;this.lastDragX=x;this.lastDragTime=t;};
+    const mm=(x,t)=>{if(this.drag){const d=x-this.dragStartX;this.targetOffsetX=this.dragStartOffset+d;this.clampPan();const dt=t-this.lastDragTime;if(dt>0&&dt<100){this.velocity=(x-this.lastDragX)/dt*16;}this.lastDragX=x;this.lastDragTime=t;}};
+    const mu=()=>{this.drag=0;this.updateTimeLabels();};
+    this.canvas.addEventListener("mousedown",e=>{const r=this.canvas.getBoundingClientRect();md(e.clientX-r.left,Date.now());});
+    addEventListener("mousemove",e=>{const r=this.canvas.getBoundingClientRect();mm(e.clientX-r.left,Date.now());});
+    addEventListener("mouseup",mu);
+    const db=(a,b)=>Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);
+    this.canvas.addEventListener("touchstart",e=>{const r=this.canvas.getBoundingClientRect();if(e.touches.length===1){md(e.touches[0].clientX-r.left,Date.now());}else if(e.touches.length===2){this.drag=0;this.pinch=1;this.p0=db(e.touches[0],e.touches[1]);this.pMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;this.pMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;}},{passive:false});
+    this.canvas.addEventListener("touchmove",e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect();if(this.pinch&&e.touches.length===2){const d=db(e.touches[0],e.touches[1]);if(this.p0>0){const sc=Math.max(0.2,Math.min(5,d/(this.p0||d)));this.applyZoomAround(this.pMidX,this.pMidY,sc);}this.p0=d;}else if(!this.pinch&&e.touches.length===1){mm(e.touches[0].clientX-r.left,Date.now());}},{passive:false});
+    this.canvas.addEventListener("touchend",e=>{if(e.touches.length<2){this.pinch=0;this.p0=0;}if(e.touches.length===0){mu();}},{passive:false});
+  }
   loop(){this.draw();requestAnimationFrame(()=>this.loop());}
 
   async switchPair(pairName){
@@ -1180,22 +1315,20 @@ class AdvancedTradingChart {
     try{
       await this._cleanupMasterViewer();
       this.currentPair=pairName;
-      const cfg=this.PAIR_CONFIG[pairName]||{base:1.0,digits:5,seed:Math.abs(pairName.split('').reduce((h,c)=>((h<<5)-h)+c.charCodeAt(0)|0,0))%90000+10000,volScale:1};
+      const cfg=this.PAIR_CONFIG[pairName]||{base:1.0,digits:5,seed:Math.abs(pairName.split('').reduce((h,c)=>((h<<5)-h)+c.charCodeAt(0),0)),volScale:1};
       this.basePrice=cfg.base;
-      this.currentPrice=cfg.base;
       this.digits=cfg.digits;
       this.seed=cfg.seed;
       this.volScale=cfg.volScale;
       this.firebaseManager.setPair(pairName);
       this.candles=[];
-      this.currentCandle=null;
       this.markers=[];
-      this.t0=Math.floor(Date.now()/this.timeframe)*this.timeframe;
-      this.smin=null;
-      this.smax=null;
-      this.velocity=0;
-      this._fr=0;
-
+      this._closedTrades=[];
+      if(window.tradeHistory){
+        window.tradeHistory.setTrades([]);
+        if(window.tradeHistory.setHistory)window.tradeHistory.setHistory([]);
+      }
+      this._refreshTradeBadge();
       const firebaseCandles=await this.firebaseManager.loadCandles(this.maxCandles);
       if(firebaseCandles&&firebaseCandles.length>0){
         this.candles=firebaseCandles;
@@ -1224,7 +1357,7 @@ class AdvancedTradingChart {
 
       if (this.authManager.user) {
         this.loadOpenTrades();
-        this.loadTradeHistory(); // ✅ تحميل السجل عند تبديل الزوج
+        this.loadTradeHistory();
       }
 
     }catch(e){
@@ -1236,9 +1369,6 @@ class AdvancedTradingChart {
     }
   }
 
-  /* ============================================================
-     إدارة الرصيد
-     ============================================================ */
   _getActiveAcc() { return this.authManager.activeAccount || 'demo'; }
   _fmtBal(n) {
     try { return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n); }
@@ -1256,9 +1386,6 @@ class AdvancedTradingChart {
     this.authManager.setBalance(a, safeAmt, { persist: true });
   }
 
-  /* ============================================================
-     فتح صفقة
-     ============================================================ */
   openTrade(direction) {
     const acc = this._getActiveAcc();
 
@@ -1274,7 +1401,7 @@ class AdvancedTradingChart {
 
     const amountEl = document.getElementById('amountDisplay');
     const raw = amountEl ? String(amountEl.value || '') : '';
-    const rawVal = raw.replace(/[^0-9.]/g, '');
+    const rawVal = raw.replace(/\$/g, '');
 
     if (!rawVal || rawVal.trim() === '') {
       this._showMsg('اكتب مبلغ الصفقة الأول ❌', '#dc2626');
@@ -1287,50 +1414,46 @@ class AdvancedTradingChart {
       return;
     }
 
-    const balance = this._getBalanceFor(acc);
-
-    if (!Number.isFinite(balance) || balance <= 0) {
-      this._showMsg('الحساب فارغ ❌', '#dc2626');
+    const bal = this._getBalanceFor(acc);
+    if (bal < amount) {
+      this._showMsg('رصيدك مش كافي ❌', '#dc2626');
       return;
     }
 
-    if (balance < amount) {
-      this._showMsg('رصيد غير كافٍ ❌', '#dc2626');
-      return;
-    }
+    this._setBalanceFor(acc, bal - amount);
 
-    this._setBalanceFor(acc, balance - amount);
+    const dir = direction === 'buy' ? 'up' : 'down';
+    const duration = this.selectedTime;
+    const entryPrice = this.currentPrice;
 
-    const parts = this.currentPair.split('/');
-    const flagMap = {'AED':'ae','CNY':'cn','AUD':'au','CAD':'ca','CHF':'ch','BHD':'bh','EUR':'eu','RUB':'ru','USD':'us','KES':'ke','LBP':'lb','QAR':'qa','TRY':'tr','SYP':'sy','EGP':'eg','INR':'in','IRR':'ir'};
-    const f1 = (flagMap[parts[0]] || parts[0]).toLowerCase();
-    const f2 = (flagMap[parts[1]] || parts[1]).toLowerCase();
-
-    const payouts = {'EUR/USD':0.92,'AUD/CAD':0.88,'AUD/CHF':0.92,'BHD/CNY':0.86,'EUR/RUB':0.77,'KES/USD':0.84,'LBP/USD':0.79,'QAR/CNY':0.83,'USD/CHF':0.89,'SYP/TRY':0.87,'EGP/USD':0.78,'USD/INR':0.90,'AED/CNY':0.83};
-    const payout = payouts[this.currentPair] || 0.85;
-
-    const tradeId  = 'qt_' + Date.now() + '_' + (++this._tradeCounter);
-    const duration = this.selectedTime || 5;
-    const openTime = Date.now();
-    const closeTime = openTime + duration * 1000;
+    this._tradeCounter++;
+    const tradeId = `trade_${Date.now()}_${this._tradeCounter}`;
 
     const trade = {
-      id:tradeId,dir:direction==='buy'?'up':'down',pair:this.currentPair+' (OTC)',
-      flags:[f1,f2],amountTxt:this._fmtBal(amount),stake:amount,
-      entry:this.currentPrice,payout,remain:duration,duration,
-      openTime,closeTime,open:true,status:'open',
+      id: tradeId,
+      dir,
+      entry: entryPrice,
+      stake: amount,
+      profit: amount * 0.85,
+      closeTime: Date.now() + duration * 1000,
+      duration,
       account: acc,
-      markerCandleTimestamp:this.currentCandle?this.currentCandle.timestamp:null,
-      markerPrice:this.currentPrice,markerCandleIndex:this.candles.length
+      pair: this.currentPair,
+      timestamp: Date.now(),
+      status: 'open',
+      markerCandleIndex: this.candles.length,
+      markerCandleTimestamp: this.currentCandle ? this.currentCandle.timestamp : this.t0
     };
 
-    if (window.tradeHistory) {
-      const current = window.tradeHistory.getTrades() || [];
-      current.push(trade);
-      window.tradeHistory.setTrades(current);
-    }
-
     this.addMarker(direction, tradeId, acc);
+
+    if (window.tradeHistory) {
+      const current = window.tradeHistory.getTrades ? window.tradeHistory.getTrades() : [];
+      if (!current.find(t => t.id === tradeId)) {
+        current.push(trade);
+        window.tradeHistory.setTrades(current);
+      }
+    }
 
     if (this.authManager.user) {
       this._saveTradeToFirebase(trade).catch(e => console.warn('❌ Trade save error:', e));
@@ -1341,36 +1464,29 @@ class AdvancedTradingChart {
     setTimeout(() => this._closeTrade(tradeId, trade), duration * 1000);
   }
 
-  /* ============================================================
-     ✅ إغلاق الصفقة + إضافتها للسجل + حفظها في Firebase
-     ============================================================ */
   _closeTrade(tradeId, trade) {
     const currentP = this.currentPrice;
     const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP <= trade.entry);
-    const profit = win ? trade.stake * trade.payout : 0;
+    const profit = win ? trade.profit : 0;
     const pl = win ? profit : -trade.stake;
 
-    // ✅ إزالة من قائمة الصفقات المفتوحة
     if (window.tradeHistory) {
-      const remaining = (window.tradeHistory.getTrades() || []).filter(t => t.id !== tradeId);
+      const remaining = (window.tradeHistory.getTrades ? window.tradeHistory.getTrades() : []).filter(t => t.id !== tradeId);
       window.tradeHistory.setTrades(remaining);
     }
 
-    // ✅ تسوية الرصيد على نفس الحساب
     const acc = trade.account || 'demo';
     if (win) {
       const b = this._getBalanceFor(acc);
       this._setBalanceFor(acc, b + trade.stake + profit);
     }
 
-    // ✅ تحديث الماركر على الشارت
     const mIdx = this.markers.findIndex(mk => mk.tradeId === tradeId);
     if (mIdx >= 0) {
       this.markers[mIdx].closed = true;
       this.markers[mIdx].profitLoss = pl;
     }
 
-    // ✅ بناء كائن الصفقة المنتهية الكامل
     const closedTrade = {
       ...trade,
       status: 'closed',
@@ -1382,10 +1498,8 @@ class AdvancedTradingChart {
       open: false
     };
 
-    // ✅ إضافة للسجل وعرضها مباشرة
     this._addClosedTradeToHistory(closedTrade);
 
-    // ✅ حفظ في Firebase لو المستخدم مسجل
     if (this.authManager.user) {
       this._updateTradeInFirebase(tradeId, {
         status: 'closed',
@@ -1401,14 +1515,9 @@ class AdvancedTradingChart {
     this._refreshTradeBadge();
   }
 
-  /* ============================================================
-     ✅ إضافة صفقة منتهية للسجل المحلي + إرسال الحدث للـ HTML
-     ============================================================ */
   _addClosedTradeToHistory(closedTrade) {
-    // ✅ إضافة في بداية المصفوفة (الأحدث أولاً)
     this._closedTrades.unshift(closedTrade);
 
-    // ✅ الطريقة الأولى: استدعاء API السجل مباشرة إن وجدت
     if (window.tradeHistory) {
       if (typeof window.tradeHistory.addHistory === 'function') {
         window.tradeHistory.addHistory(closedTrade);
@@ -1421,7 +1530,6 @@ class AdvancedTradingChart {
       }
     }
 
-    // ✅ الطريقة الثانية: إرسال حدث مخصص يلتقطه الـ HTML
     window.dispatchEvent(new CustomEvent('qt_trade_closed', {
       detail: {
         trade: closedTrade,
@@ -1432,16 +1540,12 @@ class AdvancedTradingChart {
     console.log(`📝 صفقة أُضيفت للسجل: ${closedTrade.id} | ${closedTrade.result} | $${closedTrade.profit?.toFixed(2)}`);
   }
 
-  /* ============================================================
-     ✅ تحميل سجل الصفقات المنتهية من Firebase
-     ============================================================ */
   async loadTradeHistory() {
     if (!this.authManager.user) return;
     try {
       const email = this.authManager.user.email;
       const tradesRef = collection(db, 'users', email, 'trades');
 
-      // ✅ جلب آخر 100 صفقة منتهية مرتبة من الأحدث للأقدم
       const q = query(
         tradesRef,
         where('status', '==', 'closed'),
@@ -1457,7 +1561,6 @@ class AdvancedTradingChart {
         this._closedTrades.push({
           ...data,
           id: docSnap.id,
-          // ✅ ضمان وجود الحقول الأساسية
           status: 'closed',
           result: data.result || (data.profit >= 0 ? 'win' : 'loss'),
           profit: data.profit || data.profitLoss || 0,
@@ -1469,7 +1572,6 @@ class AdvancedTradingChart {
 
       console.log(`📜 تم تحميل ${this._closedTrades.length} صفقة منتهية من Firebase`);
 
-      // ✅ إرسال السجل الكامل للـ HTML
       if (window.tradeHistory) {
         if (typeof window.tradeHistory.setHistory === 'function') {
           window.tradeHistory.setHistory([...this._closedTrades]);
@@ -1479,14 +1581,12 @@ class AdvancedTradingChart {
         }
       }
 
-      // ✅ إرسال حدث مخصص مع كل السجل
       window.dispatchEvent(new CustomEvent('qt_history_loaded', {
         detail: [...this._closedTrades]
       }));
 
     } catch(e) {
       console.error('❌ loadTradeHistory error:', e);
-      // ✅ حتى لو فشل التحميل، أرسل مصفوفة فارغة
       window.dispatchEvent(new CustomEvent('qt_history_loaded', { detail: [] }));
     }
   }
@@ -1512,9 +1612,6 @@ class AdvancedTradingChart {
     } catch(e) { console.error('❌ _updateTradeInFirebase error:', e); throw e; }
   }
 
-  /* ============================================================
-     ✅ تحميل الصفقات المفتوحة + السجل معاً
-     ============================================================ */
   async loadOpenTrades() {
     if (!this.authManager.user) return;
     try {
@@ -1525,7 +1622,6 @@ class AdvancedTradingChart {
 
       if (snapshot.empty) {
         this._refreshTradeBadge();
-        // ✅ حتى لو ما فيش صفقات مفتوحة، حمّل السجل
         await this.loadTradeHistory();
         return;
       }
@@ -1539,13 +1635,18 @@ class AdvancedTradingChart {
         const trade = { ...docSnap.data(), id: docSnap.id };
         if (!trade.closeTime) continue;
         if (trade.closeTime <= now) {
-          await this._closeExpiredTrade(trade);
+          await this._updateTradeInFirebase(trade.id, {
+            status: 'closed',
+            result: 'expired',
+            profit: -trade.stake,
+            profitLoss: -trade.stake,
+            closedAt: now,
+            closePrice: this.currentPrice
+          }).catch(() => {});
         } else {
           const remaining = trade.closeTime - now;
-          trade.remain = Math.ceil(remaining / 1000);
-          trade.open = true;
           if (window.tradeHistory) {
-            const current = window.tradeHistory.getTrades() || [];
+            const current = window.tradeHistory.getTrades ? window.tradeHistory.getTrades() : [];
             if (!current.find(t => t.id === trade.id)) {
               current.push(trade);
               window.tradeHistory.setTrades(current);
@@ -1557,8 +1658,6 @@ class AdvancedTradingChart {
       }
 
       this._refreshTradeBadge();
-
-      // ✅ تحميل السجل بعد الصفقات المفتوحة
       await this.loadTradeHistory();
 
     } catch(e) { console.error('❌ loadOpenTrades error:', e); }
@@ -1568,83 +1667,30 @@ class AdvancedTradingChart {
     let candleIdx = trade.markerCandleIndex || 0;
     if (trade.markerCandleTimestamp) {
       for (let i = 0; i < this.candles.length; i++) {
-        if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
+        if (this.candles[i].timestamp === trade.markerCandleTimestamp) {
+          candleIdx = i;
+          break;
+        }
       }
     }
+    const dir = trade.dir === 'up' ? 'buy' : 'sell';
+    const fp = trade.entry || this.currentPrice;
     this.markers.push({
-      type:trade.dir==='up'?'buy':'sell',
-      ts:trade.openTime||Date.now(),
-      price:trade.markerPrice||trade.entry,
-      candleIndex:candleIdx,
-      candleTimestamp:trade.markerCandleTimestamp,
-      tradeId:trade.id,
+      type: dir,
+      price: fp,
+      candleIndex: candleIdx,
+      candleTimestamp: trade.markerCandleTimestamp || 0,
+      tradeId: trade.id,
       account: trade.account || 'demo',
-      closed:false,
-      profitLoss:null
+      closed: false,
+      profitLoss: null
     });
-  }
-
-  async _closeExpiredTrade(trade) {
-    const currentP = this.currentPrice;
-    const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP <= trade.entry);
-    const profit = win ? trade.stake * trade.payout : 0;
-    const pl = win ? profit : -trade.stake;
-
-    const acc = trade.account || 'demo';
-    if (win) {
-      const b = this._getBalanceFor(acc);
-      this._setBalanceFor(acc, b + trade.stake + profit);
-    }
-
-    let candleIdx = trade.markerCandleIndex || 0;
-    if (trade.markerCandleTimestamp) {
-      for (let i = 0; i < this.candles.length; i++) {
-        if (this.candles[i].timestamp === trade.markerCandleTimestamp) { candleIdx = i; break; }
-      }
-    }
-    this.markers.push({
-      type:trade.dir==='up'?'buy':'sell',
-      ts:trade.openTime||Date.now(),
-      price:trade.markerPrice||trade.entry,
-      candleIndex:candleIdx,
-      candleTimestamp:trade.markerCandleTimestamp,
-      tradeId:trade.id,
-      account: acc,
-      closed:true,
-      profitLoss:pl
-    });
-
-    // ✅ بناء كائن الصفقة المنتهية وإضافتها للسجل
-    const closedTrade = {
-      ...trade,
-      status: 'closed',
-      result: win ? 'win' : 'loss',
-      profit: pl,
-      profitLoss: pl,
-      closedAt: Date.now(),
-      closePrice: currentP,
-      open: false
-    };
-    this._addClosedTradeToHistory(closedTrade);
-
-    try {
-      await this._updateTradeInFirebase(trade.id, {
-        status: 'closed',
-        result: win ? 'win' : 'loss',
-        profit: pl,
-        profitLoss: pl,
-        closedAt: Date.now(),
-        closePrice: currentP,
-        open: false
-      });
-    } catch(e) { console.warn('⚠️ Expired trade Firebase update error:', e); }
   }
 
   _refreshTradeBadge() {
     try {
       const acc = this._getActiveAcc();
-      const trades = (window.tradeHistory ? (window.tradeHistory.getTrades() || []) : []);
-      const count = trades.filter(t => (t.account || 'demo') === acc).length;
+      const count = (window.tradeHistory && window.tradeHistory.getTrades ? window.tradeHistory.getTrades() : []).filter(t => (t.account || 'demo') === acc).length;
       this._updateTradeBadge(count);
     } catch(e) {}
   }
@@ -1652,7 +1698,7 @@ class AdvancedTradingChart {
   _updateTradeBadge(count) {
     let badge = document.getElementById('_qtTradeBadge');
     if (!badge) {
-      let histBtn = document.querySelector('#historyBtn')||document.querySelector('.historyBtn')||document.querySelector('[data-panel="history"]')||document.querySelector('#tradeHistoryBtn')||document.querySelector('.tradeHistBtn')||document.querySelector('[id*="hist" i]')||document.querySelector('[class*="hist" i]');
+      let histBtn = document.querySelector('#historyBtn')||document.querySelector('.historyBtn')||document.querySelector('[data-panel="history"]')||document.querySelector('#tradeHistoryBtn')||document.querySelector('.tradeHistBtn')||document.querySelector('[id="hist" i]')||document.querySelector('[class="hist" i]');
       if (!histBtn) { document.querySelectorAll('button').forEach(btn => { if (!histBtn && ((btn.id&&btn.id.toLowerCase().includes('hist'))||(btn.className&&btn.className.toLowerCase().includes('hist')))) histBtn=btn; }); }
       if (!histBtn) return;
       badge = document.createElement('span');
@@ -1680,9 +1726,6 @@ class AdvancedTradingChart {
   }
 }
 
-/* ============================================================
-   🚀 تهيئة التطبيق
-   ============================================================ */
 window.chart=new AdvancedTradingChart();
 const timeSelector=document.getElementById("timeSelector");
 const timeDropdown=document.getElementById("timeDropdown");
@@ -1736,7 +1779,7 @@ compensationList.addEventListener("click",e=>{
 
 timeDisplay.addEventListener("input",e=>{
   if(isEditingTime){
-    let v=e.target.textContent.replace(/[^0-9]/g,"");
+    let v=e.target.textContent.replace(/\D/g,"");
     if(v.length>4)v=v.slice(0,4);
     const sel=window.getSelection();
     const pos=sel.focusOffset;
@@ -1755,7 +1798,7 @@ timeDisplay.addEventListener("input",e=>{
 
 timeDisplay.addEventListener("blur",()=>{
   if(isEditingTime){
-    let v=timeDisplay.textContent.replace(/[^0-9]/g,"");
+    let v=timeDisplay.textContent.replace(/\D/g,"");
     if(v.length===0)v="0005";
     v=v.padStart(4,"0");
     const h=v.slice(0,2);
@@ -1772,11 +1815,11 @@ timeDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.prevent
 
 amountContainer.addEventListener("click",()=>{amountDisplay.focus();});
 amountDisplay.addEventListener("focus",function(){let v=this.value.replace("$","");this.value=v;setTimeout(()=>{this.setSelectionRange(0,this.value.length);},10);});
-amountDisplay.addEventListener("input",function(){this.value=this.value.replace(/[^0-9]/g,"");});
+amountDisplay.addEventListener("input",function(){this.value=this.value.replace(/\D/g,"");});
 amountDisplay.addEventListener("blur",function(){let val=parseFloat(this.value)||50;this.value=val+"$";});
 amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
 
 document.getElementById("buyBtn").addEventListener("click",()=>chart.openTrade("buy"));
 document.getElementById("sellBtn").addEventListener("click",()=>chart.openTrade("sell"));
 
-console.log('🚀 QT Trading Chart v3 — Firebase History Sync ✅');
+console.log('🚀 QT Trading Chart v3 — Fixed ✅');
