@@ -1,1451 +1,666 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, serverTimestamp, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+<!DOCTYPE html>
+<html lang="en">
 
-const firebaseConfig = {apiKey: "AIzaSyBOUqLixfphg3b8hajc4hkwV-VJmldGBVw",authDomain: "randers-c640b.firebaseapp.com",projectId: "randers-c640b",storageBucket: "randers-c640b.firebasestorage.app",messagingSenderId: "391496092929",appId: "1:391496092929:web:58208b4eb3e6f9a8571f00",measurementId: "G-DBDSVVF7PS"};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
 
-/* ============================================================
-   💉 حقن CSS مربع تبديل الحسابات + وقت مخصص
-   ============================================================ */
-(function injectAccMenuStyles() {
-  if (document.getElementById('qtAccMenuCSS')) return;
-  const st = document.createElement('style');
-  st.id = 'qtAccMenuCSS';
-  st.textContent = `
-    .qt-bal-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer;z-index:2601}
-    .qt-acc-menu{
-      position:absolute;
-      top:calc(100% + 10px);
-      left:0;
-      width:248px;
-      background:linear-gradient(145deg,#101a2f 0%,#0d1117 100%);
-      border:2px solid rgba(255,255,255,.10);
-      border-radius:16px;
-      box-shadow:0 12px 40px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04) inset;
-      padding:10px;
-      z-index:99999;
-      display:none;
-      animation:qtMenuIn .18s cubic-bezier(.34,1.3,.64,1) both;
-    }
-    .qt-acc-menu.show{display:block}
-    @keyframes qtMenuIn{
-      from{opacity:0;transform:translateY(-8px) scale(.97)}
-      to{opacity:1;transform:translateY(0) scale(1)}
-    }
-    .qt-acc-switch{
-      display:flex;gap:7px;
-      background:#0d1117;
-      border-radius:10px;padding:4px;margin-bottom:11px;
-    }
-    .qt-sw-btn{
-      flex:1;padding:8px 4px;border-radius:8px;
-      font-size:11px;font-weight:900;letter-spacing:.4px;
-      transition:.2s;border:1.5px solid transparent;
-      display:flex;align-items:center;justify-content:center;gap:5px;
-      background:transparent;color:#fff;cursor:pointer;
-    }
-    .qt-sw-btn.qt-live{color:#00ff41}
-    .qt-sw-btn.qt-demo{color:#ffd700}
-    .qt-sw-btn.active{background:rgba(255,255,255,.10);border-color:currentColor;box-shadow:0 0 8px rgba(255,255,255,.08)}
-    .qt-acc-item{
-      background:rgba(255,255,255,.03);
-      border:1.3px solid rgba(255,255,255,.10);
-      border-radius:12px;padding:10px 12px;margin-bottom:9px;
-      cursor:pointer;transition:.15s;
-      display:flex;align-items:center;justify-content:space-between;gap:10px;
-    }
-    .qt-acc-item:hover{background:rgba(255,255,255,.06);transform:translateY(-1px)}
-    .qt-acc-item.active{
-      background:linear-gradient(135deg,rgba(66,153,225,.16) 0%,rgba(49,130,206,.10) 100%);
-      border-color:#4299e1;
-      box-shadow:0 0 14px rgba(66,153,225,.22);
-    }
-    .qt-acc-left{display:flex;align-items:center;gap:10px;min-width:0}
-    .qt-acc-ico{width:26px;height:26px;object-fit:contain;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-    .qt-acc-info{display:flex;flex-direction:column;gap:2px}
-    .qt-acc-label{font-size:10px;color:rgba(255,255,255,.45);font-weight:700;letter-spacing:.4px;text-transform:uppercase}
-    .qt-acc-amt{font-size:16px;font-weight:1000;color:#fff;white-space:nowrap}
-    .qt-acc-badge{
-      font-size:9px;font-weight:900;letter-spacing:.6px;
-      padding:3px 7px;border-radius:6px;white-space:nowrap;
-    }
-    .qt-acc-badge.live{background:rgba(0,255,65,.12);color:#00ff41;border:1px solid rgba(0,255,65,.3)}
-    .qt-acc-badge.demo{background:rgba(255,215,0,.12);color:#ffd700;border:1px solid rgba(255,215,0,.3)}
-    .qt-refill-btn{
-      width:100%;
-      background:linear-gradient(135deg,#4299e1 0%,#3182ce 100%);
-      border-radius:10px;padding:10px;
-      font-size:12px;font-weight:1000;color:#fff;
-      letter-spacing:.5px;cursor:pointer;
-      box-shadow:0 4px 14px rgba(66,153,225,.35);
-      transition:.2s;border:none;
-    }
-    .qt-refill-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(66,153,225,.45)}
-    .qt-refill-btn:active{transform:scale(.97)}
+  </head>
+    
+  <body>
+  <!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f1d35"><title>QT Real Trading</title><style>
+*{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;overflow:hidden}body{font-family:Arial,sans-serif;background:#0a1628;color:#fff;direction:rtl;display:flex;flex-direction:column;font-size:12.6px}
+.header{flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:4px 10px;background:#0f1d35;position:relative}
+.header::after{content:'';position:absolute;bottom:-8px;left:0;right:0;height:8px;background:linear-gradient(to bottom,#0f1d35,transparent);pointer-events:none;z-index:5}
+.header-left{display:flex;gap:8px;align-items:center}.header-center{display:flex;gap:8px;align-items:center}.header-right{display:flex;align-items:center;gap:8px}
+.icon-btn{width:38px;height:38px;background:rgba(255,255,255,.05);border-radius:8px;display:flex;align-items:center;justify-content:center;border:0;cursor:pointer;padding:0}
+.logo-btn img{width:100%;height:100%;display:block;object-fit:cover}
+.balance-box{background:#0f1d35;padding:8px 14px;border-radius:10px;min-height:46px;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid rgba(255,255,255,.12);position:relative;cursor:pointer;user-select:none;z-index:2601}
+.balance-main{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.acc-top-icon{width:20px;height:14px;border-radius:3px;box-shadow:0 2px 4px rgba(0,0,0,.3);flex:0 0 auto;object-fit:cover}
+.balance-label{font-size:9.5px;color:#fff;font-weight:700;letter-spacing:.3px;margin-bottom:2px}
+.balance-amount{font-size:15px;font-weight:900;letter-spacing:.4px;color:#fff}
+.balance-content{display:flex;flex-direction:column;min-width:0}
+.balance-arrow{display:flex;align-items:center;justify-content:center;color:#8b9cb5;font-size:16px;transition:transform .2s}
+.balance-box.open .balance-arrow{transform:rotate(180deg)}
+.accMenu{position:absolute;top:calc(100% + 8px);right:0;width:260px;background:linear-gradient(145deg,#101a2f 0%,#0d1117 100%);border:2px solid rgba(255,255,255,.10);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.05) inset;padding:10px;z-index:99999;display:none}
+.accMenu.show{display:block}
+.accSwitch{display:flex;gap:8px;background:#0d1117;border-radius:10px;padding:4px;margin-bottom:12px}
+.accSwitchBtn{flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:900;transition:.2s;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px;background:transparent;color:#fff;cursor:pointer}
+.accSwitchBtn.live{color:#00ff41}.accSwitchBtn.demo{color:#ffd700}.accSwitchBtn.active{background:rgba(255,255,255,.1);border-color:currentColor}
+.accItem{background:rgba(255,255,255,.03);border:1.3px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 12px;margin-bottom:9px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.accItem.active{background:linear-gradient(135deg,rgba(66,153,225,.15) 0%,rgba(49,130,206,.1) 100%);border-color:#4299e1;box-shadow:0 0 12px rgba(66,153,225,.2)}
+.accL{display:flex;align-items:center;gap:10px;min-width:0}
+.accIco{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.accAmt{font-size:16px;font-weight:1000;color:#fff;white-space:nowrap}
+.refillBtn{width:100%;background:linear-gradient(135deg,#3b82f6 0%,#2563eb 100%);border:0;border-radius:10px;padding:10px;font-size:12px;font-weight:1000;color:#fff;letter-spacing:.5px;box-shadow:0 4px 12px rgba(66,153,225,.4);cursor:pointer}
+.wallet-btn{width:38px;height:38px;background:#16a34a;border-radius:8px;border:2px solid rgba(255,255,255,.15);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden}
+.wallet-btn img{width:100%;height:100%;display:block;object-fit:cover}
+.time-display{position:absolute;left:8px;top:calc(100% + 8px);font-size:11px;color:#8b9cb5;font-weight:700;letter-spacing:.4px;background:rgba(15,29,53,.95);padding:6px 12px;border-radius:6px;z-index:180;border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:6px}
+.time-display::before{content:'';width:6px;height:6px;background:#0f0;border-radius:50%;box-shadow:0 0 8px #0f0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.chart-container{flex:1 1 auto;min-height:0;background:#0a1628;position:relative;overflow:hidden}
+.quick-actions{position:absolute;top:52px;left:8px;display:flex;flex-direction:column;gap:6px;z-index:190;pointer-events:none}
+.quick-actions button{pointer-events:auto}
+.qa-btn{width:44px;height:44px;background:#0f1d35;border:1px solid rgba(255,255,255,.12);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;transition:background .15s}
+.qa-btn:hover{background:#1a2942}.qa-btn:active{background:#213554}
+.chart-frame{position:relative;width:100%;height:100%;overflow:hidden}
+.plot{position:absolute;inset:0;overflow:hidden}
+#chartCanvas{display:block;position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;touch-action:none;cursor:grab}
+#chartCanvas:active{cursor:grabbing}
+.candle-timer{position:absolute;color:rgba(255,255,255,.35);font-size:11px;font-weight:700;z-index:180;pointer-events:none;font-family:monospace}
+.price-line{position:absolute;left:0;right:0;height:2px;background:transparent;z-index:150;pointer-events:none;border-top:2px dashed rgba(255,255,255,.7)}
+.timeLabels{position:absolute;left:0;right:0;bottom:0;height:24px;background:rgba(10,22,40,.95);border-top:1px solid rgba(255,255,255,.08);pointer-events:none;z-index:160}
+.timeLabel{position:absolute;bottom:2px;font-size:8.5px;font-weight:900;color:rgba(255,255,255,.55);transform:translateX(-50%);white-space:nowrap}
+.timeLabel.major{color:rgba(255,215,0,.85);font-weight:900}
+#priceScale{position:absolute;top:0;right:0;bottom:0;width:50px;pointer-events:none;z-index:170;background:transparent!important;border:none!important;box-shadow:none!important}
+#priceScaleLabels{position:absolute;inset:0;background:transparent!important;border:none!important;box-shadow:none!important}
+#currentPrice{position:absolute;right:8px;transform:translateY(-50%);color:#000;font-size:10px;font-weight:900;white-space:nowrap;background:#ffd700!important;padding:4px 8px!important;border-radius:4px!important;box-shadow:0 0 10px rgba(255,215,0,.6)!important;text-shadow:none!important;border:1px solid rgba(255,215,0,.8)!important}
+#priceScale .pLabel{position:absolute;right:8px;transform:translateY(-50%);font-size:9px;font-weight:800;color:#fff;white-space:nowrap;background:transparent!important;box-shadow:none!important;border:none!important;text-shadow:0 0 6px rgba(255,255,255,.4)!important;padding:0!important;margin:0!important;filter:brightness(1.3)}
+#priceScale .pLabel.major{color:#fff;filter:brightness(1.5)}
+.controls{flex:0 0 auto;padding:9px 10.8px 0;background:#0f1d35}
+.timer-amount{display:flex;gap:7.2px;margin-bottom:9px}
+.control-group{flex:1;display:flex;flex-direction:column;gap:5.4px}
+.control-label{font-size:9.9px;color:#8b9cb5;font-weight:600;text-align:center}
+.control-value{background:#0a1628;padding:9px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.2);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;position:relative;user-select:none;width:100%;min-height:46px;box-shadow:inset 0 2px 8px rgba(0,0,0,.4)}
+.control-value:hover{background:#0d1a2e}
+.control-text{flex:1;text-align:center}
+.control-icon{width:18px;height:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.dropdown{position:absolute;bottom:calc(100% + 7.2px);left:-9px;right:-9px;background:#1a2942;border-radius:10.8px;box-shadow:0 -3.6px 18px rgba(0,0,0,.6);z-index:200;display:none;border:1px solid rgba(255,255,255,.15);max-width:360px;width:auto;min-width:calc(100% + 18px)}
+.dropdown.show{display:block}
+.dropdown-header{display:flex;border-bottom:1px solid rgba(255,255,255,.1);padding:3.6px}
+.dropdown-tab{flex:1;padding:9px 14.4px;text-align:center;font-size:10.8px;cursor:pointer;background:transparent;border:0;color:#8b9cb5;font-weight:700;border-radius:7.2px;transition:all .2s}
+.dropdown-tab.active{color:#fff;background:rgba(59,130,246,.2)}
+.dropdown-content{max-height:216px;overflow-y:auto;padding:5.4px;display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
+.dropdown-item{padding:10.8px 8px;font-size:12.6px;cursor:pointer;border-radius:7.2px;font-weight:600;transition:all .2s;text-align:center}
+.dropdown-item:hover{background:rgba(59,130,246,.15);color:#3b82f6}
+.custom-input{padding:7.2px 10.8px;display:none}.custom-input.show{display:block}
+.time-input{width:100%;background:#0f1d35;border:1px solid rgba(255,255,255,.2);border-radius:7.2px;padding:10.8px;color:#fff;font-size:14.4px;text-align:center;font-weight:700;letter-spacing:.9px}
+#timeDisplay.editing{background:#0f1d35;border:1px solid rgba(59,130,246,.5);outline:none;cursor:text;color:#fff}
+#amountDisplay{background:transparent;border:none;color:#fff;font-size:16px;text-align:center;font-weight:700;outline:none;width:100%;cursor:text;padding:0}
+#amountDisplay:focus{outline:none}
+.trade-buttons{display:flex;gap:7.2px;margin:9px 0 5.4px}
+.trade-btn{flex:1;height:38px;border:0;border-radius:10.8px;font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7.2px;transition:transform .2s}
+.trade-btn:active{transform:scale(.96)}
+.buy-btn{background:linear-gradient(135deg,#0f0,#0c0);color:#fff}.buy-btn:before{content:"↗";font-size:16.2px}
+.sell-btn{background:linear-gradient(135deg,#f00,#c00);color:#fff}.sell-btn:before{content:"↘";font-size:16.2px}
+.ai-trade-btn{flex:2;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}.ai-trade-btn:before{content:"AI";margin-right:4.5px;font-weight:900}
+.bottom-nav{flex:0 0 auto;background:#0f1d35;display:flex;justify-content:space-around;padding:7.2px 0;border-top:1px solid rgba(255,255,255,.05)}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3.6px;color:#6b7a94;font-size:9px;cursor:pointer}
+.nav-item.active{color:#3b82f6}
+.nav-icon{width:21.6px;height:21.6px;display:flex;align-items:center;justify-content:center;font-size:16.2px}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,22,40,.95);display:flex;align-items:center;justify-content:center;z-index:9999;display:none}
+.loading-overlay.show{display:flex}
+.loading-content{text-align:center}
+.loading-spinner{width:50px;height:50px;border:4px solid rgba(59,130,246,.3);border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:#fff;font-size:14px;font-weight:600}
 
-    #timeDisplay { caret-color: #fff !important; outline: none !important; }
-    #timeDisplay:focus { border-color: rgba(255,255,255,.35) !important; }
+/* ===== Pair HUD + Panel ===== */
+.pair-box{position:absolute;left:8px;bottom:32px;z-index:175;display:inline-flex;align-items:center;gap:6.6px;background:#0f1d35;border:1.1px solid rgba(255,255,255,.12);border-radius:11px;padding:5.5px 9.9px;cursor:pointer;user-select:none;backdrop-filter:blur(8px)}
+.pair-box .flags{display:flex;align-items:center;margin-inline:2px}
+.pair-box .flags img{width:24.2px;height:24.2px;border-radius:999px;border:2.2px solid #101a2f;margin-left:-8.8px;background:#101a2f;object-fit:cover}
+.pair-box .otc{margin-inline-start:6.6px;padding:2.2px 6.6px;border-radius:999px;background:rgba(255,255,255,.10);border:1.1px solid rgba(255,255,255,.18);font-size:11px;font-weight:1000;letter-spacing:.44px}
+.pairPanel{position:fixed;left:0;top:0;bottom:0;width:18vw;min-width:280px;max-width:420px;background:rgba(10,22,40,.72);border-right:1.5px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);z-index:99998;transform:translateX(-105%);transition:transform .25s ease;pointer-events:auto;box-shadow:4px 0 24px rgba(0,0,0,.6)}
+.pairPanel.on{transform:translateX(0)}
+.pairHead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid rgba(255,255,255,.12);background:linear-gradient(to bottom,rgba(255,255,255,.03),transparent);user-select:none}
+.pairHead b{font-size:15px;font-weight:1000;color:#fff;letter-spacing:.3px}
+.pairClose{width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);color:#d9e6ff;font-weight:1000;transition:.2s;cursor:pointer}
+.pairList{padding:10px 12px;max-height:calc(100vh - 80px);overflow-y:auto}
+.pit{width:100%;display:flex;align-items:center;justify-content:space-between;gap:11px;padding:11px 13.2px;border-radius:13.2px;background:rgba(255,255,255,.03);border:1.5px solid rgba(255,255,255,.12);color:#d9e6ff;margin:6.6px 0;transition:.2s;cursor:pointer}
+.pit:hover{background:rgba(255,255,255,.05)}
+.pitL{display:flex;align-items:center;gap:11px;min-width:0}
+.star{width:19.8px;height:19.8px;border-radius:6.6px;background:rgba(255,159,42,.10);border:1.1px solid rgba(255,159,42,.30);display:grid;place-items:center;color:#ffb357;font-size:13.2px;flex:0 0 auto}
+.fg{display:flex;align-items:center}
+.fg img{width:24.2px;height:24.2px;border-radius:999px;border:2.2px solid #101a2f;margin-left:-8.8px;background:#101a2f;object-fit:cover}
+.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:1000}
+.bad{margin-inline-start:6.6px;padding:2.2px 6.6px;border-radius:999px;background:rgba(255,255,255,.08);border:1.1px solid rgba(255,255,255,.12);font-size:11px;font-weight:1000}
 
-    #_qtRoleBadge{display:none !important;opacity:0 !important;visibility:hidden !important;}
-  `;
-  document.head.appendChild(st);
+/* ===== سجل الصفقات ===== */
+:root{--histH:30vh}
+#hb{position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);z-index:99996;display:none}
+#hs{position:fixed;left:0;right:0;bottom:0;height:var(--histH);min-height:190px;max-height:360px;background:#1f2736;color:#e9eef7;z-index:99997;transform:translateY(105%);transition:transform .22s ease;border-top:1px solid #2e384b;box-shadow:0 -10px 30px rgba(0,0,0,.55)}
+#hs.on{transform:translateY(0)}
+#hb.on{display:block}
+#hs .hh{height:44px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 12px;background:#1f2736;border-bottom:1px solid #2e384b;position:relative}
+#hs .hh:before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#2e7bef}
+#hs .hhL{display:flex;align-items:center;gap:10px;opacity:.85}
+#hs .hhL .ic{width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,.06);display:grid;place-items:center;font-weight:800;font-size:12px;color:#b8c3d6;border:1px solid rgba(255,255,255,.10)}
+#hs .hhC{display:flex;align-items:center;gap:8px;justify-content:center}
+#hs .hhC .ttl{font-size:16px;font-weight:800;letter-spacing:.2px}
+#hs .hhC .bdg{min-width:22px;height:22px;border-radius:999px;background:#3a465c;display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff}
+#hs .hhR{display:flex;justify-content:flex-end}
+#hs .hhR button{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#b8c3d6;font-size:18px;font-weight:900;cursor:pointer}
+#hs .hlst{height:calc(100% - 44px);overflow:auto;padding-top:6px}
+
+/* صفوف التاب */
+#hs .htabs{display:flex;gap:4px;padding:6px 12px 4px;border-bottom:1px solid #2e384b;background:#1a2330}
+#hs .htab{flex:1;padding:5px 8px;border-radius:7px;font-size:10.5px;font-weight:900;letter-spacing:.3px;background:transparent;border:1px solid rgba(255,255,255,.10);color:#6b7a94;cursor:pointer;transition:.2s;text-align:center}
+#hs .htab.active{background:rgba(46,123,239,.18);border-color:#2e7bef;color:#e9eef7}
+#hs .htab .tc{display:inline-block;min-width:16px;height:16px;border-radius:999px;background:#3a465c;font-size:10px;font-weight:900;line-height:16px;text-align:center;margin-inline-start:4px;padding:0 3px}
+#hs .htab.active .tc{background:#2e7bef}
+
+/* صف صفقة مفتوحة */
+#hs .hrw{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;background:#242d3e;border-top:1px solid #2e384b}
+#hs .hrw:first-child{border-top:0}
+#hs .lft{display:flex;gap:10px;min-width:0;align-items:flex-start}
+#hs .car{color:#b7c2d6;font-size:16px;line-height:1;margin-top:2px}
+#hs .tm{font-size:18px;font-weight:700;color:#e9eef7;direction:ltr;text-align:left}
+#hs .pf{margin-top:6px;font-size:18px;font-weight:1000;direction:ltr;text-align:left}
+#hs .pf.pos{color:#22c55e}
+#hs .pf.neg{color:#e15353}
+#hs .rgt{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:0}
+#hs .pr{display:flex;align-items:center;gap:8px;white-space:nowrap}
+#hs .pr .pair{font-size:18px;font-weight:900;color:#e9eef7;direction:ltr}
+#hs .flg{display:flex;align-items:center;gap:6px}
+#hs .flg img{width:20px;height:20px;border-radius:999px;border:1px solid rgba(230,236,246,.8);object-fit:cover}
+#hs .amt{display:flex;align-items:center;gap:10px}
+#hs .amt .v{font-size:20px;font-weight:1000;direction:ltr}
+#hs .amt .v.up{color:#22c55e}
+#hs .amt .v.dn{color:#e15353}
+#hs .amt .d{width:26px;height:26px;border-radius:999px;background:#3a465c;display:grid;place-items:center;border:1px solid rgba(255,255,255,.10)}
+#hs .amt .d span{font-size:16px;line-height:1}
+#hs .amt .d.up span{color:#22c55e}
+#hs .amt .d.dn span{color:#e15353}
+
+/* صف صفقة منتهية */
+#hs .hrw.closed{background:#1e2a3a}
+#hs .hrw.closed .tm{font-size:13px;color:#8b9cb5}
+#hs .result-badge{font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;letter-spacing:.4px;margin-top:2px;display:inline-block}
+#hs .result-badge.win{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+#hs .result-badge.loss{background:rgba(225,83,83,.15);color:#e15353;border:1px solid rgba(225,83,83,.3)}
+
+/* رسالة فارغ */
+#hs .empty-msg{text-align:center;padding:28px 20px;color:#6b7a94;font-size:13px;line-height:1.7}
+#hs .empty-msg span{font-size:26px;display:block;margin-bottom:8px;opacity:.5}
+</style></head><body>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-content"><div class="loading-spinner"></div><div class="loading-text">جاري تحميل البيانات...</div></div></div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="balance-box" id="balanceBox" aria-label="Account Switcher">
+      <div class="balance-main">
+        <img class="acc-top-icon" id="topAccIcon" src="https://flagcdn.com/w40/us.png" alt="account">
+        <div class="balance-content"><div class="balance-label" id="balLabel">QT Real USD</div><div class="balance-amount" id="balAmount">$10,000.00</div></div>
+      </div>
+      <div class="balance-arrow" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="#8b9cb5"><path d="M7 10l5 5 5-5z"></path></svg></div>
+      <div class="accMenu" id="accMenu">
+        <div class="accSwitch">
+          <button class="accSwitchBtn live active" data-acc="real" type="button">LIVE</button>
+          <button class="accSwitchBtn demo" data-acc="demo" type="button">Demo</button>
+        </div>
+        <div class="accItem active" data-type="real"><div class="accL"><img class="accIco" src="https://flagcdn.com/w40/us.png" alt="USD"><div class="accAmt" id="realAmt">$10,000.00</div></div></div>
+        <div class="accItem" data-type="demo"><div class="accL"><img class="accIco" src="https://cdn-icons-png.flaticon.com/128/1344/1344761.png" alt="Demo"><div class="accAmt" id="demoAmt">$10,000.00</div></div></div>
+        <button class="refillBtn" id="refillBtn" type="button">🔄 Refill Demo Account</button>
+      </div>
+    </div>
+  </div>
+  <div class="header-center">
+    <button class="wallet-btn" aria-label="Wallet" onclick="window.location.href='wallet.html'"><img src="https://cdn-icons-png.flaticon.com/128/10167/10167706.png" alt="Wallet"></button>
+    <button class="icon-btn logo-btn" aria-label="QT" onclick="window.location.href='profile.html'"><img id="userAvatarImg" src="https://cdn-icons-png.flaticon.com/128/18921/18921105.png" alt="QT"></button>
+  </div>
+  <div class="time-display" id="liveTime">00:00:00 UTC+3</div>
+</div>
+
+<div class="chart-container">
+  <div class="quick-actions">
+    <button class="qa-btn" id="openHistory" aria-label="Trade History"><svg width="42" height="42" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="gradBag" x1="0" y1="0" x2="24" y2="24"><stop offset="0%" stop-color="#4a90e2"></stop><stop offset="100%" stop-color="#357abd"></stop></linearGradient></defs><rect x="3" y="7" width="18" height="13" rx="3" stroke="url(#gradBag)" stroke-width="2" fill="none"></rect><path d="M8 7V5a4 4 0 0 1 8 0v2" stroke="url(#gradBag)" stroke-width="2" stroke-linecap="round"></path><line x1="7" y1="12" x2="17" y2="12" stroke="url(#gradBag)" stroke-width="1.6" stroke-linecap="round"></line></svg></button>
+    <button class="qa-btn" aria-label="Options" style="color:#4a90e2"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><line x1="5" y1="7" x2="19" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line><line x1="5" y1="17" x2="19" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg></button>
+  </div>
+
+  <div class="chart-frame"><div class="plot" id="plot">
+    <canvas id="chartCanvas"></canvas><div class="price-line" id="priceLine"></div><div class="candle-timer" id="candleTimer">59</div>
+    <div id="priceScale"><div id="priceScaleLabels"></div><div id="currentPrice"></div></div><div class="timeLabels" id="timeLabels"></div>
+    <div class="pair-box" id="pairHud"><span id="pairHudTxt">EUR/USD</span><span class="otc" id="otcHud">OTC</span><span class="flags" id="pairFlags"></span><span style="opacity:.7">▾</span></div>
+  </div></div>
+</div>
+
+<div class="controls">
+  <div class="timer-amount">
+    <div class="control-group">
+      <div class="control-label">Time</div>
+      <div class="control-value" id="timeSelector">
+        <span class="control-text" id="timeDisplay">00:05</span>
+        <div class="control-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+        <div class="dropdown" id="timeDropdown"><div class="dropdown-header"><button class="dropdown-tab active" id="tabCompensation">Quick</button><button class="dropdown-tab" id="tabCustom">Custom</button></div>
+          <div class="dropdown-content" id="compensationList">
+            <div class="dropdown-item" data-sec="5">00:05</div><div class="dropdown-item" data-sec="10">00:10</div><div class="dropdown-item" data-sec="15">00:15</div><div class="dropdown-item" data-sec="30">00:30</div><div class="dropdown-item" data-sec="60">01:00</div><div class="dropdown-item" data-sec="120">02:00</div><div class="dropdown-item" data-sec="300">05:00</div><div class="dropdown-item" data-sec="600">10:00</div><div class="dropdown-item" data-sec="900">15:00</div><div class="dropdown-item" data-sec="1800">30:00</div><div class="dropdown-item" data-sec="3600">01:00:00</div><div class="dropdown-item" data-sec="7200">02:00:00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="control-group">
+      <div class="control-label">Amount</div>
+      <div class="control-value" id="amountContainer">
+        <input type="text" class="control-text" id="amountDisplay" value="50$">
+        <div class="control-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 6v12"></path><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"></path></svg></div>
+      </div>
+    </div>
+  </div>
+  <div class="trade-buttons"><button class="trade-btn buy-btn" id="buyBtn">BUY</button><button class="trade-btn ai-trade-btn">TRADING</button><button class="trade-btn sell-btn" id="sellBtn">SELL</button></div>
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="2" ry="2" stroke="currentColor" stroke-width="1.5" fill="none"></rect><line x1="4" y1="20" x2="20" y2="20" stroke="currentColor" stroke-width=".8"></line><line x1="4" y1="4" x2="4" y2="20" stroke="currentColor" stroke-width=".8"></line><polyline points="4,16 8,12 12,14 16,8 20,10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline><circle cx="4" cy="16" r="1.2" fill="currentColor"></circle><circle cx="8" cy="12" r="1.2" fill="currentColor"></circle><circle cx="12" cy="14" r="1.2" fill="currentColor"></circle><circle cx="16" cy="8" r="1.2" fill="currentColor"></circle><circle cx="20" cy="10" r="1.2" fill="currentColor"></circle></svg></div><div>Chart</div></div>
+  <div class="nav-item" id="navHistory"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="18" height="14" rx="2" ry="2" fill="currentColor"></rect><rect x="8" y="3" width="8" height="4" rx="1" ry="1" fill="currentColor"></rect><line x1="6" y1="11" x2="18" y2="11" stroke="#0a1628" stroke-width="1"></line><line x1="6" y1="14" x2="18" y2="14" stroke="#0a1628" stroke-width="1"></line><line x1="6" y1="17" x2="18" y2="17" stroke="#0a1628" stroke-width="1"></line></svg></div><div>History</div></div>
+  <div class="nav-item" onclick="window.location.href='profile.html'"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="2" fill="none"></circle><circle cx="12" cy="8" r="3" fill="currentColor"></circle><path d="M6 20c0-3.3 5-5 6-5s6 1.7 6 5" fill="currentColor"></path></svg></div><div>Profile</div></div>
+  <div class="nav-item"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"></rect><rect x="8" y="18" width="8" height="2" fill="currentColor"></rect><rect x="11" y="10" width="2" height="8" fill="currentColor"></rect><path d="M6 10 C6 6, 18 6, 18 10 C18 14, 6 14, 6 10 Z" fill="currentColor"></path><path d="M6 10 C4 10, 4 12, 6 12" stroke="currentColor" stroke-width="1.5" fill="none"></path><path d="M18 10 C20 10, 20 12, 18 12" stroke="currentColor" stroke-width="1.5" fill="none"></path></svg></div><div>Rank</div></div>
+  <div class="nav-item"><div class="nav-icon"><svg width="21.6" height="21.6" viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="3" ry="3" stroke="currentColor" stroke-width="1.5" fill="none"></rect><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2" fill="currentColor"></circle><line x1="12" y1="2" x2="12" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="2" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="19" y1="12" x2="22" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="5" y1="5" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="17" y1="17" x2="19" y2="19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="5" y1="19" x2="7" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line><line x1="17" y1="7" x2="19" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line></svg></div><div>Settings</div></div>
+</div>
+
+<div class="pairPanel" id="pairPanel"><div class="pairHead"><b>الازواج</b><button class="pairClose" id="pairClose" type="button">×</button></div><div class="pairList" id="pairList"></div></div>
+
+<!-- ============================================================
+     سجل الصفقات - لوحة منزلقة
+     ============================================================ -->
+<div id="hb"></div>
+<div id="hs">
+  <!-- رأس اللوحة -->
+  <div class="hh">
+    <div class="hhL">
+      <span class="ic" id="hOpenCnt">0</span>
+      <span class="ic">🕒</span>
+    </div>
+    <div class="hhC">
+      <span class="bdg" id="hCnt">0</span>
+      <span class="ttl">التداولات</span>
+    </div>
+    <div class="hhR"><button id="hX" type="button">×</button></div>
+  </div>
+  <!-- تابات: مفتوحة / منتهية -->
+  <div class="htabs">
+    <button class="htab active" id="htabOpen" type="button">مفتوحة <span class="tc" id="tcOpen">0</span></button>
+    <button class="htab" id="htabClosed" type="button">منتهية <span class="tc" id="tcClosed">0</span></button>
+  </div>
+  <!-- القائمة -->
+  <div class="hlst" id="hList"></div>
+</div>
+
+<!-- ============================================================
+     Firebase + Account Switcher
+     ============================================================ -->
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import{getAnalytics}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
+import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyBOUqLixfphg3b8hajc4hkwV-VJmldGBVw",authDomain:"randers-c640b.firebaseapp.com",projectId:"randers-c640b",storageBucket:"randers-c640b.firebasestorage.app",messagingSenderId:"391496092929",appId:"1:391496092929:web:58208b4eb3e6f9a8571f00",measurementId:"G-DBDSVVF7PS"};
+const app=initializeApp(firebaseConfig);try{getAnalytics(app)}catch(e){}const auth=getAuth(app),db=getFirestore(app);
+(function(){
+var balanceBox=document.getElementById("balanceBox");if(!balanceBox)return;
+var accMenu=document.getElementById("accMenu"),refillBtn=document.getElementById("refillBtn");
+var demoAmtEl=document.getElementById("demoAmt"),realAmtEl=document.getElementById("realAmt");
+var balLabel=document.getElementById("balLabel"),balAmount=document.getElementById("balAmount"),topAccIcon=document.getElementById("topAccIcon");
+var avatarImg=document.getElementById("userAvatarImg"),defaultAvatarSrc=avatarImg?avatarImg.src:"";
+var activeAcc="real",uRef=null,unsub=null,realBal=0,demoBal=10000;
+function fmt(n){try{return new Intl.NumberFormat("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}).format(n)}catch(e){return (Math.round(n*100)/100).toFixed(2)}}
+function toNum(v,def){if(typeof v==="number"&&isFinite(v))return v;if(typeof v==="string"){var n=parseFloat(v.replace(/[^0-9.\-]/g,""));return isFinite(n)?n:def}return def}
+function renderAmounts(){if(realAmtEl)realAmtEl.textContent="$"+fmt(realBal);if(demoAmtEl)demoAmtEl.textContent="$"+fmt(demoBal)}
+function updateTopBar(){
+renderAmounts();
+var amountTxt=(activeAcc==="real")?"$"+fmt(realBal):"$"+fmt(demoBal);
+if(balAmount)balAmount.textContent=amountTxt;
+if(balLabel)balLabel.textContent=(activeAcc==="real")?"QT Real USD":"QT Demo USD";
+if(topAccIcon)topAccIcon.src=(activeAcc==="real")?"https://flagcdn.com/w40/us.png":"https://cdn-icons-png.flaticon.com/128/1344/1344761.png";
+document.querySelectorAll(".accSwitchBtn").forEach(function(btn){btn.classList.toggle("active",(btn.dataset.acc||"demo")===activeAcc)});
+document.querySelectorAll(".accItem").forEach(function(it){it.classList.toggle("active",(it.dataset.type||"demo")===activeAcc)});
+}
+function openMenu(){if(accMenu)accMenu.classList.add("show");balanceBox.classList.add("open")}
+function closeMenu(){if(accMenu)accMenu.classList.remove("show");balanceBox.classList.remove("open")}
+function toggleMenu(){if(!accMenu)return;accMenu.classList.contains("show")?closeMenu():openMenu()}
+balanceBox.addEventListener("click",function(e){if(e.target&&e.target.closest&&e.target.closest("#accMenu"))return;e.stopPropagation();toggleMenu()});
+document.addEventListener("click",function(e){if(!e.target||!e.target.closest||!e.target.closest("#balanceBox"))closeMenu()});
+if(accMenu)accMenu.addEventListener("click",function(e){e.stopPropagation()});
+document.querySelectorAll(".accSwitchBtn").forEach(function(btn){btn.addEventListener("click",function(){activeAcc=btn.dataset.acc||"demo";updateTopBar();closeMenu()})});
+document.querySelectorAll(".accItem").forEach(function(it){it.addEventListener("click",function(){activeAcc=it.dataset.type||"demo";updateTopBar();closeMenu()})});
+if(refillBtn)refillBtn.addEventListener("click",async function(){
+demoBal=10000;renderAmounts();updateTopBar();
+if(uRef)try{await updateDoc(uRef,{demobalance:10000})}catch(e){try{await setDoc(uRef,{demobalance:10000},{merge:true})}catch(_){}} 
+refillBtn.textContent="✅";setTimeout(function(){refillBtn.textContent="🔄 Refill Demo Account"},900);
+});
+function applyUserData(d){
+realBal=toNum(d&&d.balance,0);demoBal=toNum(d&&d.demobalance,10000);
+var av=(d&&d.avatar)?String(d.avatar).trim():"";
+if(avatarImg)avatarImg.src=av?av:defaultAvatarSrc;
+updateTopBar();
+}
+async function ensureFields(user){
+uRef=doc(db,"users",user.uid);
+var defaults={email:user.email||"",balance:0,demobalance:10000,avatar:""};
+var snap=await getDoc(uRef);
+if(!snap.exists()){await setDoc(uRef,defaults);return defaults;}
+var data=snap.data()||{},patch={};
+if(data.email==null&&user.email)patch.email=user.email;
+if(data.balance==null)patch.balance=0;
+if(data.demobalance==null)patch.demobalance=10000;
+if(data.avatar==null)patch.avatar="";
+if(Object.keys(patch).length)await setDoc(uRef,patch,{merge:true});
+return Object.assign({},defaults,data,patch);
+}
+onAuthStateChanged(auth,async function(user){
+if(unsub){try{unsub()}catch(e){}unsub=null}
+if(!user||!user.email){uRef=null;applyUserData({balance:0,demobalance:10000,avatar:""});return;}
+try{var base=await ensureFields(user);applyUserData(base);unsub=onSnapshot(uRef,function(s){if(s.exists())applyUserData(s.data()||{})});}
+catch(e){uRef=null;applyUserData({balance:0,demobalance:10000,avatar:""})}
+});
+updateTopBar();
 })();
+</script>
 
-/* ============================================================
-   🔐 AuthManager
-   ============================================================ */
-class AuthManager {
-  constructor() {
-    this.user         = null;
-    this.unsubscribeBalance = null;
-    this.balanceEl    = document.getElementById("userBalance");
+<!-- ============================================================
+     Pair switch UI
+     ============================================================ -->
+<script>
+(function(){
+var hud=document.getElementById("pairHud"),panel=document.getElementById("pairPanel"),closeBtn=document.getElementById("pairClose"),list=document.getElementById("pairList");
+var hudTxt=document.getElementById("pairHudTxt"),otc=document.getElementById("otcHud"),flagsBox=document.getElementById("pairFlags");
+if(!hud||!panel||!list||!hudTxt||!flagsBox)return;
+var fM={AED:"ae",CNY:"cn",AUD:"au",CAD:"ca",CHF:"ch",BHD:"bh",EUR:"eu",RUB:"ru",USD:"us",KES:"ke",LBP:"lb",QAR:"qa",TRY:"tr",SYP:"sy",EGP:"eg",INR:"in",IRR:"ir"};
+var mkF=function(c){c=(c||"un").toUpperCase();return "https://flagcdn.com/w40/"+String((fM[c]||c)).toLowerCase()+".png"};
+var pairs=[{pair:"AED/CNY",otc:1,payout:.91,flags:["AED","CNY"]},{pair:"AUD/CAD",otc:1,payout:.88,flags:["AUD","CAD"]},{pair:"AUD/CHF",otc:1,payout:.92,flags:["AUD","CHF"]},{pair:"BHD/CNY",otc:1,payout:.86,flags:["BHD","CNY"]},{pair:"EUR/RUB",otc:1,payout:.77,flags:["EUR","RUB"]},{pair:"EUR/USD",otc:1,payout:.92,flags:["EUR","USD"]},{pair:"KES/USD",otc:1,payout:.84,flags:["KES","USD"]},{pair:"LBP/USD",otc:1,payout:.79,flags:["LBP","USD"]},{pair:"QAR/CNY",otc:1,payout:.83,flags:["QAR","CNY"]},{pair:"USD/CHF",otc:1,payout:.89,flags:["USD","CHF"]},{pair:"SYP/TRY",otc:1,payout:.87,flags:["SYP","TRY"]},{pair:"EGP/USD",otc:1,payout:.78,flags:["EGP","USD"]},{pair:"USD/INR",otc:1,payout:.90,flags:["USD","INR"]}];
+var fav=new Set(),fmtP=function(x){return Math.round((+x||0)*100)+"%"};
+var setHud=function(p){
+hudTxt.textContent=p.pair;
+if(otc){otc.textContent=p.otc?"OTC":"";otc.style.display=p.otc?"inline-flex":"none"}
+var f=p.flags||String(p.pair).split("/");
+flagsBox.innerHTML='<img src="'+mkF(f[0])+'" alt=""><img src="'+mkF(f[1])+'" alt="">';
+};
+var render=function(){
+pairs.sort(function(a,b){var fa=fav.has(a.pair)?1:0,fb=fav.has(b.pair)?1:0;if(fa!==fb)return fb-fa;return a.pair.localeCompare(b.pair)});
+list.innerHTML=pairs.map(function(x){
+var ab=String(x.pair).split("/"),st=fav.has(x.pair)?"★":"☆";
+return '<button class="pit" data-p="'+x.pair+'" type="button"><span class="pitL"><span class="star" data-s="1">'+st+'</span><span class="fg"><img src="'+mkF(ab[0])+'" alt=""><img src="'+mkF(ab[1])+'" alt=""></span><span class="nm">'+x.pair+'<span class="bad">OTC</span></span></span><span>+'+fmtP(x.payout)+'</span></button>';
+}).join("");
+};
+hud.addEventListener("click",function(e){e.stopPropagation();panel.classList.toggle("on");render()});
+if(closeBtn)closeBtn.addEventListener("click",function(){panel.classList.remove("on")});
+document.addEventListener("click",function(e){if(panel.classList.contains("on")&&!e.target.closest("#pairPanel")&&!e.target.closest("#pairHud"))panel.classList.remove("on")});
+list.addEventListener("click",function(e){
+var b=e.target.closest("button.pit");if(!b)return;
+var p=b.getAttribute("data-p");
+if(e.target&&e.target.getAttribute&&e.target.getAttribute("data-s")){fav.has(p)?fav.delete(p):fav.add(p);render();return;}
+panel.classList.remove("on");
+var obj=pairs.find(function(x){return x.pair===p})||{pair:p,otc:1,flags:p.split("/")};setHud(obj);
+try{if(window.chart&&typeof window.chart.switchPair==="function")window.chart.switchPair(p)}catch(_){}
+});
+setHud(pairs.find(function(x){return x.pair==="EUR/USD"})||pairs[0]);
+render();
+})();
+</script>
 
-    this.activeAccount = 'demo';
-    this.realBalance   = 0;
-    this.demoBalance   = 10000;
-    this.menuVisible   = false;
-    this.balancesReady = false;
+<!-- ============================================================
+     سجل الصفقات — منطق متكامل مع Firebase
+     ============================================================ -->
+<script>
+(function(){
+  /* ── العناصر ── */
+  var hb  = document.getElementById("hb");
+  var hs  = document.getElementById("hs");
+  var xBtn= document.getElementById("hX");
+  var btn = document.getElementById("openHistory");
+  var nav = document.getElementById("navHistory");
+  var lst = document.getElementById("hList");
+  var cnt = document.getElementById("hCnt");           /* شارة الرأس الكلية */
+  var hOpenCnt = document.getElementById("hOpenCnt"); /* عدد المفتوحة في الأيقونة */
+  var tcOpen   = document.getElementById("tcOpen");   /* تاب مفتوحة */
+  var tcClosed = document.getElementById("tcClosed"); /* تاب منتهية */
+  var tabOpen  = document.getElementById("htabOpen");
+  var tabClosed= document.getElementById("htabClosed");
+  if(!hb||!hs||!lst) return;
 
-    try {
-      const ls = localStorage.getItem('qt_demo_balance');
-      const v = ls !== null ? parseFloat(ls) : NaN;
-      if (Number.isFinite(v)) this.demoBalance = Math.max(0, v);
-    } catch(e) {}
+  /* ── الحالة ── */
+  var state = {
+    openTrades:   [],   /* صفقات مفتوحة  */
+    closedTrades: [],   /* صفقات منتهية  */
+    price: null,
+    timer: null,
+    activeTab: "open"   /* "open" | "closed" */
+  };
 
-    this.initMenuUI();
-    this.init();
+  /* ── مساعدات ── */
+  var F   = function(cc){ return "https://flagcdn.com/w40/"+cc+".png"; };
+  function z(n){ return (n<10?"0":"")+n; }
+  function fmtCountdown(sec){
+    sec=Math.max(0,sec|0);
+    var h=(sec/3600)|0, m=((sec%3600)/60)|0, s=sec%60;
+    return z(h)+":"+z(m)+":"+z(s);
   }
+  function fmtCloseTime(ts){
+    if(!ts) return "--:--";
+    var d=new Date(ts);
+    return z(d.getDate())+"/"+z(d.getMonth()+1)+" "+z(d.getHours())+":"+z(d.getMinutes());
+  }
+  function num(x,d){ x=+x; return isFinite(x)?x:d; }
+  function fmt2(x){ return (Math.round(num(x,0)*100)/100).toFixed(2); }
 
-  _fmtMoney(n) {
-    try {
-      return '$' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
-    } catch(e) {
-      return '$' + (Math.round(n * 100) / 100).toFixed(2);
+  /* ── بناء صف صفقة مفتوحة ── */
+  function rowOpen(t){
+    var p     = state.price;
+    var entry = num(t.entry,null);
+    var pv    = {v:0, pos:false};
+    if(p!=null && entry!=null){
+      var dir = (t.dir||"down")==="up" ? "up":"down";
+      var ok  = (dir==="up")?(p>=entry):(p<=entry);
+      pv = ok ? {v:num(t.stake,10)*num(t.payout,0.85), pos:true} : {v:0, pos:false};
     }
+    var dir = (t.dir||"down")==="up" ? "up":"dn";
+    return(
+      '<div class="hrw" data-id="'+(t.id||"")+'">'+
+        '<div class="lft"><span class="car">▾</span>'+
+          '<div>'+
+            '<div class="tm">'+fmtCountdown(num(t.remain,60))+'</div>'+
+            '<div class="pf '+(pv.pos?'pos':'neg')+'">'+fmt2(pv.v)+' $</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="rgt">'+
+          '<div class="pr">'+
+            '<span class="pair">'+(t.pair||"---")+'</span>'+
+            '<span class="flg">'+
+              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
+              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
+            '</span>'+
+          '</div>'+
+          '<div class="amt">'+
+            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
+            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    );
   }
 
-  async setBalance(type, amount, { persist = true } = {}) {
-    const safeAmt = Math.max(0, Number(amount) || 0);
-
-    if (type === 'real') this.realBalance = safeAmt;
-    else this.demoBalance = safeAmt;
-
-    const realEl = document.getElementById('qtRealAmt');
-    const demoEl = document.getElementById('qtDemoAmt');
-    if (realEl) realEl.textContent = this._fmtMoney(this.realBalance);
-    if (demoEl) demoEl.textContent = this._fmtMoney(this.demoBalance);
-
-    if (this.balanceEl) {
-      const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
-      this.balanceEl.textContent = this._fmtMoney(showAmt);
-    }
-
-    const balAmount = document.getElementById('balAmount');
-    if (balAmount) {
-      const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
-      balAmount.textContent = this._fmtMoney(showAmt);
-    }
-
-    if (type === 'demo' && !this.user) {
-      try { localStorage.setItem('qt_demo_balance', String(safeAmt)); } catch(e) {}
-    }
-
-    if (persist && this.user) {
-      const userRef = doc(db, 'users', this.user.email);
-      const payload = (type === 'real')
-        ? { realBalance: safeAmt, balance: safeAmt }
-        : { demoBalance: safeAmt };
-      updateDoc(userRef, payload).catch(e => console.warn('⚠️ Firebase balance sync:', e));
-    }
+  /* ── بناء صف صفقة منتهية ── */
+  function rowClosed(t){
+    var pl    = num(t.profitLoss||t.profit, 0);
+    var isWin = (t.result==="win") || pl>0;
+    var dir   = (t.dir||"down")==="up" ? "up":"dn";
+    var timeStr = fmtCloseTime(t.closedAt || t.openTime);
+    var plTxt = isWin ? "+"+fmt2(Math.abs(pl)) : "-"+fmt2(Math.abs(pl));
+    var carIco= isWin
+      ? '<span class="car" style="color:#22c55e;font-size:18px">✓</span>'
+      : '<span class="car" style="color:#e15353;font-size:18px">✗</span>';
+    return(
+      '<div class="hrw closed" data-id="'+(t.id||"")+'">'+
+        '<div class="lft">'+carIco+
+          '<div>'+
+            '<div class="tm">'+timeStr+'</div>'+
+            '<div class="pf '+(isWin?'pos':'neg')+'">'+plTxt+' $</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="rgt">'+
+          '<div class="pr">'+
+            '<span class="pair">'+(t.pair||"---")+'</span>'+
+            '<span class="flg">'+
+              '<img src="'+F((t.flags&&t.flags[0])||"us")+'" alt="">'+
+              '<img src="'+F((t.flags&&t.flags[1])||"us")+'" alt="">'+
+            '</span>'+
+          '</div>'+
+          '<div class="amt">'+
+            '<span class="v '+(dir==="up"?'up':'dn')+'">$ '+(t.amountTxt||"--")+'</span>'+
+            '<span class="d '+(dir==="up"?'up':'dn')+'"><span>'+(dir==="up"?"↗":"↘")+'</span></span>'+
+          '</div>'+
+          '<div>'+
+            '<span class="result-badge '+(isWin?'win':'loss')+'">'+(isWin?'WIN ✓':'LOSS ✗')+'</span>'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    );
   }
 
-  initMenuUI() {
-    const balEl = this.balanceEl;
-    if (!balEl) return;
-    const wrap = balEl.parentElement;
-    if (!wrap) return;
-    wrap.classList.add('qt-bal-wrap');
-    const menu = document.createElement('div');
-    menu.id        = 'qtAccMenu';
-    menu.className = 'qt-acc-menu';
-    menu.innerHTML = `
-      
-        ● LIVE
-        ◆ Demo
-      
-      
-        
-          
-          
-            Real Account
-            $0.00
-          
-        
-        LIVE
-      
-      
-        
-          
-          
-            Demo Account
-            $10,000.00
-          
-        
-        DEMO
-      
-      🔄 Refill Demo Account
-    `;
-    wrap.appendChild(menu);
+  /* ── إعادة الرسم ── */
+  function render(){
+    /* تحديث الأعداد */
+    var nOpen   = state.openTrades.length;
+    var nClosed = state.closedTrades.length;
+    var nTotal  = nOpen + nClosed;
 
-    this.setBalance('real', this.realBalance, { persist: false });
-    this.setBalance('demo', this.demoBalance, { persist: false });
-    this.switchAccount(this.activeAccount);
+    if(cnt)      cnt.textContent      = String(nTotal);
+    if(hOpenCnt) hOpenCnt.textContent = String(nOpen);
+    if(tcOpen)   tcOpen.textContent   = String(nOpen);
+    if(tcClosed) tcClosed.textContent = String(nClosed);
 
-    wrap.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (e.target.closest('#qtAccMenu')) return;
-      this.toggleMenu();
-    });
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.qt-bal-wrap')) this.closeMenu();
-    });
-    menu.querySelectorAll('.qt-sw-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const type = btn.dataset.acc;
-        this.switchAccount(type);
-        menu.querySelectorAll('.qt-sw-btn').forEach(b => b.classList.toggle('active', b === btn));
-        menu.querySelectorAll('.qt-acc-item').forEach(it => it.classList.toggle('active', it.dataset.type === type));
-      });
-    });
-    menu.querySelectorAll('.qt-acc-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const type = item.dataset.type;
-        this.switchAccount(type);
-        menu.querySelectorAll('.qt-acc-item').forEach(i => i.classList.toggle('active', i === item));
-        menu.querySelectorAll('.qt-sw-btn').forEach(b => b.classList.toggle('active', b.dataset.acc === type));
-        this.closeMenu();
-      });
-    });
-
-    const refillBtn = document.getElementById('qtRefillBtn');
-    if (refillBtn) {
-      refillBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.setBalance('demo', 10000, { persist: true });
-        const btn = document.getElementById('qtRefillBtn');
-        btn.textContent = '✅ Refilled!';
-        setTimeout(() => { btn.textContent = '🔄 Refill Demo Account'; }, 1500);
-      });
-    }
-  }
-
-  toggleMenu() {
-    const menu = document.getElementById('qtAccMenu');
-    if (!menu) return;
-    this.menuVisible = !this.menuVisible;
-    menu.classList.toggle('show', this.menuVisible);
-  }
-
-  closeMenu() {
-    const menu = document.getElementById('qtAccMenu');
-    if (!menu) return;
-    this.menuVisible = false;
-    menu.classList.remove('show');
-  }
-
-  switchAccount(type) {
-    this.activeAccount = type;
-    if (!this.balanceEl) return;
-
-    const showAmt = type === 'real' ? this.realBalance : this.demoBalance;
-    this.balanceEl.textContent = this._fmtMoney(showAmt);
-
-    const balAmount = document.getElementById('balAmount');
-    if (balAmount) balAmount.textContent = this._fmtMoney(showAmt);
-
-    try {
-      if (window.chart && typeof window.chart._refreshTradeBadge === 'function') {
-        window.chart._refreshTradeBadge();
-      }
-    } catch(e) {}
-  }
-
-  async init() {
-    onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        this.user = u;
-        await this.loadUserBalance();
-        if (window.chart) {
-          if (window.chart.dataLoaded) {
-            window.chart.loadOpenTrades();
-            // ✅ تحميل سجل الصفقات المنتهية من Firebase
-            window.chart.loadTradeHistory();
-          } else {
-            window.chart._pendingTradeLoad = true;
-          }
-        }
+    /* رسم القائمة حسب التاب النشطة */
+    var html = "";
+    if(state.activeTab === "open"){
+      if(nOpen === 0){
+        html = '<div class="empty-msg"><span>📂</span>لا توجد صفقات مفتوحة حالياً</div>';
       } else {
-        this.user = null;
-        this.balancesReady = false;
-
-        if (this.balanceEl) {
-          const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
-          this.balanceEl.textContent = this._fmtMoney(showAmt);
-        }
-
-        // ✅ مسح سجل التاريخ عند الخروج
-        window.dispatchEvent(new CustomEvent('qt_history_loaded', { detail: [] }));
+        html = state.openTrades.map(rowOpen).join("");
       }
-    });
-  }
-
-  async loadUserBalance() {
-    const userRef  = doc(db, "users", this.user.email);
-    const userSnap = await getDoc(userRef);
-
-    if (!userSnap.exists()) {
-      await setDoc(userRef, {
-        email: this.user.email,
-        realBalance: 0,
-        demoBalance: 10000,
-        balance: 0,
-        createdAt: serverTimestamp()
-      }, { merge: true });
     } else {
-      const d = userSnap.data() || {};
-      const migrateReal = (d.realBalance === undefined && d.balance !== undefined);
-      const migrateDemo = (d.demoBalance === undefined);
-      if (migrateReal || migrateDemo) {
-        await setDoc(userRef, {
-          realBalance: d.realBalance !== undefined ? d.realBalance : (d.balance || 0),
-          demoBalance: d.demoBalance !== undefined ? d.demoBalance : 10000,
-          balance: d.balance !== undefined ? d.balance : (d.realBalance || 0)
-        }, { merge: true });
-      }
-    }
-
-    if (this.unsubscribeBalance) {
-      try { this.unsubscribeBalance(); } catch(e) {}
-      this.unsubscribeBalance = null;
-    }
-
-    this.unsubscribeBalance = onSnapshot(userRef, (d) => {
-      const data = d.data();
-      if (!data) return;
-
-      this.realBalance = (data.realBalance !== undefined) ? data.realBalance : (data.balance || 0);
-      this.demoBalance = (data.demoBalance !== undefined) ? data.demoBalance : 10000;
-      this.balancesReady = true;
-
-      const realEl = document.getElementById('qtRealAmt');
-      const demoEl = document.getElementById('qtDemoAmt');
-      if (realEl) realEl.textContent = this._fmtMoney(this.realBalance);
-      if (demoEl) demoEl.textContent = this._fmtMoney(this.demoBalance);
-
-      if (this.balanceEl) {
-        const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
-        this.balanceEl.textContent = this._fmtMoney(showAmt);
-      }
-
-      const balAmount = document.getElementById('balAmount');
-      if (balAmount) {
-        const showAmt = (this.activeAccount === 'real') ? this.realBalance : this.demoBalance;
-        balAmount.textContent = this._fmtMoney(showAmt);
-      }
-
-      try { localStorage.setItem('qt_demo_balance', String(this.demoBalance)); } catch(e) {}
-    });
-  }
-
-  async updateBalance(type, amount) {
-    if (!this.user) return;
-    const userRef  = doc(db, "users", this.user.email);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-      const data = userSnap.data() || {};
-      const field = type === 'real' ? 'realBalance' : 'demoBalance';
-      const currentBalance = (data[field] !== undefined)
-        ? data[field]
-        : (type === 'real' ? (data.balance || 0) : 10000);
-      const next = currentBalance + amount;
-      const payload = {};
-      payload[field] = next;
-      if (type === 'real') payload.balance = next;
-      await updateDoc(userRef, payload);
-    }
-  }
-}
-
-/* ============================================================
-   💾 LocalStorageManager
-   ============================================================ */
-class LocalStorageManager {
-  constructor(){
-    this.CANDLES_KEY='qt_trading_candles';
-    this.LAST_SYNC_KEY='qt_last_sync';
-  }
-  ck(pair){return pair?'qt_trading_candles'+pair.replace('/','_'):this.CANDLES_KEY;}
-  sk(pair){return pair?'qt_last_sync'+pair.replace('/','_'):this.LAST_SYNC_KEY;}
-  saveCandles(candles,pair){
-    try{
-      localStorage.setItem(this._ck(pair),JSON.stringify(candles));
-      localStorage.setItem(this._sk(pair),Date.now().toString());
-    }catch(e){console.error('❌ Save error:',e);}
-  }
-  loadCandles(pair){
-    try{
-      const data=localStorage.getItem(this._ck(pair));
-      if(data){const candles=JSON.parse(data);return candles;}
-    }catch(e){console.error('❌ Load error:',e);}
-    return null;
-  }
-  getLastSyncTime(){const t=localStorage.getItem(this.LAST_SYNC_KEY);return t?parseInt(t):0;}
-  clear(){localStorage.removeItem(this.CANDLES_KEY);localStorage.removeItem(this.LAST_SYNC_KEY);}
-}
-
-/* ============================================================
-   🔥 FirebaseManager
-   ============================================================ */
-class FirebaseManager {
-  constructor(){
-    this.db=db;
-    this.candlesCollection='candles';
-    this.saveBatchSize=50;
-    this.saveInterval=30000;
-    this.lastSaveTime=0;
-    this.pendingCandles=[];
-    this.isSaving=false;
-    this.startAutoSave();
-  }
-  setPair(pairName){
-    const key='candles_'+pairName.replace('/','_');
-    if(this.candlesCollection!==key){
-      this.candlesCollection=key;
-      this.pendingCandles=[];
-      console.log('🔄 Firebase collection switched to:',key);
-    }
-  }
-  async saveCandles(candles){
-    if(this.isSaving){console.log('⏳ Save in progress...');return false;}
-    try{
-      this.isSaving=true;
-      const batch=[];
-      for(const candle of candles){
-        const candleData={open:candle.open,high:candle.high,low:candle.low,close:candle.close,timestamp:candle.timestamp,savedAt:serverTimestamp()};
-        batch.push(candleData);
-        if(batch.length>=this.saveBatchSize){await this.saveBatch(batch);batch.length=0;await this.delay(100);}
-      }
-      if(batch.length>0){await this.saveBatch(batch);}
-      this.lastSaveTime=Date.now();
-      return true;
-    }catch(e){console.error('❌ Save error:',e);return false;}
-    finally{this.isSaving=false;}
-  }
-  async saveBatch(batch){
-    const promises=batch.map(candleData=>addDoc(collection(this.db,this.candlesCollection),candleData));
-    await Promise.all(promises);
-  }
-  async loadCandles(maxCandles=10000){
-    try{
-      console.log('📥 Loading from Firebase collection:',this.candlesCollection);
-      const q=query(collection(this.db,this.candlesCollection),orderBy('timestamp','desc'),limit(maxCandles));
-      const querySnapshot=await getDocs(q);
-      const candles=[];
-      const seen=new Set();
-      querySnapshot.forEach((docSnap)=>{
-        const data=docSnap.data();
-        if(!seen.has(data.timestamp)){
-          seen.add(data.timestamp);
-          candles.push({open:data.open,high:data.high,low:data.low,close:data.close,timestamp:data.timestamp});
-        }
-      });
-      candles.reverse();
-      console.log('✅ Loaded from Firebase:',candles.length,'(deduplicated)');
-      return candles;
-    }catch(e){console.error('❌ Load error:',e);return null;}
-  }
-  async clearOldCandles(daysToKeep=7){
-    try{
-      const cutoffTime=Date.now()-(daysToKeep2460601000);
-      const q=query(collection(this.db,this.candlesCollection),where('timestamp','{
-      if(this.pendingCandles.length>0&&!this.isSaving){
-        const candlesToSave=[...this.pendingCandles];
-        this.pendingCandles=[];
-        await this.saveCandles(candlesToSave);
-      }
-    },this.saveInterval);
-  }
-  delay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
-}
-
-/* ============================================================
-   ⏰ updateLiveTime
-   ============================================================ */
-function updateLiveTime(){const d=new Date();const u=d.getTime()+d.getTimezoneOffset()60000;const t=new Date(u+(33600000));const h=String(t.getHours()).padStart(2,"0");const m=String(t.getMinutes()).padStart(2,"0");const s=String(t.getSeconds()).padStart(2,"0");document.getElementById("liveTime").textContent=${h}:${m}:${s} UTC+3;}updateLiveTime();setInterval(updateLiveTime,1000);
-
-/* ============================================================
-   📊 AdvancedTradingChart
-   ============================================================ */
-class AdvancedTradingChart {
-  constructor(){
-    this.plot=document.getElementById("plot");
-    this.canvas=document.getElementById("chartCanvas");
-    this.ctx=this.canvas.getContext("2d");
-    this.timeLabels=document.getElementById("timeLabels");
-    this.candleTimer=document.getElementById("candleTimer");
-    this.priceLine=document.getElementById("priceLine");
-    this.priceScaleLabels=document.getElementById("priceScaleLabels");
-    this.currentPriceEl=document.getElementById("currentPrice");
-    this.loadingOverlay=document.getElementById("loadingOverlay");
-    this.authManager=new AuthManager();
-    this.localStorageManager=new LocalStorageManager();
-    this.firebaseManager=new FirebaseManager();
-
-    this.PAIR_CONFIG={
-      'EUR/USD':{base:1.9500,digits:5,seed:11001,volScale:1},
-      'AUD/CAD':{base:0.9100,digits:5,seed:22001,volScale:0.95},
-      'AUD/CHF':{base:0.5700,digits:5,seed:33001,volScale:0.6},
-      'BHD/CNY':{base:2.6500,digits:4,seed:44001,volScale:2.7},
-      'EUR/RUB':{base:98.000,digits:3,seed:55001,volScale:100},
-      'KES/USD':{base:0.0077,digits:6,seed:66001,volScale:0.008},
-      'LBP/USD':{base:0.0111,digits:6,seed:77001,volScale:0.011},
-      'QAR/CNY':{base:1.9800,digits:5,seed:88001,volScale:2},
-      'USD/CHF':{base:0.8900,digits:5,seed:99001,volScale:0.9},
-      'SYP/TRY':{base:0.2800,digits:5,seed:10501,volScale:0.3},
-      'EGP/USD':{base:0.0205,digits:5,seed:11501,volScale:0.021},
-      'USD/INR':{base:83.500,digits:3,seed:12501,volScale:85},
-      'AED/CNY':{base:1.9800,digits:5,seed:13501,volScale:2}
-    };
-
-    this.currentPair='EUR/USD';
-    this.isSwitching=false;
-    this.volScale=1;
-
-    this.firebaseManager.setPair(this.currentPair);
-
-    this.candles=[];
-    this.currentCandle=null;
-    this.maxCandles=10000;
-    this.basePrice=1.95;
-    this.currentPrice=1.9518;
-    this.seed=11001;
-    this.digits=5;
-    this.priceRange={min:1.9,max:2};
-    this.baseSpacing=12;
-    this.zoom=1;
-    this.targetZoom=1;
-    this.minZoom=0.425;
-    this.maxZoom=2.25;
-    this.zoomEase=0.28;
-    this.targetOffsetX=0;
-    this.offsetX=0;
-    this.panEase=0.38;
-    this.velocity=0;
-    this.drag=0;
-    this.dragStartX=0;
-    this.dragStartOffset=0;
-    this.lastDragX=0;
-    this.lastDragTime=0;
-    this.pinch=0;
-    this.p0=0;
-    this.pMidX=0;
-    this.pMidY=0;
-    this.timeframe=60000;
-    this.t0=Math.floor(Date.now()/60000)*60000;
-    this.smin=null;
-    this.smax=null;
-    this.sre=0.088;
-    this._fr=0;
-    this.markers=[];
-    this.selectedTime=5;
-    this.dataLoaded=false;
-    this.usingLocalStorage=false;
-
-    this._tradeCounter = 0;
-    this._pendingTradeLoad = false;
-
-    // ✅ مصفوفة الصفقات المنتهية المحلية
-    this._closedTrades = [];
-
-    this.uid = 'uid_' + Date.now() + '_' + Math.random().toString(36).substr(2,9);
-    this.isMaster = false;
-    this._masterBroadcastInterval = null;
-    this._watchdogInterval = null;
-    this._liveUnsubscribe = null;
-    this._lastBroadcastedClose = null;
-    this.MASTER_TIMEOUT = 12000;
-    this.BROADCAST_INTERVAL = 1000;
-
-    window.addEventListener('beforeunload', () => {
-      if (this.isMaster) {
-        try {
-          const stateRef = doc(db, 'trading_live', this._getPairKey());
-          updateDoc(stateRef, { masterUid: null, masterHeartbeat: 0 }).catch(()=>{});
-        } catch(e) {}
-      }
-    });
-
-    this.setup();
-    this.initData();
-  }
-
-  _getPairKey() {
-    return this.currentPair.replace('/', '_');
-  }
-
-  _getLiveStateRef() {
-    return doc(db, 'trading_live', this._getPairKey());
-  }
-
-  _setRoleBadge(role) {
-    let badge = document.getElementById('_qtRoleBadge');
-    if (!badge) {
-      badge = document.createElement('div');
-      badge.id = '_qtRoleBadge';
-      document.body.appendChild(badge);
-    }
-    badge.className = role;
-    badge.textContent = role === 'master' ? '👑 MASTER' : '👁️ VIEWER';
-  }
-
-  async _initMasterViewerSystem() {
-    try {
-      const claimed = await this._tryClaimMaster();
-      if (claimed) {
-        this.isMaster = true;
-        this.candles = await this._fillAndSaveCandleGaps(this.candles);
-        this._startMasterBroadcast();
-        this._setRoleBadge('master');
-        console.log('👑 أنا الماستر - أبث الشمعة الحية');
+      if(nClosed === 0){
+        html = '<div class="empty-msg"><span>📜</span>لا يوجد سجل صفقات منتهية بعد</div>';
       } else {
-        this.isMaster = false;
-        this._startViewerSubscription();
-        this._startWatchdog();
-        this._setRoleBadge('viewer');
-        console.log('👁️ أنا مشاهد - أستقبل من الماستر');
+        html = state.closedTrades.map(rowClosed).join("");
       }
-    } catch(e) {
-      console.error('❌ _initMasterViewerSystem error:', e);
-      this.isMaster = true;
-      this._startMasterBroadcast();
-      this._setRoleBadge('master');
     }
+    lst.innerHTML = html;
   }
 
-  async _tryClaimMaster() {
-    try {
-      const stateRef = this._getLiveStateRef();
-      const snap = await getDoc(stateRef);
-
-      if (!snap.exists()) {
-        await setDoc(stateRef, {
-          masterUid: this.uid,
-          masterHeartbeat: Date.now(),
-          liveCandle: null,
-          liveT0: this.t0,
-          pair: this.currentPair
-        });
-        console.log('👑 استُولي على الماستر (مستند جديد)');
-        return true;
-      }
-
-      const data = snap.data();
-      const hb = data.masterHeartbeat || 0;
-      const isAlive = (Date.now() - hb)  {
-      if (!this.isMaster || this.isSwitching || !this.currentCandle) return;
-      if (this.currentCandle.close === this._lastBroadcastedClose) return;
-      this._lastBroadcastedClose = this.currentCandle.close;
-      try {
-        const stateRef = this._getLiveStateRef();
-        await setDoc(stateRef, {
-          masterUid:        this.uid,
-          masterHeartbeat:  Date.now(),
-          liveCandle:       { ...this.currentCandle },
-          liveT0:           this.t0,
-          liveUpdatedAt:    Date.now(),
-          pair:             this.currentPair
-        }, { merge: true });
-      } catch(e) {
-        console.warn('⚠️ Broadcast error:', e);
-      }
-    }, this.BROADCAST_INTERVAL);
-  }
-
-  _startViewerSubscription() {
-    if (this._liveUnsubscribe) { this._liveUnsubscribe(); this._liveUnsubscribe = null; }
-    const stateRef = this._getLiveStateRef();
-    this._liveUnsubscribe = onSnapshot(stateRef, (snap) => {
-      if (!snap.exists() || this.isMaster || this.isSwitching) return;
-      const data = snap.data();
-      if (data.liveT0 && data.liveT0 !== this.t0 && this.t0 > 0) {
-        if (this.currentCandle &&
-            (!this.candles.length || this.currentCandle.timestamp !== this.candles[this.candles.length-1].timestamp)) {
-          const completed = { ...this.currentCandle };
-          this.candles.push(completed);
-          if (this.candles.length > this.maxCandles) this.candles.shift();
-          this.localStorageManager.saveCandles(this.candles, this.currentPair);
-        }
-      }
-      if (data.liveT0) this.t0 = data.liveT0;
-      if (data.liveCandle) {
-        this.currentCandle = { ...data.liveCandle };
-        this.currentPrice  = data.liveCandle.close;
-        window.__qt_price  = this.currentPrice;
-      }
-    }, (err) => {
-      console.warn('⚠️ onSnapshot viewer error:', err);
+  /* ── تيك كل ثانية للمفتوحة ── */
+  function tick(){
+    state.openTrades.forEach(function(t){
+      if(t.open===false) return;
+      t.remain = Math.max(0, num(t.remain,0)-1);
     });
+    if(state.activeTab==="open") render();
+  }
+  function ensureTimer(){
+    if(state.timer) return;
+    state.timer = setInterval(tick, 1000);
   }
 
-  _startWatchdog() {
-    if (this._watchdogInterval) clearInterval(this._watchdogInterval);
-    this._watchdogInterval = setInterval(async () => {
-      if (this.isMaster || this.isSwitching) return;
-      try {
-        const stateRef = this._getLiveStateRef();
-        const snap = await getDoc(stateRef);
-        if (!snap.exists()) { await this._becomeMaster(); return; }
-        const data = snap.data();
-        const hb = data.masterHeartbeat || 0;
-        const isAlive = (Date.now() - hb) {});
-      } catch(e) {}
+  /* ── فتح / إغلاق اللوحة ── */
+  function openPanel(){ hb.classList.add("on"); hs.classList.add("on"); }
+  function closePanel(){ hb.classList.remove("on"); hs.classList.remove("on"); }
+  function toggle(){ hs.classList.contains("on") ? closePanel() : openPanel(); }
+
+  /* ── API: صفقات مفتوحة ── */
+  function setTrades(arr){
+    state.openTrades = (Array.isArray(arr)?arr:[]).slice();
+    render(); ensureTimer();
+  }
+  function getTrades(){ return state.openTrades.slice(); }
+  function updateTrade(id, patch){
+    var t = state.openTrades.find(function(x){ return String(x.id)===String(id); });
+    if(!t) return;
+    for(var k in patch) t[k]=patch[k];
+    render();
+  }
+  function updatePrice(p){ state.price = num(p,null); if(state.activeTab==="open") render(); }
+
+  /* ── API: صفقة منتهية واحدة ── */
+  function addClosedTrade(trade){
+    if(!trade) return;
+    /* إزالة من المفتوحة */
+    state.openTrades = state.openTrades.filter(function(t){ return String(t.id)!==String(trade.id); });
+    /* إضافة للمنتهية (بدون تكرار) */
+    var exists = state.closedTrades.find(function(t){ return String(t.id)===String(trade.id); });
+    if(!exists) state.closedTrades.unshift(trade);
+    render();
+    /* ✅ انتقال تلقائي لتاب المنتهية عند إتمام صفقة */
+    switchTab("closed");
+  }
+
+  /* ── API: تحميل / ضبط كل السجل ── */
+  function setHistory(arr){
+    state.closedTrades = (Array.isArray(arr)?arr:[]).slice();
+    render();
+  }
+  function loadHistory(arr){ setHistory(arr); }
+  function addHistory(trade){ addClosedTrade(trade); }
+
+  /* ── تبديل التابات ── */
+  function switchTab(tab){
+    state.activeTab = tab;
+    if(tabOpen)   tabOpen.classList.toggle("active",   tab==="open");
+    if(tabClosed) tabClosed.classList.toggle("active", tab==="closed");
+    render();
+  }
+  if(tabOpen)   tabOpen.addEventListener("click",   function(){ switchTab("open"); });
+  if(tabClosed) tabClosed.addEventListener("click", function(){ switchTab("closed"); });
+
+  /* ── أحداث الأزرار ── */
+  if(btn) btn.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
+  if(nav) nav.addEventListener("click", function(e){ e.stopPropagation(); toggle(); });
+  hb.addEventListener("click", closePanel);
+  if(xBtn) xBtn.addEventListener("click", closePanel);
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closePanel(); });
+
+  /* ── مزامنة السعر من chart.js ── */
+  setInterval(function(){
+    if(typeof window.__qt_price==="number") updatePrice(window.__qt_price);
+  }, 250);
+
+  /* ── ✅ الاستماع لأحداث chart.js ── */
+
+  /* صفقة أُغلقت للتو */
+  window.addEventListener("qt_trade_closed", function(e){
+    if(e && e.detail && e.detail.trade){
+      addClosedTrade(e.detail.trade);
     }
-    this.isMaster = false;
-    this._lastBroadcastedClose = null;
-  }
+  });
 
-  async _fillAndSaveCandleGaps(candles) {
-    if (!candles || candles.length === 0) return candles || [];
-    const lastCandle = candles[candles.length - 1];
-    const lastTs     = lastCandle.timestamp;
-    const currentT0  = Math.floor(Date.now() / this.timeframe) * this.timeframe;
-    if (currentT0  0) {
-      try {
-        await this.firebaseManager.saveCandles(gaps);
-        console.log(✅ ${gaps.length} شمعة فجوة تم حفظها في Firebase);
-      } catch(e) {
-        console.warn('⚠️ Gap candle save error:', e);
-        gaps.forEach(c => this.firebaseManager.addPendingCandle(c));
-      }
-      const result = [...candles, ...gaps];
-      if (result.length > this.maxCandles) {
-        return result.slice(result.length - this.maxCandles);
-      }
-      return result;
+  /* تحميل السجل الكامل من Firebase بعد تسجيل الدخول */
+  window.addEventListener("qt_history_loaded", function(e){
+    if(e && e.detail && Array.isArray(e.detail)){
+      setHistory(e.detail);
+      /* إذا كان السجل يحتوي صفقات، انتقل لتاب المنتهية */
+      if(e.detail.length > 0) switchTab("closed");
     }
-    return candles;
-  }
+  });
 
-  async initData(){
-    this.showLoading(true);
-    try{
-      console.log('📄 Loading from Firebase collection:',this.firebaseManager.candlesCollection);
-      const firebaseCandles=await this.firebaseManager.loadCandles(this.maxCandles);
-      if(firebaseCandles&&firebaseCandles.length>0){
-        console.log('✅ Using Firebase data');
-        this.candles=firebaseCandles;
-        this.usingLocalStorage=false;
-        this.localStorageManager.saveCandles(this.candles,this.currentPair);
-      }else{
-        console.log('⚠️ No Firebase data, trying local...');
-        const localCandles=this.localStorageManager.loadCandles(this.currentPair);
-        if(localCandles&&localCandles.length>0){
-          console.log('✅ Using local data');
-          this.candles=localCandles;
-          this.usingLocalStorage=true;
-        }else{
-          console.log('🔨 Generating new data...');
-          this.initHistoricalData();
-          this.usingLocalStorage=true;
-        }
-      }
-      if(this.candles.length>0){this.currentPrice=this.candles[this.candles.length-1].close;}
-      this.snapToLive();
-      this.updateTimeLabels();
-      this.updatePriceRange();
-      this.smin=this.priceRange.min;
-      this.smax=this.priceRange.max;
-      this.updatePriceScale();
-      this.updatePriceLabel();
-      this.dataLoaded=true;
-
-      if (window.tradeHistory) {
-        window.tradeHistory.setTrades([]);
-      }
-      this._refreshTradeBadge();
-
-      await this._initMasterViewerSystem();
-
-      if (this._pendingTradeLoad && this.authManager.user) {
-        this._pendingTradeLoad = false;
-        this.loadOpenTrades();
-        this.loadTradeHistory(); // ✅ تحميل السجل أيضاً
-      }
-
-      this.initEvents();
-      this.startRealtime();
-      this.loop();
-    }catch(e){
-      console.error('❌ Init error:',e);
-      this.initHistoricalData();
-      this.usingLocalStorage=true;
-      this.dataLoaded=true;
-      this.isMaster=true;
-      this._startMasterBroadcast();
-      this._setRoleBadge('master');
-      this.initEvents();
-      this.startRealtime();
-      this.loop();
-    }finally{
-      this.showLoading(false);
+  /* ── الـ API العامة ── */
+  window.tradeHistory = {
+    open:  openPanel,
+    close: closePanel,
+    toggle: toggle,
+    setTrades:      setTrades,
+    getTrades:      getTrades,
+    updateTrade:    updateTrade,
+    updatePrice:    updatePrice,
+    addHistory:     addHistory,
+    addClosedTrade: addClosedTrade,
+    setHistory:     setHistory,
+    loadHistory:    loadHistory,
+    setPriceFromChartVar: function(varName){
+      setInterval(function(){ var v=window[varName]; if(typeof v==="number") updatePrice(v); }, 250);
     }
-  }
-
-  showLoading(show){if(this.loadingOverlay){if(show){this.loadingOverlay.classList.add('show');}else{this.loadingOverlay.classList.remove('show');}}}
-  setup(){const dpr=window.devicePixelRatio||1;const r=this.plot.getBoundingClientRect();this.w=r.width;this.h=r.height-24;this.canvas.width=this.wdpr;this.canvas.height=this.hdpr;this.canvas.style.width=this.w+"px";this.canvas.style.height=this.h+"px";this.ctx.scale(dpr,dpr);if(this.dataLoaded){this.updatePriceLabel();this.updatePriceScale();this.updateTimeLabels();}}
-  rnd(s){const x=Math.sin(s)*10000;return x-Math.floor(x);}
-  rndG(s){const u1=this.rnd(s);const u2=this.rnd(s+100000);return Math.sqrt(-2Math.log(u1+0.00001))Math.cos(2Math.PIu2);}
-
-  genCandle(t,o){
-    const s=this.seed+Math.floor(t/this.timeframe);
-    const vb=0.0008*(this.volScale||1);
-    const tb=0.00005*(this.volScale||1);
-    const r1=this.rndG(s);const r2=this.rndG(s+1);const r3=this.rndG(s+2);
-    const r4=this.rnd(s+3);const r5=this.rnd(s+4);const r6=this.rnd(s+5);
-    const v=vb(0.7+Math.abs(r1)0.8);
-    const tr=tbr20.6;
-    const dir=r3>0?1:-1;
-    const tc=o+(dir*v+tr);
-    const rg=v(0.2+r40.6);
-    const hm=rg(0.3+r50.7);
-    const lm=rg(0.3+(1-r5)0.7);
-    const c=+(tc+(r6-0.5)v0.1).toFixed(this.digits);
-    const op=+o.toFixed(this.digits);
-    return{open:op,close:c,high:+Math.max(op,c,op+hm,c+hm).toFixed(this.digits),low:+Math.min(op,c,op-lm,c-lm).toFixed(this.digits),timestamp:t};
-  }
-
-  initHistoricalData(){
-    let p=this.basePrice;
-    let t=Date.now()-this.maxCandles*this.timeframe;
-    for(let i=0;i0.003){this.offsetX+=diffthis.panEase;}else{this.offsetX=this.targetOffsetX;}if(Math.abs(this.velocity)>0.01){this.targetOffsetX+=this.velocity;this.velocity=0.972;this.clampPan();}else{this.velocity=0;}}
-  tickZoom(){const d=this.targetZoom-this.zoom;if(Math.abs(d)>0.0001){this.zoom+=d*this.zoomEase;}else{this.zoom=this.targetZoom;}}
-  tickSR(){const r=this.priceRange;if(this.smin===null){this.smin=r.min;this.smax=r.max;return;}this.smin+=(r.min-this.smin)this.sre;this.smax+=(r.max-this.smax)this.sre;}
-  applyZoomAround(mx,my,sc){const oz=this.targetZoom;const nz=Math.max(this.minZoom,Math.min(this.maxZoom,ozsc));if(Math.abs(nz-oz)this.h+5)continue;const mj=i%5===0;this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";this.ctx.lineWidth=mj?1:0.8;this.ctx.beginPath();this.ctx.moveTo(0,y+0.5);this.ctx.lineTo(this.w,y+0.5);this.ctx.stroke();}const visC=this.w/this.getSpacing();const targetL=9;const stepC=Math.max(1,Math.round(visC/targetL));const s=Math.floor(this.xToIndex(0));const e=Math.ceil(this.xToIndex(this.w));for(let i=s;ithis.w+5)continue;const mj=i%Math.round(stepC5)===0;this.ctx.strokeStyle=mj?"rgba(255,215,0,.12)":"rgba(255,255,255,.05)";this.ctx.lineWidth=mj?1:0.8;this.ctx.beginPath();this.ctx.moveTo(x+0.5,0);this.ctx.lineTo(x+0.5,this.h);this.ctx.stroke();}}
-  updateTimeLabels(){const tl=this.timeLabels;tl.innerHTML="";const visC=this.w/this.getSpacing();const targetL=9;const stepC=Math.max(1,Math.round(visC/targetL));const s=Math.floor(this.xToIndex(0));const e=Math.ceil(this.xToIndex(this.w));const tS=this.candles.length?this.candles[0].timestamp:this.t0;for(let i=s;ithis.w-5)continue;const t=tS+ithis.timeframe;const d=new Date(t);const hh=String(d.getHours()).padStart(2,"0");const mm=String(d.getMinutes()).padStart(2,"0");const lb=document.createElement("div");lb.className="timeLabel";if(i%Math.round(stepC5)===0){lb.classList.add("major");}lb.style.left=x+"px";lb.textContent=${hh}:${mm};tl.appendChild(lb);}}
-  updatePriceScale(){const{min,step,count}=this.calcNiceGrid();let h="";for(let i=0;ithis.h+8)continue;const mj=i%5===0;h+=${p.toFixed(this.digits)};}this.priceScaleLabels.innerHTML=h;}
-  updatePriceLabel(){const py=this.priceToY(this.currentPrice);this.priceLine.style.top=py+"px";this.currentPriceEl.style.top=py+"px";this.currentPriceEl.textContent=this.currentPrice.toFixed(this.digits);}
-  updateCandleTimer(){if(!this.currentCandle)return;const n=Date.now();const e=n-this.t0;const r=this.timeframe-e;const s=Math.floor(r/1000);this.candleTimer.textContent=s>=0?s:0;const cx=this.indexToX(this.candles.length);this.candleTimer.style.left=cx+15+"px";this.candleTimer.style.top="10px";this.candleTimer.style.display='block';}
-  priceToY(p){const r=this.getPriceRange();const n=(p-r.min)/(r.max-r.min);return this.h*(1-n);}
-  drawCandle(c,x,glow){const oy=this.priceToY(c.open);const cy=this.priceToY(c.close);const hy=this.priceToY(c.high);const ly=this.priceToY(c.low);const b=c.close>=c.open;const w=this.getCandleWidth();this.ctx.strokeStyle=b?"#0f0":"#f00";this.ctx.lineWidth=Math.max(1,0.18*w);this.ctx.beginPath();this.ctx.moveTo(x,hy);this.ctx.lineTo(x,ly);this.ctx.stroke();const bh=Math.max(1,Math.abs(cy-oy));const bt=Math.min(oy,cy);const g=this.ctx.createLinearGradient(x,bt,x,bt+bh);if(b){g.addColorStop(0,"#0f0");g.addColorStop(0.5,"#0f0");g.addColorStop(1,"#0c0");}else{g.addColorStop(0,"#f00");g.addColorStop(0.5,"#f00");g.addColorStop(1,"#c00");}this.ctx.fillStyle=g;if(glow){this.ctx.shadowColor=b?"rgba(0,255,0,.8)":"rgba(255,0,0,.8)";this.ctx.shadowBlur=12;}this.ctx.fillRect(x-w/2,bt,w,bh);if(glow){this.ctx.shadowBlur=0;}}
-
-  addMarker(t, tradeId, account){
-    const op=this.currentPrice;
-    const c=this.currentCandle;
-    if(!c)return;
-    const bt=Math.max(c.open,c.close);
-    const bb=Math.min(c.open,c.close);
-    let fp=op;
-    if(op>bt){fp=bt;}else if(opthis.w+50)return;
-    const y=this.priceToY(m.price);
-    const w=this.getCandleWidth();
-    const ib=m.type==="buy";
-    const cl=ib?"#16a34a":"#ff3b3b";
-    const r=5.5;
-
-    this.ctx.save();
-    const lsx=x;
-
-    this.ctx.shadowColor=cl;
-    this.ctx.shadowBlur=9;
-    this.ctx.fillStyle=cl;
-    this.ctx.beginPath();
-    this.ctx.arc(x,y,r,0,2*Math.PI);
-    this.ctx.fill();
-    this.ctx.shadowBlur=0;
-
-    this.ctx.fillStyle="#fff";
-    this.ctx.save();
-    this.ctx.translate(x,y);
-    if(!ib)this.ctx.rotate(Math.PI);
-    this.ctx.beginPath();
-    this.ctx.moveTo(0,-2.8);
-    this.ctx.lineTo(-2,0.8);
-    this.ctx.lineTo(-0.65,0.8);
-    this.ctx.lineTo(-0.65,2.8);
-    this.ctx.lineTo(0.65,2.8);
-    this.ctx.lineTo(0.65,0.8);
-    this.ctx.lineTo(2,0.8);
-    this.ctx.closePath();
-    this.ctx.fill();
-    this.ctx.restore();
-
-    const lx=lsx+w/2+3;
-    const lw=Math.min(95,this.w-lx-22);
-    this.ctx.strokeStyle=ib?"rgba(22,163,74,.7)":"rgba(255,59,59,.7)";
-    this.ctx.lineWidth=1.2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(lsx+w/2,y);
-    this.ctx.lineTo(lx,y);
-    this.ctx.stroke();
-    this.ctx.beginPath();
-    this.ctx.moveTo(lx,y);
-    this.ctx.lineTo(lx+lw,y);
-    this.ctx.stroke();
-
-    const ex=lx+lw;
-    const er=5;
-    this.ctx.strokeStyle=cl;
-    this.ctx.lineWidth=2;
-    this.ctx.fillStyle="#fff";
-    this.ctx.beginPath();
-    this.ctx.arc(ex,y,er,0,2*Math.PI);
-    this.ctx.fill();
-    this.ctx.stroke();
-
-    this.ctx.strokeStyle=ib?"rgba(22,163,74,.5)":"rgba(255,59,59,.5)";
-    this.ctx.lineWidth=1.2;
-    this.ctx.beginPath();
-    this.ctx.moveTo(ex+er,y);
-    this.ctx.lineTo(ex+65,y);
-    this.ctx.stroke();
-
-    if (m.closed && m.profitLoss !== null) {
-      const pl = m.profitLoss;
-      const isWin = pl >= 0;
-      const plText = isWin ? +$${this._fmtBal(pl)} : -$${this._fmtBal(Math.abs(pl))};
-      const plColor = isWin ? '#00ff41' : '#ff3b3b';
-      const bgColor = isWin ? 'rgba(0,255,65,0.18)' : 'rgba(255,59,59,0.18)';
-      const textX = ex + er + 4;
-      const textY = y;
-
-      this.ctx.font = 'bold 11.5px Arial';
-      const tw = this.ctx.measureText(plText).width;
-
-      this.ctx.fillStyle = bgColor;
-      this.ctx.fillRect(textX - 3, textY - 10, tw + 10, 17);
-
-      this.ctx.strokeStyle = plColor;
-      this.ctx.lineWidth = 0.8;
-      this.ctx.strokeRect(textX - 3, textY - 10, tw + 10, 17);
-
-      this.ctx.fillStyle = plColor;
-      this.ctx.shadowColor = plColor;
-      this.ctx.shadowBlur = 4;
-      this.ctx.fillText(plText, textX + 2, textY + 3);
-      this.ctx.shadowBlur = 0;
-    }
-
-    this.ctx.restore();
-  }
-
-  draw(){
-    this.tickZoom();
-    this.updatePan();
-    this.updatePriceRange();
-    this.tickSR();
-    this.ctx.clearRect(0,0,this.w,this.h);
-    this.drawGrid();
-
-    for(let i=0;ithis.w+60)continue;
-      this.drawCandle(this.candles[i],x,false);
-    }
-
-    if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){
-      const lx=this.indexToX(this.candles.length);
-      if(lx>=-60&&lx{
-      if(this.isSwitching) return;
-      if (!this.isMaster) return;
-
-      const n=Date.now();
-      const e=n-this.t0;
-      if(e>=this.timeframe){
-        if(this.currentCandle&&(!this.candles.length||this.currentCandle.timestamp!==this.candles[this.candles.length-1].timestamp)){
-          const completedCandle={...this.currentCandle};
-          this.candles.push(completedCandle);
-          this.saveCompletedCandle(completedCandle);
-          if(this.candles.length>this.maxCandles){this.candles.shift();}
-        }
-        this.t0=Math.floor(n/this.timeframe)*this.timeframe;
-        const lp=this.currentCandle?this.currentCandle.close:this.currentPrice;
-        this.currentCandle=this.genCandle(this.t0,lp);
-        this.currentCandle.open=lp;
-        this.currentCandle.close=lp;
-        this.currentCandle.high=lp;
-        this.currentCandle.low=lp;
-        this.currentPrice=lp;
-        this._lastBroadcastedClose = null;
-      }else{
-        this.updateCurrentCandle();
-      }
-    },200);
-
-    setInterval(()=>{
-      if(!this.isSwitching && this.isMaster){
-        this.localStorageManager.saveCandles(this.candles,this.currentPair);
-      }
-    },10000);
-  }
-
-  async saveCompletedCandle(candle){
-    try{this.firebaseManager.addPendingCandle(candle);}
-    catch(e){console.error('❌ Queue error:',e);}
-  }
-
-  updatePriceRange(){let v=[...this.candles];if(this.currentCandle&&(!v.length||this.currentCandle.timestamp!==v[v.length-1].timestamp)){v.push(this.currentCandle);}if(!v.length){this.priceRange={min:0.95this.basePrice,max:1.05this.basePrice};return;}const si=Math.floor(this.xToIndex(0));const ei=Math.ceil(this.xToIndex(this.w));const sl=v.slice(Math.max(0,si-5),Math.min(v.length,ei+5));if(!sl.length){this.priceRange={min:0.95this.basePrice,max:1.05this.basePrice};return;}const lo=sl.map(c=>c.low);const hi=sl.map(c=>c.high);const mn=Math.min(...lo);const mx=Math.max(...hi);const pd=0.15*(mx-mn)||0.000000001;this.priceRange={min:mn-pd,max:mx+pd};}
-  initEvents(){addEventListener("resize",()=>this.setup());this.canvas.addEventListener("wheel",e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect();const x=e.clientX-r.left;const y=e.clientY-r.top;const sc=e.deltaY>0?1/1.1:1.1;this.applyZoomAround(x,y,sc);},{passive:false});const md=(x,t)=>{this.drag=1;this.dragStartX=x;this.dragStartOffset=this.targetOffsetX;this.velocity=0;this.lastDragX=x;this.lastDragTime=t;};const mm=(x,t)=>{if(this.drag){const d=x-this.dragStartX;this.targetOffsetX=this.dragStartOffset+d;this.clampPan();const dt=t-this.lastDragTime;if(dt>0&&dt{this.drag=0;this.updateTimeLabels();};this.canvas.addEventListener("mousedown",e=>{const r=this.canvas.getBoundingClientRect();md(e.clientX-r.left,Date.now());});addEventListener("mousemove",e=>{const r=this.canvas.getBoundingClientRect();mm(e.clientX-r.left,Date.now());});addEventListener("mouseup",mu);const db=(a,b)=>Math.hypot(b.clientX-a.clientX,b.clientY-a.clientY);this.canvas.addEventListener("touchstart",e=>{const r=this.canvas.getBoundingClientRect();if(e.touches.length===1){md(e.touches[0].clientX-r.left,Date.now());}else if(e.touches.length===2){this.drag=0;this.pinch=1;this.p0=db(e.touches[0],e.touches[1]);this.pMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-r.left;this.pMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-r.top;}},{passive:false});this.canvas.addEventListener("touchmove",e=>{e.preventDefault();const r=this.canvas.getBoundingClientRect();if(this.pinch&&e.touches.length===2){const d=db(e.touches[0],e.touches[1]);if(this.p0>0){const sc=Math.max(0.2,Math.min(5,d/(this.p0||d)));this.applyZoomAround(this.pMidX,this.pMidY,sc);}this.p0=d;}else if(!this.pinch&&e.touches.length===1){mm(e.touches[0].clientX-r.left,Date.now());}},{passive:false});this.canvas.addEventListener("touchend",e=>{if(e.touches.length{this.pinch=0;this.p0=0;mu();},{passive:false});}
-  loop(){this.draw();requestAnimationFrame(()=>this.loop());}
-
-  async switchPair(pairName){
-    if(this.currentPair===pairName||this.isSwitching) return;
-    console.log('🔀 Switching pair:',this.currentPair,'→',pairName);
-    this.isSwitching=true;
-    this.showLoading(true);
-    try{
-      await this._cleanupMasterViewer();
-      this.currentPair=pairName;
-      const cfg=this.PAIR_CONFIG[pairName]||{base:1.0,digits:5,seed:Math.abs(pairName.split('').reduce((h,c)=>((h0){
-        this.candles=firebaseCandles;
-        this.usingLocalStorage=false;
-        this.localStorageManager.saveCandles(this.candles,pairName);
-      }else{
-        const localCandles=this.localStorageManager.loadCandles(pairName);
-        if(localCandles&&localCandles.length>0){
-          this.candles=localCandles;
-          this.usingLocalStorage=true;
-        }else{
-          this.initHistoricalData();
-          this.usingLocalStorage=true;
-        }
-      }
-      if(this.candles.length>0){this.currentPrice=this.candles[this.candles.length-1].close;}
-      this.snapToLive();
-      this.updateTimeLabels();
-      this.updatePriceRange();
-      this.smin=this.priceRange.min;
-      this.smax=this.priceRange.max;
-      this.updatePriceScale();
-      this.updatePriceLabel();
-
-      await this._initMasterViewerSystem();
-
-      if (this.authManager.user) {
-        this.loadOpenTrades();
-        this.loadTradeHistory(); // ✅ تحميل السجل عند تبديل الزوج
-      }
-
-    }catch(e){
-      console.error('❌ switchPair error:',e);
-      try{this.initHistoricalData();}catch(_){}
-    }finally{
-      this.isSwitching=false;
-      this.showLoading(false);
-    }
-  }
-
-  /* ============================================================
-     إدارة الرصيد
-     ============================================================ */
-  _getActiveAcc() { return this.authManager.activeAccount || 'demo'; }
-  _fmtBal(n) {
-    try { return new Intl.NumberFormat('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n); }
-    catch(e) { return (Math.round(n * 100) / 100).toFixed(2); }
-  }
-  _getBalanceFor(acc) {
-    const a = acc || this._getActiveAcc();
-    return a === 'real'
-      ? (this.authManager.realBalance || 0)
-      : (this.authManager.demoBalance || 0);
-  }
-  _setBalanceFor(acc, amount) {
-    const a = acc || this._getActiveAcc();
-    const safeAmt = Math.max(0, Number(amount) || 0);
-    this.authManager.setBalance(a, safeAmt, { persist: true });
-  }
-
-  /* ============================================================
-     فتح صفقة
-     ============================================================ */
-  openTrade(direction) {
-    const acc = this._getActiveAcc();
-
-    if (acc === 'real' && !this.authManager.user) {
-      this._showMsg('سجّل الدخول لاستخدام الحساب الحقيقي ❌', '#dc2626');
-      return;
-    }
-
-    if (this.authManager.user && !this.authManager.balancesReady) {
-      this._showMsg('استنى تحميل الرصيد لحظة... ⏳', '#f59e0b');
-      return;
-    }
-
-    const amountEl = document.getElementById('amountDisplay');
-    const raw = amountEl ? String(amountEl.value || '') : '';
-    const rawVal = raw.replace(//g, '');
-
-    if (!rawVal || rawVal.trim() === '') {
-      this._showMsg('اكتب مبلغ الصفقة الأول ❌', '#dc2626');
-      return;
-    }
-
-    const amount = parseFloat(rawVal);
-    if (!Number.isFinite(amount) || amount  console.warn('❌ Trade save error:', e));
-    }
-
-    this._refreshTradeBadge();
-
-    setTimeout(() => this._closeTrade(tradeId, trade), duration * 1000);
-  }
-
-  /* ============================================================
-     ✅ إغلاق الصفقة + إضافتها للسجل + حفظها في Firebase
-     ============================================================ */
-  _closeTrade(tradeId, trade) {
-    const currentP = this.currentPrice;
-    const win = (trade.dir === 'up' && currentP >= trade.entry) || (trade.dir === 'down' && currentP  t.id !== tradeId);
-      window.tradeHistory.setTrades(remaining);
-    }
-
-    // ✅ تسوية الرصيد على نفس الحساب
-    const acc = trade.account || 'demo';
-    if (win) {
-      const b = this._getBalanceFor(acc);
-      this._setBalanceFor(acc, b + trade.stake + profit);
-    }
-
-    // ✅ تحديث الماركر على الشارت
-    const mIdx = this.markers.findIndex(mk => mk.tradeId === tradeId);
-    if (mIdx >= 0) {
-      this.markers[mIdx].closed = true;
-      this.markers[mIdx].profitLoss = pl;
-    }
-
-    // ✅ بناء كائن الصفقة المنتهية الكامل
-    const closedTrade = {
-      ...trade,
-      status: 'closed',
-      result: win ? 'win' : 'loss',
-      profit: pl,
-      profitLoss: pl,
-      closedAt: Date.now(),
-      closePrice: currentP,
-      open: false
-    };
-
-    // ✅ إضافة للسجل وعرضها مباشرة
-    this._addClosedTradeToHistory(closedTrade);
-
-    // ✅ حفظ في Firebase لو المستخدم مسجل
-    if (this.authManager.user) {
-      this._updateTradeInFirebase(tradeId, {
-        status: 'closed',
-        result: win ? 'win' : 'loss',
-        profit: pl,
-        profitLoss: pl,
-        closedAt: Date.now(),
-        closePrice: currentP,
-        open: false
-      }).catch(e => console.warn('❌ Trade close update error:', e));
-    }
-
-    this._refreshTradeBadge();
-  }
-
-  /* ============================================================
-     ✅ إضافة صفقة منتهية للسجل المحلي + إرسال الحدث للـ HTML
-     ============================================================ */
-  _addClosedTradeToHistory(closedTrade) {
-    // ✅ إضافة في بداية المصفوفة (الأحدث أولاً)
-    this._closedTrades.unshift(closedTrade);
-
-    // ✅ الطريقة الأولى: استدعاء API السجل مباشرة إن وجدت
-    if (window.tradeHistory) {
-      if (typeof window.tradeHistory.addHistory === 'function') {
-        window.tradeHistory.addHistory(closedTrade);
-      }
-      if (typeof window.tradeHistory.addClosedTrade === 'function') {
-        window.tradeHistory.addClosedTrade(closedTrade);
-      }
-      if (typeof window.tradeHistory.setHistory === 'function') {
-        window.tradeHistory.setHistory([...this._closedTrades]);
-      }
-    }
-
-    // ✅ الطريقة الثانية: إرسال حدث مخصص يلتقطه الـ HTML
-    window.dispatchEvent(new CustomEvent('qt_trade_closed', {
-      detail: {
-        trade: closedTrade,
-        allClosed: [...this._closedTrades]
-      }
-    }));
-
-    console.log(📝 صفقة أُضيفت للسجل: ${closedTrade.id} | ${closedTrade.result} | $${closedTrade.profit?.toFixed(2)});
-  }
-
-  /* ============================================================
-     ✅ تحميل سجل الصفقات المنتهية من Firebase
-     ============================================================ */
-  async loadTradeHistory() {
-    if (!this.authManager.user) return;
-    try {
-      const email = this.authManager.user.email;
-      const tradesRef = collection(db, 'users', email, 'trades');
-
-      // ✅ جلب آخر 100 صفقة منتهية مرتبة من الأحدث للأقدم
-      const q = query(
-        tradesRef,
-        where('status', '==', 'closed'),
-        orderBy('closedAt', 'desc'),
-        limit(100)
-      );
-
-      const snapshot = await getDocs(q);
-      this._closedTrades = [];
-
-      snapshot.forEach(docSnap => {
-        const data = docSnap.data();
-        this._closedTrades.push({
-          ...data,
-          id: docSnap.id,
-          // ✅ ضمان وجود الحقول الأساسية
-          status: 'closed',
-          result: data.result || (data.profit >= 0 ? 'win' : 'loss'),
-          profit: data.profit || data.profitLoss || 0,
-          profitLoss: data.profitLoss || data.profit || 0,
-          closedAt: data.closedAt || 0,
-          open: false
-        });
-      });
-
-      console.log(📜 تم تحميل ${this._closedTrades.length} صفقة منتهية من Firebase);
-
-      // ✅ إرسال السجل الكامل للـ HTML
-      if (window.tradeHistory) {
-        if (typeof window.tradeHistory.setHistory === 'function') {
-          window.tradeHistory.setHistory([...this._closedTrades]);
-        }
-        if (typeof window.tradeHistory.loadHistory === 'function') {
-          window.tradeHistory.loadHistory([...this._closedTrades]);
-        }
-      }
-
-      // ✅ إرسال حدث مخصص مع كل السجل
-      window.dispatchEvent(new CustomEvent('qt_history_loaded', {
-        detail: [...this._closedTrades]
-      }));
-
-    } catch(e) {
-      console.error('❌ loadTradeHistory error:', e);
-      // ✅ حتى لو فشل التحميل، أرسل مصفوفة فارغة
-      window.dispatchEvent(new CustomEvent('qt_history_loaded', { detail: [] }));
-    }
-  }
-
-  async _saveTradeToFirebase(trade) {
-    if (!this.authManager.user) return;
-    try {
-      const email = this.authManager.user.email;
-      const tradeRef = doc(db, 'users', email, 'trades', trade.id);
-      const payload = { ...trade };
-      delete payload.open;
-      payload.savedAt = serverTimestamp();
-      await setDoc(tradeRef, payload);
-    } catch(e) { console.error('❌ _saveTradeToFirebase error:', e); throw e; }
-  }
-
-  async _updateTradeInFirebase(tradeId, updates) {
-    if (!this.authManager.user) return;
-    try {
-      const email = this.authManager.user.email;
-      const tradeRef = doc(db, 'users', email, 'trades', tradeId);
-      await updateDoc(tradeRef, updates);
-    } catch(e) { console.error('❌ _updateTradeInFirebase error:', e); throw e; }
-  }
-
-  /* ============================================================
-     ✅ تحميل الصفقات المفتوحة + السجل معاً
-     ============================================================ */
-  async loadOpenTrades() {
-    if (!this.authManager.user) return;
-    try {
-      const email = this.authManager.user.email;
-      const tradesRef = collection(db, 'users', email, 'trades');
-      const q = query(tradesRef, where('status', '==', 'open'));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        this._refreshTradeBadge();
-        // ✅ حتى لو ما فيش صفقات مفتوحة، حمّل السجل
-        await this.loadTradeHistory();
-        return;
-      }
-
-      if (window.tradeHistory) window.tradeHistory.setTrades([]);
-      this.markers = [];
-
-      const now = Date.now();
-
-      for (const docSnap of snapshot.docs) {
-        const trade = { ...docSnap.data(), id: docSnap.id };
-        if (!trade.closeTime) continue;
-        if (trade.closeTime  t.id === trade.id)) {
-              current.push(trade);
-              window.tradeHistory.setTrades(current);
-            }
-          }
-          this._restoreTradeMarker(trade);
-          setTimeout(() => this._closeTrade(trade.id, trade), remaining);
-        }
-      }
-
-      this._refreshTradeBadge();
-
-      // ✅ تحميل السجل بعد الصفقات المفتوحة
-      await this.loadTradeHistory();
-
-    } catch(e) { console.error('❌ loadOpenTrades error:', e); }
-  }
-
-  _restoreTradeMarker(trade) {
-    let candleIdx = trade.markerCandleIndex || 0;
-    if (trade.markerCandleTimestamp) {
-      for (let i = 0; i = trade.entry) || (trade.dir === 'down' && currentP  (t.account || 'demo') === acc).length;
-      this._updateTradeBadge(count);
-    } catch(e) {}
-  }
-
-  _updateTradeBadge(count) {
-    let badge = document.getElementById('_qtTradeBadge');
-    if (!badge) {
-      let histBtn = document.querySelector('#historyBtn')||document.querySelector('.historyBtn')||document.querySelector('[data-panel="history"]')||document.querySelector('#tradeHistoryBtn')||document.querySelector('.tradeHistBtn')||document.querySelector('[id="hist" i]')||document.querySelector('[class="hist" i]');
-      if (!histBtn) { document.querySelectorAll('button').forEach(btn => { if (!histBtn && ((btn.id&&btn.id.toLowerCase().includes('hist'))||(btn.className&&btn.className.toLowerCase().includes('hist')))) histBtn=btn; }); }
-      if (!histBtn) return;
-      badge = document.createElement('span');
-      badge.id = '_qtTradeBadge';
-      badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;z-index:10000;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.5);line-height:1';
-      histBtn.style.position = 'relative';
-      histBtn.appendChild(badge);
-    }
-    if (count > 0) { badge.textContent = count > 99 ? '99+' : String(count); badge.style.display = 'flex'; }
-    else { badge.style.display = 'none'; }
-  }
-
-  _showMsg(text, color) {
-    if (!document.getElementById('_qtToastCSS')) {
-      const s = document.createElement('style');
-      s.id = '_qtToastCSS';
-      s.textContent = @keyframes _qtFade{0%{opacity:0;transform:translateX(-50%) translateY(-14px)}12%{opacity:1;transform:translateX(-50%) translateY(0)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-8px)}};
-      document.head.appendChild(s);
-    }
-    const t = document.createElement('div');
-    t.style.cssText = position:fixed;top:68px;left:50%;transform:translateX(-50%);background:${color};color:#fff;padding:10px 22px;border-radius:12px;font-size:14px;font-weight:900;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.5);white-space:nowrap;animation:_qtFade 2.4s forwards;pointer-events:none;letter-spacing:.3px;;
-    t.textContent = text;
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2400);
-  }
-}
-
-/* ============================================================
-   🚀 تهيئة التطبيق
-   ============================================================ */
-window.chart=new AdvancedTradingChart();
-const timeSelector=document.getElementById("timeSelector");
-const timeDropdown=document.getElementById("timeDropdown");
-const timeDisplay=document.getElementById("timeDisplay");
-const tabCompensation=document.getElementById("tabCompensation");
-const tabCustom=document.getElementById("tabCustom");
-const compensationList=document.getElementById("compensationList");
-const amountDisplay=document.getElementById("amountDisplay");
-const amountContainer=document.getElementById("amountContainer");
-let isEditingTime=false;
-let savedTimeValue="00:05";
-
-timeSelector.addEventListener("click",e=>{e.stopPropagation();if(!isEditingTime){timeDropdown.classList.toggle("show");}});
-document.addEventListener("click",()=>{timeDropdown.classList.remove("show");if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}});
-timeDropdown.addEventListener("click",e=>e.stopPropagation());
-
-tabCompensation.addEventListener("click",()=>{
-  tabCompensation.classList.add("active");
-  tabCustom.classList.remove("active");
-  compensationList.style.display="grid";
-  if(isEditingTime){timeDisplay.textContent=savedTimeValue;isEditingTime=false;}
-});
-
-tabCustom.addEventListener("click",()=>{
-  tabCustom.classList.add("active");
-  tabCompensation.classList.remove("active");
-  compensationList.style.display="none";
-  isEditingTime=true;
-  const editVal = savedTimeValue.replace(':','');
-  timeDisplay.textContent = editVal;
-  setTimeout(()=>{
-    timeDisplay.focus();
-    try {
-      const range = document.createRange();
-      range.selectNodeContents(timeDisplay);
-      const sel = window.getSelection();
-      sel.removeAllRanges();
-      sel.addRange(range);
-    } catch(e) {}
-  }, 30);
-});
-
-compensationList.addEventListener("click",e=>{
-  if(e.target.classList.contains("dropdown-item")){
-    savedTimeValue=e.target.textContent;
-    timeDisplay.textContent=savedTimeValue;
-    chart.selectedTime=parseInt(e.target.getAttribute("data-sec"));
-    timeDropdown.classList.remove("show");
-  }
-});
-
-timeDisplay.addEventListener("input",e=>{
-  if(isEditingTime){
-    let v=e.target.textContent.replace(//g,"");
-    if(v.length>4)v=v.slice(0,4);
-    const sel=window.getSelection();
-    const pos=sel.focusOffset;
-    e.target.textContent=v;
-    try{
-      if(e.target.firstChild){
-        const r=document.createRange();
-        r.setStart(e.target.firstChild,Math.min(pos,v.length));
-        r.collapse(true);
-        sel.removeAllRanges();
-        sel.addRange(r);
-      }
-    }catch(_){}
-  }
-});
-
-timeDisplay.addEventListener("blur",()=>{
-  if(isEditingTime){
-    let v=timeDisplay.textContent.replace(//g,"");
-    if(v.length===0)v="0005";
-    v=v.padStart(4,"0");
-    const h=v.slice(0,2);
-    const m=v.slice(2,4);
-    savedTimeValue=${h}:${m};
-    timeDisplay.textContent=savedTimeValue;
-    const totalSec = parseInt(h)*60 + parseInt(m);
-    chart.selectedTime = totalSec > 0 ? totalSec : 5;
-    isEditingTime=false;
-  }
-});
-
-timeDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
-
-amountContainer.addEventListener("click",()=>{amountDisplay.focus();});
-amountDisplay.addEventListener("focus",function(){let v=this.value.replace("$","");this.value=v;setTimeout(()=>{this.setSelectionRange(0,this.value.length);},10);});
-amountDisplay.addEventListener("input",function(){this.value=this.value.replace(//g,"");});
-amountDisplay.addEventListener("blur",function(){let val=parseFloat(this.value)||50;this.value=val+"$";});
-amountDisplay.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();this.blur();}});
-
-document.getElementById("buyBtn").addEventListener("click",()=>chart.openTrade("buy"));
-document.getElementById("sellBtn").addEventListener("click",()=>chart.openTrade("sell"));
-
-console.log('🚀 QT Trading Chart v3 — Firebase History Sync ✅');
+  };
+
+  /* ── تهيئة أولية ── */
+  render();
+  ensureTimer();
+})();
+</script>
+
+<!-- ============================================================
+     Chart.js
+     ============================================================ -->
+<script type="module" src="chart.js"></script>
+</body></html>
+    
+  </body>
+  
+</html>
