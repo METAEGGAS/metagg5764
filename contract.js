@@ -1,4 +1,4 @@
-<script>
+
 (()=>{let w=window,d=document,I='df_contract',S=I+'_s',T=['فتح الصفقة','الطلب الحالي','الطلبات التاريخية','المعاملات التاريخية'],$=(q,p=d)=>p.querySelector(q),$$=(q,p=d)=>[...p.querySelectorAll(q)],f=n=>(+n).toFixed(2),rr=(a,b)=>Math.random()*(b-a)+a,bids=p=>{let a=[],x=p+.15;for(let i=0;i<5;i++)a.push([f(x),rr(3000,16000).toFixed(2)+'K']),x-=rr(.03,.05);return a},asks=p=>{let a=[],x=p-.02;for(let i=0;i<5;i++)a.push([f(x),rr(3000,16000).toFixed(2)+'K']),x-=rr(.03,.05);return a},R=(a,c)=>a.map(v=>`<div class="r ${c}"><span class=v>${v[1]}</span><span class=pr>${v[0]}</span></div>`).join('');if(w.__DFP?.contract?.ready)return;function C(){if(d.getElementById(S))return;let s=d.createElement('style');s.id=S;s.textContent=`
 #${I}{position:fixed;inset:0 0 56px;z-index:78;background:#000;color:#fff;font-family:Noto Sans Arabic,Tahoma,Arial,sans-serif;display:none;overflow:hidden}
 #${I}.on{display:flex;flex-direction:column}
@@ -74,4 +74,4 @@ function M(){let x=d.getElementById(I);if(x)return x;C();d.body.insertAdjacentHT
 function op(){let p=w.__DFP||{};p.trade?.close&&p.trade.close();d.getElementById('dfv')?.classList.remove('on');d.getElementById('drw')?.classList.remove('op');d.body.classList.remove('sp');M().classList.add('on');N()}
 function cl(){d.getElementById(I)?.classList.remove('on')}
 w.__DFP=w.__DFP||{};w.__DFP.contract={ready:1,open:op,close:cl,t:0}})();
-</script>
+
