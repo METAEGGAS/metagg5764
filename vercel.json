@@ -1,7 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/pages/login/register/:path*",
+      "source": "/pages/login/registe/:path*",
       "destination": "/login.html"
     }
   ]
