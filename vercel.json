@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/pages/login/registe/",
+      "source": "/pages/login/registe/:path*",
       "destination": "/login.html"
+    },
+    {
+      "source": "/pages/trade/index/:path*",
+      "destination": "/trade.js"
     }
   ]
 }
