@@ -1,0 +1,499 @@
+<!DOCTYPE html><html dir="rtl" lang="ar"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DunFin • لوحة التحكم</title><style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#0a0d14;--pn:#111623;--pn2:#161c2c;--bd:#232a3d;--t:#e9edf5;--m:#8892a8;--y:#ffd21f;--g:#22c55e;--r:#ef4444;--b:#3b82f6;--o:#f59e0b;--sh:0 10px 30px #0006}
+html,body{background:var(--bg);color:var(--t);font:14px/1.6 "Noto Sans Arabic",Tahoma,Arial,sans-serif;min-height:100%}
+a{color:inherit;text-decoration:none}
+input,select,textarea,button{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:0}
+.hd{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0a0d14 0,#0a0d14e6 100%);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd);padding:14px 18px;display:flex;align-items:center;gap:14px}
+.hd h1{font-size:18px;font-weight:800;color:var(--y);display:flex;align-items:center;gap:8px}
+.hd h1::before{content:"⚡";font-size:22px}
+.hd .who{margin-inline-start:auto;color:var(--m);font-size:13px}
+.hd .lo{padding:7px 14px;background:#ef444422;border:1px solid #ef444455;border-radius:10px;color:#fca5a5;font-weight:700}
+.tabs{display:flex;gap:6px;padding:14px 18px 0;overflow-x:auto;border-bottom:1px solid var(--bd)}
+.tabs b{padding:10px 18px;border-radius:12px 12px 0 0;background:var(--pn);border:1px solid var(--bd);border-bottom:0;color:var(--m);font-weight:700;cursor:pointer;white-space:nowrap;font-size:14px}
+.tabs b.a{background:var(--pn2);color:var(--y);box-shadow:inset 0 -3px 0 var(--y)}
+.wrap{padding:18px;min-height:calc(100vh - 120px)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.card{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;box-shadow:var(--sh)}
+.card .k{color:var(--m);font-size:12px;margin-bottom:6px}
+.card .v{font-size:22px;font-weight:800;color:var(--y)}
+.card .v.g{color:var(--g)}.card .v.r{color:var(--r)}.card .v.b{color:var(--b)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.toolbar input,.toolbar select{background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:9px 12px;color:var(--t);min-width:180px}
+.toolbar input:focus,.toolbar select:focus{outline:0;border-color:var(--y)}
+.chip{padding:6px 12px;background:var(--pn);border:1px solid var(--bd);border-radius:20px;color:var(--m);font-size:13px;cursor:pointer}
+.chip.a{background:var(--y);color:#000;border-color:var(--y);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.box{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden}
+.box::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--y),var(--b))}
+.box.dep::before{background:linear-gradient(90deg,var(--g),#10b981)}
+.box.wdr::before{background:linear-gradient(90deg,var(--r),#dc2626)}
+.box .th{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.box .th .av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--y),var(--o));display:grid;place-items:center;font-weight:800;color:#000;font-size:15px}
+.box .th .nm{font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.box .th .st{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.box .st.p{background:#f59e0b22;color:#fbbf24}
+.box .st.a{background:#22c55e22;color:#4ade80}
+.box .st.r{background:#ef444422;color:#fca5a5}
+.box .rw{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--bd);font-size:13px}
+.box .rw:last-child{border-bottom:0}
+.box .rw .k{color:var(--m)}
+.box .rw .v{font-weight:600;max-width:60%;text-align:end;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.box .rw .v.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+.box .actions{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;padding:9px 12px;border-radius:10px;font-weight:700;font-size:13px;transition:.15s;text-align:center}
+.btn.ok{background:#22c55e;color:#fff}
+.btn.no{background:#ef4444;color:#fff}
+.btn.ed{background:var(--b);color:#fff}
+.btn.gh{background:transparent;border:1px solid var(--bd);color:var(--m)}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.empty{text-align:center;padding:60px 20px;color:var(--m)}
+.empty .ic{font-size:56px;margin-bottom:12px;opacity:.4}
+.mask{position:fixed;inset:0;background:#000c;backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.mask.on{display:flex}
+.modal{background:var(--pn);border:1px solid var(--bd);border-radius:18px;max-width:640px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px #000b}
+.modal .mh{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--pn);z-index:2}
+.modal .mh h3{font-size:16px;flex:1;color:var(--y)}
+.modal .mh .cx{width:32px;height:32px;border-radius:8px;background:var(--bd);color:var(--t);font-size:20px;line-height:1;display:grid;place-items:center}
+.modal .mb{padding:18px 20px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fg .full{grid-column:1/-1}
+.f{display:flex;flex-direction:column;gap:5px}
+.f label{color:var(--m);font-size:12px;font-weight:600}
+.f input,.f select,.f textarea{background:var(--pn2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px;color:var(--t)}
+.f input:focus,.f select:focus,.f textarea:focus{outline:0;border-color:var(--y)}
+.f small{color:var(--m);font-size:11px}
+.f .warn{color:var(--o);font-size:11px}
+.mf{padding:14px 20px;border-top:1px solid var(--bd);display:flex;gap:10px;position:sticky;bottom:0;background:var(--pn)}
+.mf .btn{padding:11px 16px}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--pn2);border:1px solid var(--bd);color:var(--t);padding:12px 20px;border-radius:12px;box-shadow:var(--sh);z-index:200;opacity:0;transition:.25s;pointer-events:none;font-weight:600}
+.toast.on{opacity:1;transform:translate(-50%,-6px)}
+.toast.ok{border-color:#22c55e;color:#4ade80}
+.toast.er{border-color:#ef4444;color:#fca5a5}
+.lo-spin{display:inline-block;width:14px;height:14px;border:2px solid #fff5;border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-inline-end:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loader{text-align:center;padding:60px;color:var(--m)}
+.loader::before{content:"";display:inline-block;width:34px;height:34px;border:3px solid var(--bd);border-top-color:var(--y);border-radius:50%;animation:sp 1s linear infinite;margin-bottom:14px;display:block;margin:0 auto 14px}
+.gate{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;padding:20px;z-index:300}
+.gate .gc{background:var(--pn);border:1px solid var(--bd);border-radius:18px;padding:28px;max-width:400px;width:100%;box-shadow:var(--sh)}
+.gate h2{color:var(--y);font-size:22px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.gate p{color:var(--m);font-size:13px;margin-bottom:18px}
+.gate input{width:100%;background:var(--pn2);border:1px solid var(--bd);border-radius:10px;padding:12px;color:var(--t);margin-bottom:10px;font-size:15px}
+.gate input:focus{outline:0;border-color:var(--y)}
+.gate button{width:100%;padding:12px;background:var(--y);color:#000;border-radius:10px;font-weight:800;font-size:15px}
+.gate .er{color:#fca5a5;font-size:12px;margin-top:8px;min-height:16px}
+@media(max-width:640px){.wrap{padding:12px}.grid{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.hd{padding:12px}.hd h1{font-size:16px}.tabs b{padding:8px 12px;font-size:13px}}
+.mode-sw{display:inline-flex;background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:3px;gap:2px}
+.mode-sw b{padding:6px 12px;border-radius:8px;font-size:12px;color:var(--m);cursor:pointer;font-weight:700}
+.mode-sw b.a{background:var(--y);color:#000}
+</style>
+<body>
+<div class="gate" id="gate">
+<div class="gc">
+<h2>🔐 لوحة تحكم DunFin</h2>
+<p>سجّل الدخول بحساب مسؤول للمتابعة</p>
+<input id="gEm" type="email" placeholder="البريد الإلكتروني" autocomplete="username">
+<input id="gPw" type="password" placeholder="كلمة السر" autocomplete="current-password">
+<button id="gBt">تسجيل الدخول</button>
+<div class="er" id="gEr"></div>
+</div>
+</div>
+<div id="app" style="display:none">
+<div class="hd">
+<h1>DunFin Admin</h1>
+<div class="mode-sw"><b class="a" data-md="real">حقيقي</b><b data-md="sim">محاكاة</b></div>
+<div class="who" id="who"></div>
+<button class="lo" id="lo">خروج</button>
+</div>
+<div class="tabs">
+<b class="a" data-tb="ov">📊 عام</b>
+<b data-tb="us">👥 المستخدمون</b>
+<b data-tb="dp">💰 الإيداعات</b>
+<b data-tb="wd">💸 السحوبات</b>
+</div>
+<div class="wrap">
+<div id="ov" class="tp"></div>
+<div id="us" class="tp" style="display:none"></div>
+<div id="dp" class="tp" style="display:none"></div>
+<div id="wd" class="tp" style="display:none"></div>
+</div>
+</div>
+<div class="mask" id="mask"><div class="modal" id="mdl"></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import{initializeApp,getApps}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut,updatePassword,updateEmail}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import{getFirestore,collection,collectionGroup,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,where,serverTimestamp,writeBatch,increment}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+
+const CFG={apiKey:"AIzaSyBvzfJOOjRFZnTgTUrwEZQPr8Ba7zKKlNg",authDomain:"hhhxh-5ebe4.firebaseapp.com",projectId:"hhhxh-5ebe4",storageBucket:"hhhxh-5ebe4.firebasestorage.app",messagingSenderId:"79243000696",appId:"1:79243000696:web:ee0fb2d2ccce791954e68d",measurementId:"G-08BR6LN6PT"};
+const app=getApps()[0]||initializeApp(CFG),auth=getAuth(app),db=getFirestore(app);
+setPersistence(auth,browserLocalPersistence).catch(()=>{});
+
+/* ========= يمكنك تعديل قائمة المسؤولين هنا ========= */
+const ADMINS=["admin@dunfin.com"]; // ضع البريد الإلكتروني للمسؤولين المصرَّح لهم
+/* أو ضع في وثيقة المستخدم في Firestore الحقل: isAdmin:true */
+
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const G=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{v=+v;return isFinite(v)?v:0};
+const fmt=(v,d=2)=>num(v).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const ts=v=>{if(!v)return"-";try{if(v.toDate)v=v.toDate().getTime();else if(v.seconds)v=v.seconds*1e3;let d=new Date(+v);if(isNaN(d))return"-";return d.toLocaleString("ar-EG",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})}catch(e){return"-"}};
+const toIso=v=>{if(!v)return"";try{if(v.toDate)v=v.toDate().getTime();else if(v.seconds)v=v.seconds*1e3;let d=new Date(+v);if(isNaN(d))return"";let p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes())}catch(e){return""}};
+const toast=(m,ty="")=>{let t=G("toast");t.textContent=m;t.className="toast on "+ty;clearTimeout(t._h);t._h=setTimeout(()=>t.className="toast",2400)};
+const openM=h=>{G("mdl").innerHTML=h;G("mask").classList.add("on")};
+const closeM=()=>G("mask").classList.remove("on");
+G("mask").onclick=e=>{if(e.target===G("mask"))closeM()};
+
+/* ========= الحالة ========= */
+const ST={mode:"real",tab:"ov",users:[],deps:[],wds:[],usub:null,dsub:null,wsub:null,udx:{},f:{us:"",dp:"pending",wd:"pending"}};
+const COL=()=>ST.mode==="sim"?"محاكاة":"users";
+
+/* ========= الدخول ========= */
+G("gBt").onclick=async()=>{
+  let em=G("gEm").value.trim(),pw=G("gPw").value,er=G("gEr");er.textContent="";
+  if(!em||!pw){er.textContent="أدخل البريد وكلمة السر";return}
+  G("gBt").disabled=1;G("gBt").innerHTML='<span class="lo-spin"></span>جاري الدخول...';
+  try{await signInWithEmailAndPassword(auth,em,pw)}
+  catch(e){er.textContent="خطأ في الدخول: "+(e.code||e.message)}
+  G("gBt").disabled=0;G("gBt").textContent="تسجيل الدخول";
+};
+G("gPw").addEventListener("keydown",e=>{if(e.key==="Enter")G("gBt").click()});
+
+onAuthStateChanged(auth,async u=>{
+  if(!u){G("gate").style.display="grid";G("app").style.display="none";stopSubs();return}
+  // تحقق من الصلاحية
+  let ok=ADMINS.includes((u.email||"").toLowerCase());
+  if(!ok){try{let s=await getDoc(doc(db,"users",u.uid));if(s.exists()&&s.data().isAdmin===true)ok=true}catch(e){}}
+  if(!ok){G("gEr").textContent="هذا الحساب لا يملك صلاحية المسؤول";await signOut(auth);return}
+  G("gate").style.display="none";G("app").style.display="block";
+  G("who").textContent=u.email||u.uid;
+  start();
+});
+
+G("lo").onclick=()=>signOut(auth);
+
+/* ========= تبويبات ========= */
+$$(".tabs b").forEach(b=>b.onclick=()=>{ST.tab=b.dataset.tb;$$(".tabs b").forEach(x=>x.classList.toggle("a",x===b));$$(".tp").forEach(p=>p.style.display=p.id===ST.tab?"block":"none");render()});
+$$(".mode-sw b").forEach(b=>b.onclick=()=>{ST.mode=b.dataset.md;$$(".mode-sw b").forEach(x=>x.classList.toggle("a",x===b));start()});
+
+/* ========= اشتراكات ========= */
+function stopSubs(){if(ST.usub)ST.usub();if(ST.dsub)ST.dsub();if(ST.wsub)ST.wsub();ST.usub=ST.dsub=ST.wsub=null}
+function start(){
+  stopSubs();
+  ST.users=[];ST.deps=[];ST.wds=[];ST.udx={};
+  renderAll(1);
+  // مستخدمون
+  ST.usub=onSnapshot(collection(db,COL()),ss=>{
+    ST.users=[];ST.udx={};
+    ss.forEach(d=>{let x={uid:d.id,...d.data()};ST.users.push(x);ST.udx[d.id]=x});
+    render()
+  },e=>toast("خطأ في تحميل المستخدمين: "+e.message,"er"));
+  // ايداعات - collectionGroup
+  try{
+    ST.dsub=onSnapshot(collectionGroup(db,"ايداع"),ss=>{
+      ST.deps=[];ss.forEach(d=>{let p=d.ref.path.split("/");ST.deps.push({id:d.id,path:d.ref.path,uid:p[1],...d.data()})});
+      render()
+    },e=>toast("تحميل الإيداعات فشل: "+e.message,"er"));
+  }catch(e){toast("collectionGroup ايداع فشل: "+e.message,"er")}
+  // سحوبات
+  try{
+    ST.wsub=onSnapshot(collectionGroup(db,"سحب"),ss=>{
+      ST.wds=[];ss.forEach(d=>{let p=d.ref.path.split("/");ST.wds.push({id:d.id,path:d.ref.path,uid:p[1],...d.data()})});
+      render()
+    },e=>toast("تحميل السحوبات فشل: "+e.message,"er"));
+  }catch(e){toast("collectionGroup سحب فشل: "+e.message,"er")}
+}
+
+/* ========= رسم ========= */
+function render(){renderAll()}
+function renderAll(loading){
+  if(loading){G("ov").innerHTML='<div class="loader">جاري التحميل...</div>';G("us").innerHTML='<div class="loader">...</div>';G("dp").innerHTML='<div class="loader">...</div>';G("wd").innerHTML='<div class="loader">...</div>';return}
+  // فلترة حسب الوضع
+  const inMode=x=>{if(!x.mode)return ST.mode==="real";return x.mode===ST.mode};
+  const deps=ST.deps.filter(inMode),wds=ST.wds.filter(inMode);
+  // نظرة عامة
+  let totBal=0,totTrade=0,totFrz=0,totProfit=0,pDp=0,pWd=0;
+  ST.users.forEach(u=>{totBal+=num(u.balance);totTrade+=num(u.accounttrade);totFrz+=num(u.usdtFreeze);totProfit+=num(u.profitday)});
+  pDp=deps.filter(d=>d.status==="pending").length;
+  pWd=wds.filter(d=>d.status==="pending").length;
+  G("ov").innerHTML=`
+    <div class="stats">
+      <div class="card"><div class="k">إجمالي المستخدمين</div><div class="v">${ST.users.length}</div></div>
+      <div class="card"><div class="k">مجموع الأرصدة USDT</div><div class="v g">${fmt(totBal)}</div></div>
+      <div class="card"><div class="k">حساب التداول</div><div class="v b">${fmt(totTrade)}</div></div>
+      <div class="card"><div class="k">مجمد USDT</div><div class="v">${fmt(totFrz)}</div></div>
+      <div class="card"><div class="k">أرباح اليوم</div><div class="v g">${fmt(totProfit)}</div></div>
+      <div class="card"><div class="k">إيداعات معلَّقة</div><div class="v r">${pDp}</div></div>
+      <div class="card"><div class="k">سحوبات معلَّقة</div><div class="v r">${pWd}</div></div>
+      <div class="card"><div class="k">الوضع الحالي</div><div class="v">${ST.mode==="sim"?"محاكاة":"حقيقي"}</div></div>
+    </div>
+    <div class="box" style="padding:18px"><b style="color:var(--y);font-size:15px">📌 ملاحظات المسؤول</b>
+    <ul style="margin:10px 20px;color:var(--m);font-size:13px;line-height:2">
+    <li>الأرصدة والحقول تُحدَّث فوراً عند الحفظ.</li>
+    <li>عند <b style="color:var(--g)">قبول</b> إيداع: يضاف المبلغ لرصيد المستخدم.</li>
+    <li>عند <b style="color:var(--r)">رفض</b> سحب: يُعاد المبلغ الكامل إلى رصيد المستخدم (كان قد خُصم عند الطلب).</li>
+    <li>تغيير البريد/كلمة سر مستخدم آخر يتطلب Firebase Admin SDK. تُحفظ هنا كسجلات في وثيقته.</li>
+    </ul></div>`;
+  // مستخدمون
+  let uq=(ST.f.us||"").toLowerCase();
+  let uf=ST.users.filter(u=>!uq||(u.uid+" "+(u.email||"")+" "+(u.phone||"")+" "+(u.emailOverride||"")).toLowerCase().includes(uq));
+  G("us").innerHTML=`
+    <div class="toolbar">
+      <input id="usq" placeholder="🔍 بحث بالـ UID / البريد / الجوال" value="${esc(ST.f.us)}">
+      <span class="chip a">إجمالي: ${uf.length}</span>
+    </div>
+    <div class="grid">${uf.length?uf.map(userCard).join(""):emp("لا يوجد مستخدمون","👥")}</div>`;
+  let uIn=G("usq");if(uIn)uIn.oninput=e=>{ST.f.us=e.target.value;render()};
+  // إيداعات
+  let df=ST.f.dp,dl=deps.filter(x=>df==="all"||x.status===df).sort((a,b)=>tsv(b.createdAt)-tsv(a.createdAt));
+  G("dp").innerHTML=`
+    <div class="toolbar">
+      ${["pending","approved","rejected","all"].map(k=>`<span class="chip ${df===k?"a":""}" data-f="${k}">${lbl(k)} (${k==="all"?deps.length:deps.filter(x=>x.status===k).length})</span>`).join("")}
+    </div>
+    <div class="grid">${dl.length?dl.map(x=>txCard(x,"dep")).join(""):emp("لا توجد طلبات إيداع","💰")}</div>`;
+  $$("#dp .chip").forEach(c=>c.onclick=()=>{ST.f.dp=c.dataset.f;render()});
+  // سحوبات
+  let wf=ST.f.wd,wl=wds.filter(x=>wf==="all"||x.status===wf).sort((a,b)=>tsv(b.createdAt)-tsv(a.createdAt));
+  G("wd").innerHTML=`
+    <div class="toolbar">
+      ${["pending","approved","rejected","all"].map(k=>`<span class="chip ${wf===k?"a":""}" data-f="${k}">${lbl(k)} (${k==="all"?wds.length:wds.filter(x=>x.status===k).length})</span>`).join("")}
+    </div>
+    <div class="grid">${wl.length?wl.map(x=>txCard(x,"wdr")).join(""):emp("لا توجد طلبات سحب","💸")}</div>`;
+  $$("#wd .chip").forEach(c=>c.onclick=()=>{ST.f.wd=c.dataset.f;render()});
+}
+const lbl=k=>({pending:"معلَّق",approved:"مقبول",rejected:"مرفوض",all:"الكل"}[k]||k);
+const tsv=v=>{if(!v)return 0;if(v.toDate)return v.toDate().getTime();if(v.seconds)return v.seconds*1e3;return +v||0};
+const emp=(m,i)=>`<div class="empty" style="grid-column:1/-1"><div class="ic">${i}</div>${m}</div>`;
+
+function userCard(u){
+  let init=(u.email||u.phone||u.uid||"?").trim()[0].toUpperCase();
+  let rd=u.regDate||u.createdAt||u.joinedAt;
+  return `<div class="box">
+    <div class="th">
+      <div class="av">${esc(init)}</div>
+      <div class="nm">${esc(u.email||u.emailOverride||u.phone||"مستخدم")}</div>
+      <span class="st ${u.suspended?"r":"a"}">${u.suspended?"موقوف":"نشط"}</span>
+    </div>
+    <div class="rw"><span class="k">UID</span><span class="v mono">${esc(u.uid)}</span></div>
+    <div class="rw"><span class="k">الجوال</span><span class="v">${esc(u.phone||"-")}</span></div>
+    <div class="rw"><span class="k">الرصيد</span><span class="v" style="color:var(--g)">${fmt(u.balance)} USDT</span></div>
+    <div class="rw"><span class="k">حساب التداول</span><span class="v">${fmt(u.accounttrade)}</span></div>
+    <div class="rw"><span class="k">أرباح اليوم</span><span class="v">${fmt(u.profitday)}</span></div>
+    <div class="rw"><span class="k">إجمالي الأرباح</span><span class="v">${fmt((u.loss||{}).profitALL)}</span></div>
+    <div class="rw"><span class="k">مجمَّد</span><span class="v">${fmt(u.usdtFreeze)}</span></div>
+    <div class="rw"><span class="k">تاريخ التسجيل</span><span class="v">${ts(rd)}</span></div>
+    <div class="actions">
+      <button class="btn ed" data-a="edit" data-u="${esc(u.uid)}">✎ تعديل</button>
+      <button class="btn gh" data-a="add" data-u="${esc(u.uid)}">＋ رصيد</button>
+    </div></div>`;
+}
+function txCard(x,cls){
+  let u=ST.udx[x.uid]||{},st=x.status||"pending";
+  let stCls=st==="approved"?"a":st==="rejected"?"r":"p";
+  let init=(u.email||u.phone||x.uid||"?").trim()[0].toUpperCase();
+  return `<div class="box ${cls}">
+    <div class="th">
+      <div class="av">${esc(init)}</div>
+      <div class="nm">${esc(u.email||u.emailOverride||u.phone||x.uid)}</div>
+      <span class="st ${stCls}">${lbl(st)}</span>
+    </div>
+    <div class="rw"><span class="k">النوع</span><span class="v">${esc(x.name||x.type||"-")}</span></div>
+    <div class="rw"><span class="k">المبلغ</span><span class="v" style="color:var(--y);font-size:15px">${fmt(x.amount)} ${esc(x.currency||x.coin||"USDT")}</span></div>
+    ${cls==="wdr"?`<div class="rw"><span class="k">الرسوم</span><span class="v">${fmt(x.fee)}</span></div><div class="rw"><span class="k">المستلَم</span><span class="v" style="color:var(--g)">${fmt(x.received)}</span></div>`:""}
+    <div class="rw"><span class="k">الشبكة</span><span class="v">${esc(x.network||x.chain||"-")}</span></div>
+    <div class="rw"><span class="k">العنوان</span><span class="v mono" title="${esc(x.address||"")}">${esc((x.address||"-").slice(0,22))}${(x.address||"").length>22?"…":""}</span></div>
+    <div class="rw"><span class="k">UID</span><span class="v mono">${esc(x.uid)}</span></div>
+    <div class="rw"><span class="k">التاريخ</span><span class="v">${ts(x.createdAt)}</span></div>
+    ${x.adminNote?`<div class="rw"><span class="k">ملاحظة</span><span class="v">${esc(x.adminNote)}</span></div>`:""}
+    <div class="actions">
+      ${st==="pending"?`
+        <button class="btn ok" data-a="apv" data-t="${cls}" data-p="${esc(x.path)}">✓ قبول</button>
+        <button class="btn no" data-a="rej" data-t="${cls}" data-p="${esc(x.path)}">✗ رفض</button>
+      `:`<button class="btn gh" data-a="reset" data-t="${cls}" data-p="${esc(x.path)}">↺ إعادة إلى معلَّق</button>`}
+      <button class="btn ed" data-a="txedit" data-t="${cls}" data-p="${esc(x.path)}">✎</button>
+    </div></div>`;
+}
+
+/* ========= معالجة الأزرار ========= */
+document.addEventListener("click",async e=>{
+  let b=e.target.closest("button[data-a]");if(!b)return;
+  let a=b.dataset.a;
+  if(a==="edit")editUser(b.dataset.u);
+  else if(a==="add")addBalance(b.dataset.u);
+  else if(a==="apv")approveTx(b.dataset.p,b.dataset.t);
+  else if(a==="rej")rejectTx(b.dataset.p,b.dataset.t);
+  else if(a==="reset")resetTx(b.dataset.p);
+  else if(a==="txedit")editTx(b.dataset.p,b.dataset.t);
+  else if(a==="saveUser")saveUser();
+  else if(a==="saveTx")saveTx();
+  else if(a==="delUser")delUser();
+  else if(a==="closeM")closeM();
+});
+
+/* ========= تعديل مستخدم ========= */
+function editUser(uid){
+  let u=ST.udx[uid];if(!u)return;
+  let rd=u.regDate||u.createdAt||u.joinedAt;
+  openM(`<div class="mh"><h3>✎ تعديل المستخدم</h3><button class="cx" data-a="closeM">×</button></div>
+  <div class="mb"><input type="hidden" id="euid" value="${esc(uid)}">
+  <div class="fg">
+    <div class="f full"><label>UID</label><input value="${esc(uid)}" disabled></div>
+    <div class="f"><label>البريد الإلكتروني</label><input id="femail" value="${esc(u.emailOverride||u.email||"")}"><small class="warn">⚠ لتغيير بريد Auth يلزم Admin SDK — يُحفظ في emailOverride</small></div>
+    <div class="f"><label>كلمة السر الجديدة</label><input id="fpass" type="text" placeholder="اترك فارغاً لعدم التغيير"><small class="warn">⚠ يُحفظ في passwordNew — تغيير Auth يلزم Admin SDK</small></div>
+    <div class="f"><label>الجوال</label><input id="fphone" value="${esc(u.phone||"")}"></div>
+    <div class="f"><label>تاريخ التسجيل</label><input id="fregd" type="datetime-local" value="${toIso(rd)}"></div>
+    <div class="f"><label>الرصيد USDT</label><input id="fbal" type="number" step="0.00000001" value="${num(u.balance)}"></div>
+    <div class="f"><label>حساب التداول</label><input id="ftrd" type="number" step="0.00000001" value="${num(u.accounttrade)}"></div>
+    <div class="f"><label>أرباح اليوم</label><input id="fpd" type="number" step="0.00000001" value="${num(u.profitday)}"></div>
+    <div class="f"><label>إجمالي الأرباح (loss.profitALL)</label><input id="fpa" type="number" step="0.00000001" value="${num((u.loss||{}).profitALL)}"></div>
+    <div class="f"><label>الرصيد المجمَّد</label><input id="ffz" type="number" step="0.00000001" value="${num(u.usdtFreeze)}"></div>
+    <div class="f"><label>الحالة</label><select id="fsp"><option value="0" ${!u.suspended?"selected":""}>نشط</option><option value="1" ${u.suspended?"selected":""}>موقوف</option></select></div>
+    <div class="f"><label>مسؤول (isAdmin)</label><select id="fad"><option value="0" ${!u.isAdmin?"selected":""}>لا</option><option value="1" ${u.isAdmin?"selected":""}>نعم</option></select></div>
+    <div class="f full"><label>ملاحظة للمسؤول</label><textarea id="fnote" rows="2">${esc(u.adminNote||"")}</textarea></div>
+  </div></div>
+  <div class="mf">
+    <button class="btn ok" data-a="saveUser">💾 حفظ التغييرات</button>
+    <button class="btn no" data-a="delUser">🗑 حذف الوثيقة</button>
+    <button class="btn gh" data-a="closeM">إلغاء</button>
+  </div>`);
+}
+
+async function saveUser(){
+  let uid=G("euid").value,u=ST.udx[uid]||{};
+  let patch={
+    email:G("femail").value.trim()||null,
+    emailOverride:G("femail").value.trim()||null,
+    phone:G("fphone").value.trim()||null,
+    balance:num(G("fbal").value),
+    accounttrade:num(G("ftrd").value),
+    profitday:num(G("fpd").value),
+    "loss.profitALL":num(G("fpa").value),
+    usdtFreeze:num(G("ffz").value),
+    suspended:G("fsp").value==="1",
+    isAdmin:G("fad").value==="1",
+    adminNote:G("fnote").value.trim(),
+    updatedAt:serverTimestamp(),
+    updatedBy:auth.currentUser?.email||"admin"
+  };
+  let rd=G("fregd").value;if(rd){let d=new Date(rd).getTime();if(!isNaN(d))patch.createdAt=d,patch.regDate=d}
+  let pw=G("fpass").value.trim();if(pw){patch.passwordNew=pw;patch.passwordChangedAt=serverTimestamp()}
+  // usdtTotal/usdtAvail إعادة اشتقاق
+  patch.usdtAvail=patch.balance;
+  patch.usdtTotal=patch.balance+patch.accounttrade;
+  try{
+    await setDoc(doc(db,COL(),uid),patch,{merge:true});
+    // محاولة تحديث Auth للحساب الحالي فقط
+    if(auth.currentUser&&auth.currentUser.uid===uid){
+      try{if(patch.email&&patch.email!==auth.currentUser.email)await updateEmail(auth.currentUser,patch.email)}catch(e){}
+      try{if(pw)await updatePassword(auth.currentUser,pw)}catch(e){}
+    }
+    toast("✓ تم حفظ التغييرات","ok");closeM();
+  }catch(e){toast("فشل الحفظ: "+e.message,"er")}
+}
+
+async function delUser(){
+  let uid=G("euid").value;
+  if(!confirm("تأكيد حذف وثيقة "+uid+"؟"))return;
+  try{await deleteDoc(doc(db,COL(),uid));toast("✓ حُذفت الوثيقة","ok");closeM()}
+  catch(e){toast("فشل الحذف: "+e.message,"er")}
+}
+
+function addBalance(uid){
+  let u=ST.udx[uid]||{};
+  openM(`<div class="mh"><h3>＋ إضافة/خصم رصيد</h3><button class="cx" data-a="closeM">×</button></div>
+  <div class="mb"><input type="hidden" id="euid" value="${esc(uid)}">
+  <div class="fg">
+    <div class="f full"><label>المستخدم</label><input value="${esc(u.email||u.phone||uid)}" disabled></div>
+    <div class="f full"><label>الرصيد الحالي</label><input value="${fmt(u.balance)} USDT" disabled></div>
+    <div class="f"><label>العملية</label><select id="fop"><option value="1">إضافة (+)</option><option value="-1">خصم (-)</option></select></div>
+    <div class="f"><label>المبلغ</label><input id="famt" type="number" step="0.00000001" value="0"></div>
+    <div class="f full"><label>ملاحظة (اختياري)</label><input id="fmemo" placeholder="سبب التعديل"></div>
+  </div></div>
+  <div class="mf">
+    <button class="btn ok" data-a="saveUser" id="bAdd">💾 تنفيذ</button>
+    <button class="btn gh" data-a="closeM">إلغاء</button>
+  </div>`);
+  G("bAdd").dataset.a="_addExec";
+}
+document.addEventListener("click",async e=>{
+  let b=e.target.closest('button[data-a="_addExec"]');if(!b)return;
+  let uid=G("euid").value,u=ST.udx[uid]||{},op=+G("fop").value,amt=num(G("famt").value),memo=G("fmemo").value.trim();
+  if(amt<=0)return toast("أدخل مبلغاً صالحاً","er");
+  let delta=op*amt,nb=num(u.balance)+delta;
+  if(nb<0)return toast("الرصيد الناتج سالب","er");
+  try{
+    await updateDoc(doc(db,COL(),uid),{balance:nb,usdtAvail:nb,usdtTotal:nb+num(u.accounttrade),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||"admin"});
+    // سجل
+    try{await setDoc(doc(db,COL(),uid,"adminLogs",String(Date.now())),{op:op>0?"add":"sub",amount:amt,memo,by:auth.currentUser?.email||"admin",at:serverTimestamp()})}catch(_){}
+    toast("✓ تم تعديل الرصيد بمقدار "+(delta>0?"+":"")+fmt(delta),"ok");closeM();
+  }catch(e){toast("فشل: "+e.message,"er")}
+});
+
+/* ========= معاملات: قبول/رفض ========= */
+async function approveTx(path,cls){
+  let tx=(cls==="dep"?ST.deps:ST.wds).find(x=>x.path===path);if(!tx)return;
+  if(!confirm("قبول "+(cls==="dep"?"الإيداع":"السحب")+" بمبلغ "+fmt(tx.amount)+"؟"))return;
+  try{
+    let ref=doc(db,...path.split("/"));
+    if(cls==="dep"){
+      let uref=doc(db,COL(),tx.uid),us=await getDoc(uref),ud=us.data()||{};
+      let nb=num(ud.balance)+num(tx.amount);
+      await updateDoc(uref,{balance:nb,usdtAvail:nb,usdtTotal:nb+num(ud.accounttrade),updatedAt:serverTimestamp()});
+      await updateDoc(ref,{status:"approved",statusText:"approved",approvedAt:serverTimestamp(),approvedBy:auth.currentUser?.email||"admin"});
+    }else{
+      // السحب: كان قد خُصم عند الطلب — فقط نغيّر الحالة
+      await updateDoc(ref,{status:"approved",statusText:"approved",approvedAt:serverTimestamp(),approvedBy:auth.currentUser?.email||"admin"});
+    }
+    toast("✓ تم القبول","ok");
+  }catch(e){toast("فشل: "+e.message,"er")}
+}
+async function rejectTx(path,cls){
+  let tx=(cls==="dep"?ST.deps:ST.wds).find(x=>x.path===path);if(!tx)return;
+  let note=prompt("سبب الرفض (اختياري):","");if(note===null)return;
+  try{
+    let ref=doc(db,...path.split("/"));
+    if(cls==="wdr"&&!tx.refunded){
+      // إعادة الرصيد
+      let uref=doc(db,COL(),tx.uid),us=await getDoc(uref),ud=us.data()||{};
+      let nb=num(ud.balance)+num(tx.amount);
+      await updateDoc(uref,{balance:nb,usdtAvail:nb,usdtTotal:nb+num(ud.accounttrade),updatedAt:serverTimestamp()});
+      await updateDoc(ref,{status:"rejected",statusText:"rejected",refunded:true,adminNote:note,rejectedAt:serverTimestamp(),rejectedBy:auth.currentUser?.email||"admin"});
+    }else{
+      await updateDoc(ref,{status:"rejected",statusText:"rejected",adminNote:note,rejectedAt:serverTimestamp(),rejectedBy:auth.currentUser?.email||"admin"});
+    }
+    toast("✓ تم الرفض"+(cls==="wdr"?" وأُعيد الرصيد":""),"ok");
+  }catch(e){toast("فشل: "+e.message,"er")}
+}
+async function resetTx(path){
+  if(!confirm("إعادة الطلب إلى حالة معلَّق؟"))return;
+  try{await updateDoc(doc(db,...path.split("/")),{status:"pending",statusText:"pending",resetAt:serverTimestamp(),resetBy:auth.currentUser?.email||"admin"});toast("✓","ok")}
+  catch(e){toast("فشل: "+e.message,"er")}
+}
+function editTx(path,cls){
+  let tx=(cls==="dep"?ST.deps:ST.wds).find(x=>x.path===path);if(!tx)return;
+  openM(`<div class="mh"><h3>✎ تعديل الطلب</h3><button class="cx" data-a="closeM">×</button></div>
+  <div class="mb"><input type="hidden" id="epath" value="${esc(path)}">
+  <div class="fg">
+    <div class="f"><label>المبلغ</label><input id="tamt" type="number" step="0.00000001" value="${num(tx.amount)}"></div>
+    <div class="f"><label>العملة</label><input id="tcur" value="${esc(tx.currency||tx.coin||"USDT")}"></div>
+    <div class="f"><label>الشبكة</label><input id="tnet" value="${esc(tx.network||tx.chain||"")}"></div>
+    <div class="f"><label>الحالة</label><select id="tst"><option value="pending" ${tx.status==="pending"?"selected":""}>معلَّق</option><option value="approved" ${tx.status==="approved"?"selected":""}>مقبول</option><option value="rejected" ${tx.status==="rejected"?"selected":""}>مرفوض</option></select></div>
+    <div class="f full"><label>العنوان</label><input id="tadr" value="${esc(tx.address||"")}"></div>
+    <div class="f full"><label>ملاحظة المسؤول</label><textarea id="tnote" rows="2">${esc(tx.adminNote||"")}</textarea></div>
+  </div></div>
+  <div class="mf">
+    <button class="btn ok" data-a="saveTx">💾 حفظ</button>
+    <button class="btn gh" data-a="closeM">إلغاء</button>
+  </div>`);
+}
+async function saveTx(){
+  let p=G("epath").value;
+  let patch={amount:num(G("tamt").value),currency:G("tcur").value.trim(),coin:G("tcur").value.trim(),network:G("tnet").value.trim(),chain:G("tnet").value.trim(),address:G("tadr").value.trim(),status:G("tst").value,statusText:G("tst").value,adminNote:G("tnote").value.trim(),updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||"admin"};
+  try{await updateDoc(doc(db,...p.split("/")),patch);toast("✓ حُفظ","ok");closeM()}
+  catch(e){toast("فشل: "+e.message,"er")}
+}
+</script></body></html>
