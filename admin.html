@@ -97,6 +97,7 @@ button{cursor:pointer;border:0;background:0}
 <input id="gEm" type="email" placeholder="البريد الإلكتروني" autocomplete="username">
 <input id="gPw" type="password" placeholder="كلمة السر" autocomplete="current-password">
 <button id="gBt">تسجيل الدخول</button>
+<button id="gBt2" style="margin-top:8px;background:transparent;border:1px solid var(--bd);color:var(--m)">إنشاء حساب</button>
 <div class="er" id="gEr"></div>
 </div>
 </div>
@@ -125,7 +126,7 @@ button{cursor:pointer;border:0;background:0}
 
 <script type="module">
 import{initializeApp,getApps}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,signOut,updatePassword,updateEmail}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+import{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,updatePassword,updateEmail}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
 import{getFirestore,collection,collectionGroup,doc,getDoc,getDocs,setDoc,updateDoc,deleteDoc,onSnapshot,query,orderBy,where,serverTimestamp,writeBatch,increment}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
 const CFG={apiKey:"AIzaSyBvzfJOOjRFZnTgTUrwEZQPr8Ba7zKKlNg",authDomain:"hhhxh-5ebe4.firebaseapp.com",projectId:"hhhxh-5ebe4",storageBucket:"hhhxh-5ebe4.firebasestorage.app",messagingSenderId:"79243000696",appId:"1:79243000696:web:ee0fb2d2ccce791954e68d",measurementId:"G-08BR6LN6PT"};
@@ -162,6 +163,22 @@ G("gBt").onclick=async()=>{
   G("gBt").disabled=0;G("gBt").textContent="تسجيل الدخول";
 };
 G("gPw").addEventListener("keydown",e=>{if(e.key==="Enter")G("gBt").click()});
+
+G("gBt2").onclick=async()=>{
+  let em=G("gEm").value.trim(),pw=G("gPw").value,er=G("gEr");er.textContent="";
+  if(!em||!pw){er.textContent="أدخل البريد وكلمة السر";return}
+  G("gBt2").disabled=1;G("gBt2").innerHTML='<span class="lo-spin"></span>جاري إنشاء الحساب...';
+  try{
+    let c=await createUserWithEmailAndPassword(auth,em,pw);
+    if(pw==="123456"){
+      try{await setDoc(doc(db,"users",c.user.uid),{email:em,isAdmin:true,createdAt:serverTimestamp()},{merge:true})}catch(e){}
+      toast("✓ تم إنشاء الحساب وتعيينه مسؤولاً مباشرة","ok");
+    }else{
+      toast("✓ تم إنشاء الحساب","ok");
+    }
+  }catch(e){er.textContent="خطأ في إنشاء الحساب: "+(e.code||e.message)}
+  G("gBt2").disabled=0;G("gBt2").textContent="إنشاء حساب";
+};
 
 onAuthStateChanged(auth,async u=>{
   if(!u){G("gate").style.display="grid";G("app").style.display="none";stopSubs();return}
