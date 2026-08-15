@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Admin Full Logs</title>
+<title>Full Users Logs</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -15,91 +15,79 @@ body{
   margin:0;
   padding:20px;
   background:#f1f3f6;
-  font-family:Arial,Tahoma,sans-serif;
-}
-
-h2{
-  margin-top:0;
+  font-family:Arial,Tahoma,sans-serif
 }
 
 .top{
-  background:white;
+  background:#fff;
   padding:15px;
   border-radius:12px;
   margin-bottom:15px;
-  box-shadow:0 2px 10px #0001;
+  box-shadow:0 2px 10px #0001
 }
+
+h2{margin:0 0 15px}
 
 input{
   width:100%;
   padding:13px;
   border:1px solid #ddd;
   border-radius:10px;
-  font-size:15px;
-  outline:none;
+  font-size:15px
 }
 
 #count{
   margin-top:10px;
-  color:#666;
+  color:#666
 }
 
-.admin{
-  background:white;
+.user{
+  background:#fff;
   border-radius:14px;
   margin-bottom:15px;
   overflow:hidden;
-  box-shadow:0 3px 12px #0002;
+  box-shadow:0 3px 12px #0002
 }
 
-.admin-head{
-  padding:15px;
+.head{
   background:#202b4d;
-  color:white;
+  color:#fff;
+  padding:15px
 }
 
-.admin-head h3{
-  margin:0 0 8px;
-}
-
-.badge{
-  display:inline-block;
-  background:#20c997;
-  color:white;
-  padding:4px 9px;
-  border-radius:20px;
-  font-size:12px;
+.head h3{
+  margin:0 0 7px
 }
 
 .meta{
   font-size:12px;
   opacity:.85;
-  margin-top:6px;
   word-break:break-all;
+  margin-top:4px
 }
 
 .body{
-  padding:15px;
+  padding:15px
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:10px;
+  gap:10px
 }
 
 .field{
   background:#f7f8fa;
   border:1px solid #e5e7eb;
   border-radius:9px;
-  padding:10px;
+  padding:10px
 }
 
 .key{
   display:block;
   color:#777;
   font-size:11px;
-  margin-bottom:5px;
+  margin-bottom:5px
 }
 
 .value{
@@ -107,14 +95,14 @@ input{
   color:#111;
   font-size:13px;
   word-break:break-all;
-  white-space:pre-wrap;
+  white-space:pre-wrap
 }
 
 .empty{
-  background:white;
+  background:#fff;
   padding:20px;
   border-radius:12px;
-  text-align:center;
+  text-align:center
 }
 </style>
 </head>
@@ -123,12 +111,11 @@ input{
 
 <div class="top">
 
-<h2>🔐 Full Admin Logs</h2>
+<h2>👥 جميع المستخدمين - Full Logs</h2>
 
 <input
  id="search"
- type="text"
- placeholder="ابحث في جميع بيانات الأدمن..."
+ placeholder="ابحث داخل جميع بيانات المستخدمين..."
 >
 
 <div id="count">
@@ -137,57 +124,27 @@ input{
 
 </div>
 
-<div id="admins"></div>
-
+<div id="users"></div>
 
 <script>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
-  authDomain: "asse-app-16998.firebaseapp.com",
-  projectId: "asse-app-16998",
-  storageBucket: "asse-app-16998.firebasestorage.app",
-  messagingSenderId: "835771799328",
-  appId: "1:835771799328:web:b587a5da0cb129c2042945"
+const firebaseConfig={
+  apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
+  authDomain:"asse-app-16998.firebaseapp.com",
+  projectId:"asse-app-16998",
+  storageBucket:"asse-app-16998.firebasestorage.app",
+  messagingSenderId:"835771799328",
+  appId:"1:835771799328:web:b587a5da0cb129c2042945"
 };
 
 firebase.initializeApp(firebaseConfig);
 
-const db = firebase.firestore();
+const db=firebase.firestore();
 
-let admins = [];
-
-
-/* تحويل أي قيمة Firebase إلى نص واضح */
-
-function formatValue(value){
-
-  if(value === null)
-    return "null";
-
-  if(value === undefined)
-    return "undefined";
-
-  if(typeof value === "object"){
-
-    if(value.toDate){
-      try{
-        return value.toDate().toLocaleString("ar");
-      }catch(e){}
-    }
-
-    if(Array.isArray(value)){
-      return JSON.stringify(value,null,2);
-    }
-
-    return JSON.stringify(value,null,2);
-  }
-
-  return String(value);
-}
+let users=[];
 
 
-/* حماية HTML */
+/* حماية النص من HTML */
 
 function escapeHTML(value){
 
@@ -201,59 +158,80 @@ function escapeHTML(value){
 }
 
 
-/* تحميل الأدمن */
+/* تحويل قيم Firestore إلى نص */
 
-async function loadAdmins(){
+function formatValue(value){
 
-  const container =
-    document.getElementById("admins");
+  if(value===null)
+    return "null";
+
+  if(value===undefined)
+    return "undefined";
+
+  if(value && typeof value.toDate==="function"){
+
+    try{
+      return value.toDate().toLocaleString("ar");
+    }catch(e){}
+  }
+
+  if(typeof value==="object"){
+
+    try{
+      return JSON.stringify(value,null,2);
+    }catch(e){
+      return String(value);
+    }
+
+  }
+
+  return String(value);
+
+}
+
+
+/* تحميل جميع المستخدمين */
+
+async function loadUsers(){
+
+  const container=
+    document.getElementById("users");
 
   try{
 
-    const snapshot =
+    const snapshot=
       await db.collection("users").get();
 
-    admins=[];
+    users=[];
 
     snapshot.forEach(doc=>{
 
-      const data=doc.data();
+      users.push({
 
-      const role =
-        String(data.role || "").toLowerCase();
+        documentId:doc.id,
 
-      const isAdmin =
-        role === "admin" ||
-        role === "مدير" ||
-        data.isAdmin === true ||
-        data.admin === true ||
-        data.isAdmin === "true" ||
-        data.admin === "true";
+        ...doc.data()
 
-      if(isAdmin){
-
-        admins.push({
-
-          documentId:doc.id,
-
-          ...data
-
-        });
-
-      }
+      });
 
     });
 
-    renderAdmins();
+    renderUsers();
 
   }catch(error){
 
     container.innerHTML=`
+
       <div class="empty">
-        ❌ فشل تحميل البيانات
+
+        ❌ فشل تحميل المستخدمين
+
         <br><br>
+
         ${escapeHTML(error.message)}
+
       </div>
+
     `;
 
     document.getElementById("count").textContent="";
@@ -263,11 +241,11 @@ async function loadAdmins(){
 }
 
 
-/* عرض جميع بيانات كل Admin */
+/* عرض جميع المستخدمين */
 
-function renderAdmins(){
+function renderUsers(){
 
-  const search =
+  const q=
     document
       .getElementById("search")
       .value
@@ -275,33 +253,30 @@ function renderAdmins(){
       .toLowerCase();
 
 
-  const result=admins.filter(admin=>{
+  const result=users.filter(user=>{
 
-    if(!search)
+    if(!q)
       return true;
 
-    /*
-      البحث داخل جميع بيانات الوثيقة
-      وليس فقط الاسم والبريد.
-    */
-
-    return JSON.stringify(admin)
+    return JSON.stringify(user)
       .toLowerCase()
-      .includes(search);
+      .includes(q);
 
   });
 
 
-  document.getElementById("count").textContent =
-    `عدد الأدمن: ${result.length} / ${admins.length}`;
+  document.getElementById("count").textContent=
+    `المستخدمون: ${result.length} / ${users.length}`;
 
 
   if(!result.length){
 
-    document.getElementById("admins").innerHTML=`
+    document.getElementById("users").innerHTML=`
+
       <div class="empty">
         لا توجد نتائج.
       </div>
+
     `;
 
     return;
@@ -309,35 +284,29 @@ function renderAdmins(){
   }
 
 
-  document.getElementById("admins").innerHTML =
-    result.map((admin,index)=>{
+  document.getElementById("users").innerHTML=
 
-      const name =
-        admin.name ||
-        admin.username ||
-        admin.fullName ||
-        admin.displayName ||
+    result.map((user,index)=>{
+
+      const name=
+        user.name ||
+        user.username ||
+        user.fullName ||
+        user.displayName ||
         "بدون اسم";
 
 
-      /*
-        حذف documentId من الحقول
-        لأنه سيعرض في رأس البطاقة.
-      */
-
-      const fields =
-        Object.keys(admin)
-        .filter(key=>key !== "documentId");
+      const fields=
+        Object.keys(user)
+          .filter(key=>key!=="documentId");
 
 
-      let html="";
+      let fieldsHTML="";
+
 
       fields.forEach(key=>{
 
-        const value =
-          formatValue(admin[key]);
-
-        html+=`
+        fieldsHTML+=`
 
           <div class="field">
 
@@ -346,7 +315,9 @@ function renderAdmins(){
             </span>
 
             <span class="value">
-              ${escapeHTML(value)}
+              ${escapeHTML(
+                formatValue(user[key])
+              )}
             </span>
 
           </div>
@@ -356,37 +327,33 @@ function renderAdmins(){
       });
 
 
-      return `
+      return`
 
-        <div class="admin">
+        <div class="user">
 
-          <div class="admin-head">
+          <div class="head">
 
             <h3>
               👤 ${escapeHTML(name)}
-              <span class="badge">
-                ADMIN
-              </span>
             </h3>
 
             <div class="meta">
               Document ID:
-              ${escapeHTML(admin.documentId)}
+              ${escapeHTML(user.documentId)}
             </div>
 
             <div class="meta">
-              رقم الحساب:
+              المستخدم رقم:
               ${index+1}
             </div>
 
           </div>
 
-
           <div class="body">
 
             <div class="grid">
 
-              ${html}
+              ${fieldsHTML}
 
             </div>
 
@@ -401,19 +368,17 @@ function renderAdmins(){
 }
 
 
-/* البحث اللحظي */
+/* البحث */
 
 document
   .getElementById("search")
   .addEventListener(
     "input",
-    renderAdmins
+    renderUsers
   );
 
 
-/* تشغيل */
-
-loadAdmins();
+loadUsers();
 
 </script>
 
