@@ -3,21 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>المستخدمون</title>
+<title>سجل المستخدمين</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
 <style>
-
-*{
-  box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 body{
   margin:0;
-  padding:20px;
+  padding:18px;
   background:#f2f4f7;
   font-family:Arial,Tahoma,sans-serif;
 }
@@ -31,66 +27,88 @@ body{
   background:#202b4d;
   color:white;
   padding:20px;
-  border-radius:15px;
-  margin-bottom:15px;
+  border-radius:16px;
+  margin-bottom:18px;
+  box-shadow:0 5px 20px #0002;
 }
 
 .header h2{
-  margin:0 0 12px;
+  margin:0 0 15px;
 }
 
 .search{
   width:100%;
-  padding:13px;
+  padding:15px;
   border:0;
   border-radius:10px;
-  font-size:15px;
   outline:none;
+  font-size:16px;
+  direction:ltr;
+  text-align:left;
 }
 
 .count{
   margin-top:12px;
   font-size:13px;
-  opacity:.8;
+  opacity:.85;
 }
 
+.section{
+  padding:13px 16px;
+  border-radius:11px;
+  margin:18px 0 10px;
+  font-weight:bold;
+  display:flex;
+  justify-content:space-between;
+}
 
-/* بطاقة المستخدم */
+.section-admin{
+  background:#fff3cd;
+  color:#664d03;
+  border-right:5px solid #f0b429;
+}
+
+.section-users{
+  background:#e9ecef;
+  color:#495057;
+  border-right:5px solid #777;
+}
+
+.number{
+  background:#777;
+  color:white;
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:12px;
+}
+
+.section-admin .number{
+  background:#d99d00;
+}
 
 .user{
   background:white;
   border-radius:14px;
   margin-bottom:12px;
-  padding:16px;
-  box-shadow:0 3px 12px #0001;
-
+  padding:15px;
   display:flex;
   align-items:center;
-  gap:15px;
+  gap:14px;
+  box-shadow:0 3px 12px #0001;
 }
-
-
-/* صورة المستخدم */
 
 .avatar{
   width:55px;
   height:55px;
+  min-width:55px;
   border-radius:50%;
   background:#667eea;
   color:white;
-
   display:flex;
   align-items:center;
   justify-content:center;
-
   font-size:22px;
-  font-weight:bold;
-
-  flex-shrink:0;
 }
-
-
-/* معلومات */
 
 .info{
   flex:1;
@@ -101,17 +119,23 @@ body{
   font-size:17px;
   font-weight:bold;
   color:#202b4d;
+  word-break:break-word;
+}
+
+.phone{
+  margin-top:5px;
+  font-size:13px;
+  color:#333;
+  direction:ltr;
+  text-align:right;
 }
 
 .uid{
-  margin-top:5px;
+  margin-top:4px;
   font-size:11px;
   color:#888;
   word-break:break-all;
 }
-
-
-/* الدور */
 
 .role{
   padding:6px 12px;
@@ -121,65 +145,53 @@ body{
   white-space:nowrap;
 }
 
-
-/* عضو */
-
 .member{
   background:#e9ecef;
   color:#495057;
 }
-
-
-/* أدمن */
 
 .admin{
   background:#fff3cd;
   color:#856404;
 }
 
-
-/* مسؤول */
-
 .manager{
   background:#d1ecf1;
   color:#0c5460;
 }
-
-
-/* علامة الإدارة */
-
-.admin-mark{
-  font-size:20px;
-  margin-left:5px;
-}
-
-
-/* بطاقات الإدارة */
 
 .admin-user{
   border:2px solid #f0b429;
   background:#fffdf5;
 }
 
-
 .manager-user{
   border:2px solid #17a2b8;
 }
 
+.mark{
+  margin-right:5px;
+}
 
 .loading,
 .empty,
 .error{
   background:white;
-  padding:25px;
+  padding:30px;
   border-radius:12px;
   text-align:center;
 }
 
-
-/* الهاتف */
+.error{
+  background:#f8d7da;
+  color:#842029;
+}
 
 @media(max-width:600px){
+
+  body{
+    padding:10px;
+  }
 
   .user{
     align-items:flex-start;
@@ -190,11 +202,15 @@ body{
     padding:5px 8px;
   }
 
-}
+  .avatar{
+    width:45px;
+    height:45px;
+    min-width:45px;
+  }
 
+}
 </style>
 </head>
-
 
 <body>
 
@@ -202,39 +218,39 @@ body{
 
   <div class="header">
 
-    <h2>👥 المستخدمون</h2>
+    <h2>📱 سجل المستخدمين</h2>
 
     <input
       id="search"
       class="search"
-      placeholder="🔎 ابحث عن Username أو UID أو الدور..."
+      type="tel"
+      inputmode="tel"
+      placeholder="اكتب رقم الهاتف للبحث..."
     >
 
-    <div id="count" class="count">
-      جاري التحميل...
+    <div id="count">
+      جاري تحميل المستخدمين...
     </div>
 
   </div>
 
-
   <div id="users">
 
     <div class="loading">
-      ⏳ جاري تحميل المستخدمين...
+      ⏳ جاري تحميل البيانات...
     </div>
 
   </div>
 
 </div>
 
-
 <script>
 
-/* ===================================
+/* =========================================
    Firebase
-=================================== */
+========================================= */
 
-const firebaseConfig={
+const firebaseConfig = {
 
   apiKey:
     "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
@@ -256,94 +272,16 @@ const firebaseConfig={
 
 };
 
-
 firebase.initializeApp(firebaseConfig);
 
-const db=firebase.firestore();
+const db = firebase.firestore();
+
+let users = [];
 
 
-let users=[];
-
-
-/* ===================================
-   تحديد الدور
-=================================== */
-
-function getRole(user){
-
-  const role=
-    String(user.role || "")
-      .trim()
-      .toLowerCase();
-
-
-  /* مسؤول */
-
-  if(
-
-    role==="مسؤول" ||
-    role==="manager" ||
-    role==="moderator" ||
-    role==="مسؤول النظام" ||
-
-    user.isManager===true ||
-    user.manager===true
-
-  ){
-
-    return "manager";
-
-  }
-
-
-  /* أدمن */
-
-  if(
-
-    role==="admin" ||
-    role==="administrator" ||
-    role==="مدير" ||
-
-    user.isAdmin===true ||
-    user.admin===true ||
-
-    user.isAdmin==="true" ||
-    user.admin==="true"
-
-  ){
-
-    return "admin";
-
-  }
-
-
-  /* عضو */
-
-  return "member";
-
-}
-
-
-/* ===================================
-   اسم الدور
-=================================== */
-
-function roleName(role){
-
-  if(role==="manager")
-    return "مسؤول";
-
-  if(role==="admin")
-    return "أدمن";
-
-  return "عضو";
-
-}
-
-
-/* ===================================
-   HTML حماية
-=================================== */
+/* =========================================
+   حماية النصوص
+========================================= */
 
 function escapeHTML(value){
 
@@ -357,28 +295,97 @@ function escapeHTML(value){
 }
 
 
-/* ===================================
+/* =========================================
+   تنظيف رقم الهاتف
+========================================= */
+
+function cleanPhone(phone){
+
+  return String(phone || "")
+    .replace(/[^\d+]/g,"");
+
+}
+
+
+/* =========================================
+   معرفة الدور
+========================================= */
+
+function getRole(user){
+
+  const role =
+    String(user.role || "")
+      .trim()
+      .toLowerCase();
+
+
+  /* مسؤول */
+
+  if(
+
+    role === "manager" ||
+    role === "moderator" ||
+    role === "مسؤول" ||
+    role === "مسؤول النظام" ||
+
+    user.isManager === true ||
+    user.manager === true
+
+  ){
+
+    return "manager";
+
+  }
+
+
+  /* أدمن */
+
+  if(
+
+    role === "admin" ||
+    role === "administrator" ||
+    role === "مدير" ||
+
+    user.isAdmin === true ||
+    user.admin === true ||
+
+    user.isAdmin === "true" ||
+    user.admin === "true"
+
+  ){
+
+    return "admin";
+
+  }
+
+
+  return "member";
+
+}
+
+
+/* =========================================
    تحميل المستخدمين
-=================================== */
+========================================= */
 
 async function loadUsers(){
 
   try{
 
-    const snapshot=
+    const snapshot =
       await db
         .collection("users")
         .get();
 
 
-    users=[];
+    users = [];
 
 
-    snapshot.forEach(doc=>{
+    snapshot.forEach(doc => {
 
       users.push({
 
-        id:doc.id,
+        documentId:doc.id,
 
         ...doc.data()
 
@@ -387,17 +394,17 @@ async function loadUsers(){
     });
 
 
-    renderUsers();
+    searchByPhone();
 
 
   }catch(error){
 
     document.getElementById("users")
-      .innerHTML=`
+      .innerHTML = `
 
         <div class="error">
 
-          ❌ خطأ في تحميل المستخدمين
+          ❌ فشل تحميل المستخدمين
 
           <br><br>
 
@@ -407,313 +414,359 @@ async function loadUsers(){
 
       `;
 
+    document.getElementById("count")
+      .textContent = "";
+
   }
 
 }
 
 
-/* ===================================
-   عرض المستخدمين
-=================================== */
+/* =========================================
+   البحث برقم الهاتف
+========================================= */
 
-function renderUsers(){
+function searchByPhone(){
 
-  const search=
-    document
-      .getElementById("search")
-      .value
-      .trim()
-      .toLowerCase();
+  const input =
+    cleanPhone(
+      document.getElementById("search").value
+    );
 
 
-  let list=
-    users.filter(user=>{
-
-      if(!search)
-        return true;
+  let result;
 
 
-      const username=
-        user.username ||
-        user.userName ||
-        user.name ||
-        user.displayName ||
-        "";
+  if(!input){
+
+    result = users;
+
+  }else{
+
+    result = users.filter(user => {
+
+      const phones = [
+
+        user.phone,
+        user.phoneNumber,
+        user.mobile,
+        user.tel,
+        user.telephone
+
+      ];
 
 
-      const uid=
-        user.uid ||
-        user.id ||
-        "";
+      return phones.some(phone => {
 
+        const value =
+          cleanPhone(phone);
 
-      const role=
-        roleName(
-          getRole(user)
-        );
+        return value &&
+               value.includes(input);
 
-
-      return (
-
-        String(username)
-          .toLowerCase()
-          .includes(search)
-
-        ||
-
-        String(uid)
-          .toLowerCase()
-          .includes(search)
-
-        ||
-
-        role
-          .toLowerCase()
-          .includes(search)
-
-      );
+      });
 
     });
 
-
-  /* ===================================
-     ترتيب الأدمن والمسؤول أولاً
-  =================================== */
-
-  list.sort((a,b)=>{
-
-    const ra=getRole(a);
-    const rb=getRole(b);
+  }
 
 
-    const weight={
+  renderUsers(result);
 
-      manager:0,
-      admin:1,
-      member:2
-
-    };
+}
 
 
-    return weight[ra]-weight[rb];
+/* =========================================
+   عرض النتائج
+========================================= */
 
-  });
+function renderUsers(list){
+
+  const container =
+    document.getElementById("users");
 
 
-  const managers=
+  const managers =
     list.filter(
-      u=>getRole(u)==="manager"
-    ).length;
+      u => getRole(u) === "manager"
+    );
 
-
-  const admins=
+  const admins =
     list.filter(
-      u=>getRole(u)==="admin"
-    ).length;
+      u => getRole(u) === "admin"
+    );
 
-
-  const members=
+  const members =
     list.filter(
-      u=>getRole(u)==="member"
-    ).length;
+      u => getRole(u) === "member"
+    );
 
 
   document.getElementById("count")
-    .textContent=
-      `🛡️ مسؤول: ${managers} | 👑 أدمن: ${admins} | 👤 أعضاء: ${members}`;
+    .textContent =
+      `🛡️ مسؤول: ${managers.length} | 👑 أدمن: ${admins.length} | 👤 أعضاء: ${members.length}`;
 
 
   if(!list.length){
 
-    document.getElementById("users")
-      .innerHTML=`
+    container.innerHTML = `
 
-        <div class="empty">
-          لا يوجد مستخدمون.
-        </div>
+      <div class="empty">
 
-      `;
+        📱 لا يوجد حساب بهذا الرقم
+
+      </div>
+
+    `;
 
     return;
 
   }
 
 
-  let html="";
+  let html = "";
 
 
-  list.forEach(user=>{
+  /* المسؤولون */
 
-    const role=
-      getRole(user);
+  if(managers.length){
 
+    html += `
 
-    const username=
-      user.username ||
-      user.userName ||
-      user.name ||
-      user.displayName ||
-      "بدون Username";
+      <div class="section section-admin">
 
+        <span>🛡️ المسؤولون</span>
 
-    const uid=
-      user.uid ||
-      user.id ||
-      "غير معروف";
-
-
-    let icon="👤";
-
-
-    if(role==="admin")
-      icon="👑";
-
-
-    if(role==="manager")
-      icon="🛡️";
-
-
-    html+=`
-
-      <div class="user
-
-        ${
-          role==="admin"
-          ? "admin-user"
-          : ""
-        }
-
-        ${
-          role==="manager"
-          ? "manager-user"
-          : ""
-        }
-
-      ">
-
-
-        <div class="avatar">
-
-          ${icon}
-
-        </div>
-
-
-        <div class="info">
-
-          <div class="username">
-
-            ${escapeHTML(username)}
-
-            ${
-              role==="admin"
-
-              ? `
-                <span class="admin-mark">
-                  👑
-                </span>
-              `
-
-              : ""
-            }
-
-            ${
-              role==="manager"
-
-              ? `
-                <span class="admin-mark">
-                  🛡️
-                </span>
-              `
-
-              : ""
-            }
-
-          </div>
-
-
-          <div class="uid">
-
-            UID:
-            ${escapeHTML(uid)}
-
-          </div>
-
-        </div>
-
-
-        <div class="role
-
-          ${
-            role==="member"
-            ? "member"
-            : ""
-          }
-
-          ${
-            role==="admin"
-            ? "admin"
-            : ""
-          }
-
-          ${
-            role==="manager"
-            ? "manager"
-            : ""
-          }
-
-        ">
-
-          ${
-            role==="admin"
-            ? "👑 "
-            : ""
-          }
-
-          ${
-            role==="manager"
-            ? "🛡️ "
-            : ""
-          }
-
-          ${roleName(role)}
-
-        </div>
-
+        <span class="number">
+          ${managers.length}
+        </span>
 
       </div>
 
     `;
 
-  });
+
+    managers.forEach(user => {
+
+      html += createUser(user);
+
+    });
+
+  }
 
 
-  document.getElementById("users")
-    .innerHTML=html;
+  /* الأدمن */
+
+  if(admins.length){
+
+    html += `
+
+      <div class="section section-admin">
+
+        <span>👑 الأدمن</span>
+
+        <span class="number">
+          ${admins.length}
+        </span>
+
+      </div>
+
+    `;
+
+
+    admins.forEach(user => {
+
+      html += createUser(user);
+
+    });
+
+  }
+
+
+  /* الأعضاء */
+
+  if(members.length){
+
+    html += `
+
+      <div class="section section-users">
+
+        <span>👤 الأعضاء</span>
+
+        <span class="number">
+          ${members.length}
+        </span>
+
+      </div>
+
+    `;
+
+
+    members.forEach(user => {
+
+      html += createUser(user);
+
+    });
+
+  }
+
+
+  container.innerHTML = html;
 
 }
 
 
-/* ===================================
-   البحث
-=================================== */
+/* =========================================
+   بطاقة المستخدم
+========================================= */
+
+function createUser(user){
+
+  const role =
+    getRole(user);
+
+
+  const username =
+    user.username ||
+    user.userName ||
+    user.name ||
+    user.displayName ||
+    "بدون Username";
+
+
+  const phone =
+    user.phone ||
+    user.phoneNumber ||
+    user.mobile ||
+    user.tel ||
+    user.telephone ||
+    "غير موجود";
+
+
+  const uid =
+    user.uid ||
+    user.documentId ||
+    "غير موجود";
+
+
+  let icon = "👤";
+
+  if(role === "admin")
+    icon = "👑";
+
+  if(role === "manager")
+    icon = "🛡️";
+
+
+  let roleText = "عضو";
+  let roleClass = "member";
+
+
+  if(role === "admin"){
+
+    roleText = "👑 أدمن";
+    roleClass = "admin";
+
+  }
+
+
+  if(role === "manager"){
+
+    roleText = "🛡️ مسؤول";
+    roleClass = "manager";
+
+  }
+
+
+  return `
+
+    <div class="user
+
+      ${role === "admin" ? "admin-user" : ""}
+
+      ${role === "manager" ? "manager-user" : ""}
+
+    ">
+
+
+      <div class="avatar">
+
+        ${icon}
+
+      </div>
+
+
+      <div class="info">
+
+        <div class="username">
+
+          ${escapeHTML(username)}
+
+          ${
+            role === "admin"
+            ? `<span class="mark">👑</span>`
+            : ""
+          }
+
+          ${
+            role === "manager"
+            ? `<span class="mark">🛡️</span>`
+            : ""
+          }
+
+        </div>
+
+
+        <div class="phone">
+
+          📱 ${escapeHTML(phone)}
+
+        </div>
+
+
+        <div class="uid">
+
+          🆔 ${escapeHTML(uid)}
+
+        </div>
+
+      </div>
+
+
+      <div class="role ${roleClass}">
+
+        ${roleText}
+
+      </div>
+
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================================
+   البحث أثناء الكتابة
+========================================= */
 
 document
   .getElementById("search")
   .addEventListener(
     "input",
-    renderUsers
+    searchByPhone
   );
 
 
-/* ===================================
+/* =========================================
    تشغيل
-=================================== */
+========================================= */
 
 loadUsers();
 
 
-/* تحديث تلقائي */
+/* تحديث كل دقيقة */
 
 setInterval(
   loadUsers,
