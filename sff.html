@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>سجل المستخدمين</title>
+<title>سجل المستخدمين الكامل</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -13,23 +13,22 @@
 
 body{
   margin:0;
-  padding:18px;
-  background:#f2f4f7;
+  padding:15px;
+  background:#f1f3f6;
   font-family:Arial,Tahoma,sans-serif;
 }
 
 .container{
-  max-width:1000px;
+  max-width:1100px;
   margin:auto;
 }
 
 .header{
-  background:#202b4d;
+  background:linear-gradient(135deg,#202b4d,#394b82);
   color:white;
   padding:20px;
   border-radius:16px;
   margin-bottom:18px;
-  box-shadow:0 5px 20px #0002;
 }
 
 .header h2{
@@ -38,11 +37,11 @@ body{
 
 .search{
   width:100%;
-  padding:15px;
+  padding:14px;
   border:0;
   border-radius:10px;
-  outline:none;
   font-size:16px;
+  outline:none;
   direction:ltr;
   text-align:left;
 }
@@ -50,7 +49,6 @@ body{
 .count{
   margin-top:12px;
   font-size:13px;
-  opacity:.85;
 }
 
 .section{
@@ -62,119 +60,120 @@ body{
   justify-content:space-between;
 }
 
-.section-admin{
+.admin-section{
   background:#fff3cd;
   color:#664d03;
   border-right:5px solid #f0b429;
 }
 
-.section-users{
+.user-section{
   background:#e9ecef;
   color:#495057;
   border-right:5px solid #777;
 }
 
-.number{
-  background:#777;
-  color:white;
-  padding:3px 10px;
-  border-radius:20px;
-  font-size:12px;
+.card{
+  background:#fff;
+  border-radius:15px;
+  margin-bottom:15px;
+  overflow:hidden;
+  box-shadow:0 4px 16px #0002;
 }
 
-.section-admin .number{
-  background:#d99d00;
-}
-
-.user{
-  background:white;
-  border-radius:14px;
-  margin-bottom:12px;
-  padding:15px;
-  display:flex;
-  align-items:center;
-  gap:14px;
-  box-shadow:0 3px 12px #0001;
-}
-
-.avatar{
-  width:55px;
-  height:55px;
-  min-width:55px;
-  border-radius:50%;
-  background:#667eea;
-  color:white;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-}
-
-.info{
-  flex:1;
-  min-width:0;
-}
-
-.username{
-  font-size:17px;
-  font-weight:bold;
-  color:#202b4d;
-  word-break:break-word;
-}
-
-.phone{
-  margin-top:5px;
-  font-size:13px;
-  color:#333;
-  direction:ltr;
-  text-align:right;
-}
-
-.uid{
-  margin-top:4px;
-  font-size:11px;
-  color:#888;
-  word-break:break-all;
-}
-
-.role{
-  padding:6px 12px;
-  border-radius:20px;
-  font-size:12px;
-  font-weight:bold;
-  white-space:nowrap;
-}
-
-.member{
-  background:#e9ecef;
-  color:#495057;
-}
-
-.admin{
-  background:#fff3cd;
-  color:#856404;
-}
-
-.manager{
-  background:#d1ecf1;
-  color:#0c5460;
-}
-
-.admin-user{
+.card.admin{
   border:2px solid #f0b429;
-  background:#fffdf5;
 }
 
-.manager-user{
+.card.manager{
   border:2px solid #17a2b8;
 }
 
-.mark{
-  margin-right:5px;
+.card-head{
+  background:#202b4d;
+  color:#fff;
+  padding:17px;
 }
 
-.loading,
+.card.admin .card-head{
+  background:linear-gradient(135deg,#302000,#765500);
+}
+
+.card.manager .card-head{
+  background:linear-gradient(135deg,#073c47,#087f8c);
+}
+
+.username{
+  font-size:19px;
+  font-weight:bold;
+}
+
+.badge{
+  display:inline-block;
+  margin-right:7px;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:bold;
+}
+
+.badge-admin{
+  background:#f5c542;
+  color:#241900;
+}
+
+.badge-manager{
+  background:#8de3ed;
+  color:#073c47;
+}
+
+.badge-member{
+  background:#ddd;
+  color:#444;
+}
+
+.uid{
+  margin-top:7px;
+  font-size:11px;
+  opacity:.8;
+  word-break:break-all;
+}
+
+.data{
+  padding:15px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:10px;
+}
+
+.field{
+  background:#f8f9fb;
+  border:1px solid #e2e5e9;
+  border-radius:9px;
+  padding:11px;
+}
+
+.key{
+  display:block;
+  color:#707070;
+  font-size:11px;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+
+.value{
+  display:block;
+  color:#171717;
+  font-size:13px;
+  white-space:pre-wrap;
+  word-break:break-word;
+  direction:auto;
+}
+
 .empty,
+.loading,
 .error{
   background:white;
   padding:30px;
@@ -183,31 +182,16 @@ body{
 }
 
 .error{
-  background:#f8d7da;
   color:#842029;
+  background:#f8d7da;
 }
 
 @media(max-width:600px){
+  body{padding:8px}
 
-  body{
-    padding:10px;
+  .grid{
+    grid-template-columns:1fr;
   }
-
-  .user{
-    align-items:flex-start;
-  }
-
-  .role{
-    font-size:11px;
-    padding:5px 8px;
-  }
-
-  .avatar{
-    width:45px;
-    height:45px;
-    min-width:45px;
-  }
-
 }
 </style>
 </head>
@@ -218,18 +202,18 @@ body{
 
   <div class="header">
 
-    <h2>📱 سجل المستخدمين</h2>
+    <h2>📋 سجل المستخدمين الكامل</h2>
 
     <input
       id="search"
       class="search"
       type="tel"
       inputmode="tel"
-      placeholder="اكتب رقم الهاتف للبحث..."
+      placeholder="📱 اكتب رقم الهاتف للبحث..."
     >
 
     <div id="count">
-      جاري تحميل المستخدمين...
+      جاري تحميل البيانات...
     </div>
 
   </div>
@@ -237,7 +221,7 @@ body{
   <div id="users">
 
     <div class="loading">
-      ⏳ جاري تحميل البيانات...
+      ⏳ جاري تحميل المستخدمين...
     </div>
 
   </div>
@@ -280,10 +264,10 @@ let users = [];
 
 
 /* =========================================
-   حماية النصوص
+   حماية HTML
 ========================================= */
 
-function escapeHTML(value){
+function esc(value){
 
   return String(value)
     .replace(/&/g,"&amp;")
@@ -296,19 +280,56 @@ function escapeHTML(value){
 
 
 /* =========================================
-   تنظيف رقم الهاتف
+   تحويل قيمة Firestore إلى نص
 ========================================= */
 
-function cleanPhone(phone){
+function formatValue(value){
 
-  return String(phone || "")
-    .replace(/[^\d+]/g,"");
+  if(value === null)
+    return "null";
+
+  if(value === undefined)
+    return "undefined";
+
+
+  if(
+    value &&
+    typeof value.toDate === "function"
+  ){
+
+    try{
+      return value.toDate().toLocaleString("ar");
+    }catch(e){}
+
+  }
+
+
+  if(typeof value === "object"){
+
+    try{
+
+      return JSON.stringify(
+        value,
+        null,
+        2
+      );
+
+    }catch(e){
+
+      return String(value);
+
+    }
+
+  }
+
+
+  return String(value);
 
 }
 
 
 /* =========================================
-   معرفة الدور
+   تحديد الدور
 ========================================= */
 
 function getRole(user){
@@ -319,15 +340,12 @@ function getRole(user){
       .toLowerCase();
 
 
-  /* مسؤول */
-
   if(
 
     role === "manager" ||
     role === "moderator" ||
     role === "مسؤول" ||
     role === "مسؤول النظام" ||
-
     user.isManager === true ||
     user.manager === true
 
@@ -338,17 +356,13 @@ function getRole(user){
   }
 
 
-  /* أدمن */
-
   if(
 
     role === "admin" ||
     role === "administrator" ||
     role === "مدير" ||
-
     user.isAdmin === true ||
     user.admin === true ||
-
     user.isAdmin === "true" ||
     user.admin === "true"
 
@@ -365,7 +379,19 @@ function getRole(user){
 
 
 /* =========================================
-   تحميل المستخدمين
+   تنظيف الهاتف
+========================================= */
+
+function cleanPhone(value){
+
+  return String(value || "")
+    .replace(/[^\d+]/g,"");
+
+}
+
+
+/* =========================================
+   تحميل جميع المستخدمين
 ========================================= */
 
 async function loadUsers(){
@@ -394,7 +420,7 @@ async function loadUsers(){
     });
 
 
-    searchByPhone();
+    searchUsers();
 
 
   }catch(error){
@@ -404,18 +430,15 @@ async function loadUsers(){
 
         <div class="error">
 
-          ❌ فشل تحميل المستخدمين
+          ❌ فشل تحميل بيانات Firestore
 
           <br><br>
 
-          ${escapeHTML(error.message)}
+          ${esc(error.message)}
 
         </div>
 
       `;
-
-    document.getElementById("count")
-      .textContent = "";
 
   }
 
@@ -426,22 +449,18 @@ async function loadUsers(){
    البحث برقم الهاتف
 ========================================= */
 
-function searchByPhone(){
+function searchUsers(){
 
-  const input =
+  const search =
     cleanPhone(
       document.getElementById("search").value
     );
 
 
-  let result;
+  let result = users;
 
 
-  if(!input){
-
-    result = users;
-
-  }else{
+  if(search){
 
     result = users.filter(user => {
 
@@ -458,11 +477,8 @@ function searchByPhone(){
 
       return phones.some(phone => {
 
-        const value =
-          cleanPhone(phone);
-
-        return value &&
-               value.includes(input);
+        return cleanPhone(phone)
+          .includes(search);
 
       });
 
@@ -471,40 +487,45 @@ function searchByPhone(){
   }
 
 
-  renderUsers(result);
+  /*
+     الترتيب:
+     مسؤول
+     أدمن
+     عضو
+  */
+
+  result.sort((a,b)=>{
+
+    const weight = {
+      manager:0,
+      admin:1,
+      member:2
+    };
+
+    return weight[getRole(a)]
+         - weight[getRole(b)];
+
+  });
+
+
+  render(result);
 
 }
 
 
 /* =========================================
-   عرض النتائج
+   عرض البيانات
 ========================================= */
 
-function renderUsers(list){
+function render(list){
 
   const container =
     document.getElementById("users");
 
 
-  const managers =
-    list.filter(
-      u => getRole(u) === "manager"
-    );
-
-  const admins =
-    list.filter(
-      u => getRole(u) === "admin"
-    );
-
-  const members =
-    list.filter(
-      u => getRole(u) === "member"
-    );
-
-
   document.getElementById("count")
     .textContent =
-      `🛡️ مسؤول: ${managers.length} | 👑 أدمن: ${admins.length} | 👤 أعضاء: ${members.length}`;
+      `عدد النتائج: ${list.length}`;
 
 
   if(!list.length){
@@ -513,7 +534,7 @@ function renderUsers(list){
 
       <div class="empty">
 
-        📱 لا يوجد حساب بهذا الرقم
+        📱 لم يتم العثور على مستخدم بهذا الرقم
 
       </div>
 
@@ -527,88 +548,136 @@ function renderUsers(list){
   let html = "";
 
 
-  /* المسؤولون */
+  list.forEach(user => {
 
-  if(managers.length){
+    const role =
+      getRole(user);
+
+
+    const username =
+      user.username ||
+      user.userName ||
+      user.name ||
+      user.fullName ||
+      user.displayName ||
+      "بدون اسم";
+
+
+    let badge = "";
+    let cardClass = "";
+
+
+    if(role === "admin"){
+
+      badge =
+        `<span class="badge badge-admin">
+          👑 ADMIN
+        </span>`;
+
+      cardClass = "admin";
+
+    }
+
+
+    if(role === "manager"){
+
+      badge =
+        `<span class="badge badge-manager">
+          🛡️ مسؤول
+        </span>`;
+
+      cardClass = "manager";
+
+    }
+
+
+    if(role === "member"){
+
+      badge =
+        `<span class="badge badge-member">
+          👤 عضو
+        </span>`;
+
+    }
+
+
+    /* جميع حقول المستخدم */
+
+    let fields = "";
+
+
+    Object.keys(user).forEach(key => {
+
+      let value = user[key];
+
+
+      fields += `
+
+        <div class="field">
+
+          <span class="key">
+            ${esc(key)}
+          </span>
+
+          <span class="value">
+            ${esc(formatValue(value))}
+          </span>
+
+        </div>
+
+      `;
+
+    });
+
 
     html += `
 
-      <div class="section section-admin">
+      <div class="card ${cardClass}">
 
-        <span>🛡️ المسؤولون</span>
+        <div class="card-head">
 
-        <span class="number">
-          ${managers.length}
-        </span>
+          <div class="username">
+
+            ${
+              role === "admin"
+              ? "👑"
+              : role === "manager"
+              ? "🛡️"
+              : "👤"
+            }
+
+            ${esc(username)}
+
+            ${badge}
+
+          </div>
+
+
+          <div class="uid">
+
+            🆔 Document ID:
+            ${esc(user.documentId)}
+
+          </div>
+
+        </div>
+
+
+        <div class="data">
+
+          <div class="grid">
+
+            ${fields}
+
+          </div>
+
+        </div>
 
       </div>
 
     `;
 
-
-    managers.forEach(user => {
-
-      html += createUser(user);
-
-    });
-
-  }
-
-
-  /* الأدمن */
-
-  if(admins.length){
-
-    html += `
-
-      <div class="section section-admin">
-
-        <span>👑 الأدمن</span>
-
-        <span class="number">
-          ${admins.length}
-        </span>
-
-      </div>
-
-    `;
-
-
-    admins.forEach(user => {
-
-      html += createUser(user);
-
-    });
-
-  }
-
-
-  /* الأعضاء */
-
-  if(members.length){
-
-    html += `
-
-      <div class="section section-users">
-
-        <span>👤 الأعضاء</span>
-
-        <span class="number">
-          ${members.length}
-        </span>
-
-      </div>
-
-    `;
-
-
-    members.forEach(user => {
-
-      html += createUser(user);
-
-    });
-
-  }
+  });
 
 
   container.innerHTML = html;
@@ -617,145 +686,14 @@ function renderUsers(list){
 
 
 /* =========================================
-   بطاقة المستخدم
-========================================= */
-
-function createUser(user){
-
-  const role =
-    getRole(user);
-
-
-  const username =
-    user.username ||
-    user.userName ||
-    user.name ||
-    user.displayName ||
-    "بدون Username";
-
-
-  const phone =
-    user.phone ||
-    user.phoneNumber ||
-    user.mobile ||
-    user.tel ||
-    user.telephone ||
-    "غير موجود";
-
-
-  const uid =
-    user.uid ||
-    user.documentId ||
-    "غير موجود";
-
-
-  let icon = "👤";
-
-  if(role === "admin")
-    icon = "👑";
-
-  if(role === "manager")
-    icon = "🛡️";
-
-
-  let roleText = "عضو";
-  let roleClass = "member";
-
-
-  if(role === "admin"){
-
-    roleText = "👑 أدمن";
-    roleClass = "admin";
-
-  }
-
-
-  if(role === "manager"){
-
-    roleText = "🛡️ مسؤول";
-    roleClass = "manager";
-
-  }
-
-
-  return `
-
-    <div class="user
-
-      ${role === "admin" ? "admin-user" : ""}
-
-      ${role === "manager" ? "manager-user" : ""}
-
-    ">
-
-
-      <div class="avatar">
-
-        ${icon}
-
-      </div>
-
-
-      <div class="info">
-
-        <div class="username">
-
-          ${escapeHTML(username)}
-
-          ${
-            role === "admin"
-            ? `<span class="mark">👑</span>`
-            : ""
-          }
-
-          ${
-            role === "manager"
-            ? `<span class="mark">🛡️</span>`
-            : ""
-          }
-
-        </div>
-
-
-        <div class="phone">
-
-          📱 ${escapeHTML(phone)}
-
-        </div>
-
-
-        <div class="uid">
-
-          🆔 ${escapeHTML(uid)}
-
-        </div>
-
-      </div>
-
-
-      <div class="role ${roleClass}">
-
-        ${roleText}
-
-      </div>
-
-
-    </div>
-
-  `;
-
-}
-
-
-/* =========================================
-   البحث أثناء الكتابة
+   البحث المباشر
 ========================================= */
 
 document
   .getElementById("search")
   .addEventListener(
     "input",
-    searchByPhone
+    searchUsers
   );
 
 
@@ -766,7 +704,7 @@ document
 loadUsers();
 
 
-/* تحديث كل دقيقة */
+/* تحديث تلقائي كل دقيقة */
 
 setInterval(
   loadUsers,
