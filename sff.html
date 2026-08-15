@@ -3,13 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>سجل المستخدمين</title>
+<title>المستخدمون والمسؤولون</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
 <style>
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
@@ -18,48 +21,94 @@ body{
   font-family:Arial,Tahoma,sans-serif;
 }
 
+.container{
+  max-width:1200px;
+  margin:auto;
+}
+
 .top{
   background:#fff;
-  padding:18px;
-  border-radius:14px;
-  margin-bottom:18px;
-  box-shadow:0 3px 12px #0001;
+  padding:20px;
+  border-radius:15px;
+  margin-bottom:20px;
+  box-shadow:0 3px 15px #0001;
 }
 
-h2{
+h1{
   margin:0 0 15px;
+  font-size:24px;
 }
 
-input{
+.search{
   width:100%;
   padding:14px;
   border:1px solid #ddd;
   border-radius:10px;
-  font-size:15px;
   outline:none;
+  font-size:15px;
 }
 
-input:focus{
+.search:focus{
   border-color:#667eea;
 }
 
-#count{
-  margin-top:10px;
+.count{
+  margin-top:12px;
   color:#666;
   font-size:14px;
 }
 
+
+/* عناوين الأقسام */
+
+.section{
+  padding:14px 18px;
+  border-radius:12px;
+  margin:20px 0 12px;
+  font-weight:bold;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.section-admin{
+  background:#fff3cd;
+  color:#664d03;
+  border-right:5px solid #f0b429;
+}
+
+.section-users{
+  background:#e9ecef;
+  color:#495057;
+  border-right:5px solid #6c757d;
+}
+
+.number{
+  padding:4px 11px;
+  border-radius:20px;
+  font-size:12px;
+  background:#666;
+  color:white;
+}
+
+.section-admin .number{
+  background:#e0a800;
+}
+
+
+/* بطاقة المستخدم */
+
 .user{
-  background:#fff;
+  background:white;
   border-radius:14px;
-  margin-bottom:15px;
   overflow:hidden;
+  margin-bottom:14px;
   box-shadow:0 3px 12px #0002;
 }
 
 .head{
   background:#202b4d;
-  color:#fff;
+  color:white;
   padding:16px;
 }
 
@@ -71,9 +120,47 @@ input:focus{
 .meta{
   font-size:12px;
   opacity:.85;
+  margin-top:5px;
   word-break:break-all;
-  margin-top:4px;
 }
+
+
+/* بطاقة المسؤول */
+
+.admin-user{
+  border:3px solid #f0b429;
+  box-shadow:0 5px 20px #f0b42955;
+}
+
+.admin-user .head{
+  background:linear-gradient(135deg,#302000,#765500);
+}
+
+.admin-badge{
+  display:inline-block;
+  background:#f5c542;
+  color:#241900;
+  padding:5px 11px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:bold;
+  margin-right:7px;
+  vertical-align:middle;
+}
+
+.admin-label{
+  display:inline-block;
+  margin-top:9px;
+  background:#fff3cd;
+  color:#664d03;
+  padding:6px 11px;
+  border-radius:7px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+
+/* بيانات المستخدم */
 
 .body{
   padding:15px;
@@ -87,7 +174,7 @@ input:focus{
 
 .field{
   background:#f7f8fa;
-  border:1px solid #e5e7eb;
+  border:1px solid #e4e7eb;
   border-radius:9px;
   padding:10px;
 }
@@ -107,41 +194,11 @@ input:focus{
   white-space:pre-wrap;
 }
 
-.admin-user{
-  border:3px solid #f0b429;
-  box-shadow:0 5px 18px #f0b42944;
-}
-
-.admin-user .head{
-  background:linear-gradient(135deg,#302000,#765500);
-}
-
-.admin-badge{
-  display:inline-block;
-  background:#f5c542;
-  color:#241900;
-  padding:5px 10px;
-  border-radius:20px;
-  font-size:11px;
-  margin-right:7px;
-  font-weight:bold;
-  vertical-align:middle;
-}
-
-.admin-label{
-  display:inline-block;
-  margin-top:8px;
-  background:#fff3cd;
-  color:#664d03;
-  padding:6px 10px;
-  border-radius:7px;
-  font-size:12px;
-  font-weight:bold;
-}
-
-.empty{
-  background:#fff;
-  padding:25px;
+.loading,
+.empty,
+.error{
+  background:white;
+  padding:30px;
   border-radius:12px;
   text-align:center;
 }
@@ -149,49 +206,50 @@ input:focus{
 .error{
   background:#f8d7da;
   color:#842029;
-  padding:15px;
-  border-radius:10px;
 }
 
-.loading{
-  text-align:center;
-  padding:40px;
-  background:#fff;
-  border-radius:12px;
-}
 </style>
 </head>
 
+
 <body>
 
-<div class="top">
+<div class="container">
 
-<h2>👥 سجل جميع المستخدمين</h2>
+  <div class="top">
 
-<input
- id="search"
- type="text"
- placeholder="🔎 ابحث بالاسم أو البريد أو الهاتف أو UID أو أي بيانات..."
->
+    <h1>👥 جميع المستخدمين</h1>
 
-<div id="count">
-جاري تحميل البيانات...
-</div>
+    <input
+      id="search"
+      class="search"
+      type="text"
+      placeholder="🔎 ابحث في جميع بيانات المستخدمين..."
+    >
 
-</div>
+    <div id="count" class="count">
+      جاري التحميل...
+    </div>
 
-<div id="users">
-  <div class="loading">
-    جاري جلب بيانات المستخدمين...
   </div>
+
+
+  <div id="users">
+
+    <div class="loading">
+      ⏳ جاري جلب المستخدمين...
+    </div>
+
+  </div>
+
 </div>
 
 
 <script>
 
-/* ==============================
-   Firebase
-============================== */
+/* =========================================
+   Firebase Configuration
+========================================= */
 
 const firebaseConfig = {
 
@@ -224,13 +282,14 @@ const db = firebase.firestore();
 let users = [];
 
 
-/* ==============================
+/* =========================================
    حماية HTML
-============================== */
+========================================= */
 
 function escapeHTML(value){
 
   return String(value)
+
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
     .replace(/>/g,"&gt;")
@@ -240,9 +299,9 @@ function escapeHTML(value){
 }
 
 
-/* ==============================
+/* =========================================
    تحويل بيانات Firestore
-============================== */
+========================================= */
 
 function formatValue(value){
 
@@ -253,7 +312,7 @@ function formatValue(value){
     return "undefined";
 
 
-  /* Timestamp */
+  /* Firebase Timestamp */
 
   if(
     value &&
@@ -297,9 +356,9 @@ function formatValue(value){
 }
 
 
-/* ==============================
+/* =========================================
    تحديد المسؤول تلقائياً
-============================== */
+========================================= */
 
 function isAdmin(user){
 
@@ -332,13 +391,13 @@ function isAdmin(user){
 }
 
 
-/* ==============================
-   تحميل المستخدمين
-============================== */
+/* =========================================
+   تحميل جميع المستخدمين
+========================================= */
 
 async function loadUsers(){
 
-  const container =
+  const box =
     document.getElementById("users");
 
 
@@ -357,7 +416,7 @@ async function loadUsers(){
 
       users.push({
 
-        documentId: doc.id,
+        documentId:doc.id,
 
         ...doc.data()
 
@@ -371,11 +430,11 @@ async function loadUsers(){
 
   }catch(error){
 
-    container.innerHTML = `
+    box.innerHTML = `
 
       <div class="error">
 
-        ❌ فشل تحميل البيانات
+        ❌ حدث خطأ أثناء تحميل البيانات
 
         <br><br>
 
@@ -394,9 +453,9 @@ async function loadUsers(){
 }
 
 
-/* ==============================
+/* =========================================
    عرض المستخدمين
-============================== */
+========================================= */
 
 function renderUsers(){
 
@@ -408,9 +467,9 @@ function renderUsers(){
       .toLowerCase();
 
 
-  /* البحث */
+  /* البحث في كل البيانات */
 
-  let result =
+  let filtered =
     users.filter(user => {
 
       if(!search)
@@ -424,35 +483,24 @@ function renderUsers(){
     });
 
 
-  /* ==============================
-     الأدمن أولاً
-  ============================== */
+  /* ======================================
+     فصل المسؤولين عن المستخدمين
+  ====================================== */
 
-  result.sort((a,b) => {
-
-    const aAdmin = isAdmin(a);
-    const bAdmin = isAdmin(b);
+  const admins =
+    filtered.filter(isAdmin);
 
 
-    if(aAdmin && !bAdmin)
-      return -1;
-
-
-    if(!aAdmin && bAdmin)
-      return 1;
-
-
-    return 0;
-
-  });
+  const normalUsers =
+    filtered.filter(user => !isAdmin(user));
 
 
   document.getElementById("count")
     .textContent =
-      `المستخدمون: ${result.length} / ${users.length}`;
+      `🛡️ المسؤولون: ${admins.length} | 👤 المستخدمون: ${normalUsers.length} | الإجمالي: ${filtered.length}`;
 
 
-  if(!result.length){
+  if(!filtered.length){
 
     document.getElementById("users")
       .innerHTML = `
@@ -471,33 +519,114 @@ function renderUsers(){
   let html = "";
 
 
-  result.forEach((user,index) => {
+  /* ======================================
+     قسم المسؤولين أولاً
+  ====================================== */
 
-    const admin =
-      isAdmin(user);
+  if(admins.length){
+
+    html += `
+
+      <div class="section section-admin">
+
+        <div>
+          🛡️ حسابات المسؤولين
+        </div>
+
+        <span class="number">
+          ${admins.length}
+        </span>
+
+      </div>
+
+    `;
 
 
-    const name =
-      user.name ||
-      user.username ||
-      user.fullName ||
-      user.displayName ||
-      "بدون اسم";
+    admins.forEach((user,index) => {
+
+      html += createUserCard(
+        user,
+        true,
+        index + 1
+      );
+
+    });
+
+  }
 
 
-    const fields =
-      Object.keys(user)
-        .filter(
-          key => key !== "documentId"
-        );
+  /* ======================================
+     قسم المستخدمين
+  ====================================== */
+
+  if(normalUsers.length){
+
+    html += `
+
+      <div class="section section-users">
+
+        <div>
+          👤 باقي المستخدمين
+        </div>
+
+        <span class="number">
+          ${normalUsers.length}
+        </span>
+
+      </div>
+
+    `;
 
 
-    let fieldsHTML = "";
+    normalUsers.forEach((user,index) => {
+
+      html += createUserCard(
+        user,
+        false,
+        index + 1
+      );
+
+    });
+
+  }
 
 
-    fields.forEach(key => {
+  document.getElementById("users")
+    .innerHTML = html;
 
-      fieldsHTML += `
+}
+
+
+/* =========================================
+   إنشاء بطاقة المستخدم
+========================================= */
+
+function createUserCard(
+  user,
+  admin,
+  number
+){
+
+  const name =
+    user.name ||
+    user.username ||
+    user.fullName ||
+    user.displayName ||
+    "بدون اسم";
+
+
+  let fields = "";
+
+
+  Object.keys(user)
+
+    .filter(
+      key => key !== "documentId"
+    )
+
+    .forEach(key => {
+
+      fields += `
 
         <div class="field">
 
@@ -518,61 +647,26 @@ function renderUsers(){
     });
 
 
-    html += `
+  return `
 
-      <div class="user ${admin ? "admin-user" : ""}">
+    <div class="user ${admin ? "admin-user" : ""}">
 
-        <div class="head">
+      <div class="head">
 
-          <h3>
+        <h3>
 
-            ${admin ? "🛡️" : "👤"}
+          ${admin ? "🛡️" : "👤"}
 
-            ${escapeHTML(name)}
-
-            ${
-              admin
-
-              ? `
-
-                <span class="admin-badge">
-                  ADMIN / مسؤول
-                </span>
-
-              `
-
-              : ""
-
-            }
-
-          </h3>
-
-
-          <div class="meta">
-
-            🆔 Document ID:
-            ${escapeHTML(user.documentId)}
-
-          </div>
-
-
-          <div class="meta">
-
-            #${index + 1}
-
-          </div>
-
+          ${escapeHTML(name)}
 
           ${
             admin
 
             ? `
 
-              <div class="admin-label">
-
-                🛡️ هذا الحساب مسؤول
-
-              </div>
+              <span class="admin-badge">
+                ADMIN • مسؤول
+              </span>
 
             `
 
@@ -580,35 +674,64 @@ function renderUsers(){
 
           }
 
+        </h3>
+
+
+        <div class="meta">
+
+          #${number}
+
         </div>
 
 
-        <div class="body">
+        <div class="meta">
 
-          <div class="grid">
+          🆔 Document ID:
+          ${escapeHTML(user.documentId)}
 
-            ${fieldsHTML}
+        </div>
 
-          </div>
+
+        ${
+          admin
+
+          ? `
+
+            <div class="admin-label">
+
+              🛡️ هذا الحساب مسؤول
+
+            </div>
+
+          `
+
+          : ""
+
+        }
+
+      </div>
+
+
+      <div class="body">
+
+        <div class="grid">
+
+          ${fields}
 
         </div>
 
       </div>
 
-    `;
+    </div>
 
-  });
-
-
-  document.getElementById("users")
-    .innerHTML = html;
+  `;
 
 }
 
 
-/* ==============================
+/* =========================================
    البحث المباشر
-============================== */
+========================================= */
 
 document
   .getElementById("search")
@@ -618,14 +741,14 @@ document
   );
 
 
-/* ==============================
+/* =========================================
    تشغيل
-============================== */
+========================================= */
 
 loadUsers();
 
 
-/* تحديث تلقائي كل دقيقة */
+/* تحديث كل دقيقة */
 
 setInterval(
   loadUsers,
