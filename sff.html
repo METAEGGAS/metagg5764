@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Full Users Logs</title>
+<title>سجل المستخدمين</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
@@ -15,30 +15,38 @@ body{
   margin:0;
   padding:20px;
   background:#f1f3f6;
-  font-family:Arial,Tahoma,sans-serif
+  font-family:Arial,Tahoma,sans-serif;
 }
 
 .top{
   background:#fff;
-  padding:15px;
-  border-radius:12px;
-  margin-bottom:15px;
-  box-shadow:0 2px 10px #0001
+  padding:18px;
+  border-radius:14px;
+  margin-bottom:18px;
+  box-shadow:0 3px 12px #0001;
 }
 
-h2{margin:0 0 15px}
+h2{
+  margin:0 0 15px;
+}
 
 input{
   width:100%;
-  padding:13px;
+  padding:14px;
   border:1px solid #ddd;
   border-radius:10px;
-  font-size:15px
+  font-size:15px;
+  outline:none;
+}
+
+input:focus{
+  border-color:#667eea;
 }
 
 #count{
   margin-top:10px;
-  color:#666
+  color:#666;
+  font-size:14px;
 }
 
 .user{
@@ -46,48 +54,49 @@ input{
   border-radius:14px;
   margin-bottom:15px;
   overflow:hidden;
-  box-shadow:0 3px 12px #0002
+  box-shadow:0 3px 12px #0002;
 }
 
 .head{
   background:#202b4d;
   color:#fff;
-  padding:15px
+  padding:16px;
 }
 
 .head h3{
-  margin:0 0 7px
+  margin:0 0 8px;
+  font-size:18px;
 }
 
 .meta{
   font-size:12px;
   opacity:.85;
   word-break:break-all;
-  margin-top:4px
+  margin-top:4px;
 }
 
 .body{
-  padding:15px
+  padding:15px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:10px
+  gap:10px;
 }
 
 .field{
   background:#f7f8fa;
   border:1px solid #e5e7eb;
   border-radius:9px;
-  padding:10px
+  padding:10px;
 }
 
 .key{
   display:block;
   color:#777;
   font-size:11px;
-  margin-bottom:5px
+  margin-bottom:5px;
 }
 
 .value{
@@ -95,14 +104,60 @@ input{
   color:#111;
   font-size:13px;
   word-break:break-all;
-  white-space:pre-wrap
+  white-space:pre-wrap;
+}
+
+.admin-user{
+  border:3px solid #f0b429;
+  box-shadow:0 5px 18px #f0b42944;
+}
+
+.admin-user .head{
+  background:linear-gradient(135deg,#302000,#765500);
+}
+
+.admin-badge{
+  display:inline-block;
+  background:#f5c542;
+  color:#241900;
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:11px;
+  margin-right:7px;
+  font-weight:bold;
+  vertical-align:middle;
+}
+
+.admin-label{
+  display:inline-block;
+  margin-top:8px;
+  background:#fff3cd;
+  color:#664d03;
+  padding:6px 10px;
+  border-radius:7px;
+  font-size:12px;
+  font-weight:bold;
 }
 
 .empty{
   background:#fff;
-  padding:20px;
+  padding:25px;
   border-radius:12px;
-  text-align:center
+  text-align:center;
+}
+
+.error{
+  background:#f8d7da;
+  color:#842029;
+  padding:15px;
+  border-radius:10px;
+}
+
+.loading{
+  text-align:center;
+  padding:40px;
+  background:#fff;
+  border-radius:12px;
 }
 </style>
 </head>
@@ -111,11 +166,12 @@ input{
 
 <div class="top">
 
-<h2>👥 جميع المستخدمين - Full Logs</h2>
+<h2>👥 سجل جميع المستخدمين</h2>
 
 <input
  id="search"
- placeholder="ابحث داخل جميع بيانات المستخدمين..."
+ type="text"
+ placeholder="🔎 ابحث بالاسم أو البريد أو الهاتف أو UID أو أي بيانات..."
 >
 
 <div id="count">
@@ -124,27 +180,53 @@ input{
 
 </div>
 
-<div id="users"></div>
+<div id="users">
+  <div class="loading">
+    جاري جلب بيانات المستخدمين...
+  </div>
+</div>
+
 
 <script>
 
-const firebaseConfig={
-  apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
-  authDomain:"asse-app-16998.firebaseapp.com",
-  projectId:"asse-app-16998",
-  storageBucket:"asse-app-16998.firebasestorage.app",
-  messagingSenderId:"835771799328",
-  appId:"1:835771799328:web:b587a5da0cb129c2042945"
+/* ==============================
+   Firebase
+============================== */
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
+
+  authDomain:
+    "asse-app-16998.firebaseapp.com",
+
+  projectId:
+    "asse-app-16998",
+
+  storageBucket:
+    "asse-app-16998.firebasestorage.app",
+
+  messagingSenderId:
+    "835771799328",
+
+  appId:
+    "1:835771799328:web:b587a5da0cb129c2042945"
+
 };
+
 
 firebase.initializeApp(firebaseConfig);
 
-const db=firebase.firestore();
-
-let users=[];
+const db = firebase.firestore();
 
 
-/* حماية النص من HTML */
+let users = [];
+
+
+/* ==============================
+   حماية HTML
+============================== */
 
 function escapeHTML(value){
 
@@ -158,57 +240,124 @@ function escapeHTML(value){
 }
 
 
-/* تحويل قيم Firestore إلى نص */
+/* ==============================
+   تحويل بيانات Firestore
+============================== */
 
 function formatValue(value){
 
-  if(value===null)
+  if(value === null)
     return "null";
 
-  if(value===undefined)
+  if(value === undefined)
     return "undefined";
 
-  if(value && typeof value.toDate==="function"){
+
+  /* Timestamp */
+
+  if(
+    value &&
+    typeof value.toDate === "function"
+  ){
 
     try{
-      return value.toDate().toLocaleString("ar");
+
+      return value
+        .toDate()
+        .toLocaleString("ar");
+
     }catch(e){}
+
   }
 
-  if(typeof value==="object"){
+
+  /* Arrays / Objects */
+
+  if(typeof value === "object"){
 
     try{
-      return JSON.stringify(value,null,2);
+
+      return JSON.stringify(
+        value,
+        null,
+        2
+      );
+
     }catch(e){
+
       return String(value);
+
     }
 
   }
+
 
   return String(value);
 
 }
 
 
-/* تحميل جميع المستخدمين */
+/* ==============================
+   تحديد المسؤول تلقائياً
+============================== */
+
+function isAdmin(user){
+
+  const role =
+    String(user.role || "")
+      .trim()
+      .toLowerCase();
+
+
+  return (
+
+    role === "admin" ||
+
+    role === "administrator" ||
+
+    role === "مدير" ||
+
+    role === "مسؤول" ||
+
+    user.isAdmin === true ||
+
+    user.admin === true ||
+
+    user.isAdmin === "true" ||
+
+    user.admin === "true"
+
+  );
+
+}
+
+
+/* ==============================
+   تحميل المستخدمين
+============================== */
 
 async function loadUsers(){
 
-  const container=
+  const container =
     document.getElementById("users");
+
 
   try{
 
-    const snapshot=
-      await db.collection("users").get();
+    const snapshot =
+      await db
+        .collection("users")
+        .get();
 
-    users=[];
 
-    snapshot.forEach(doc=>{
+    users = [];
+
+
+    snapshot.forEach(doc => {
 
       users.push({
 
-        documentId:doc.id,
+        documentId: doc.id,
 
         ...doc.data()
 
@@ -216,15 +365,17 @@ async function loadUsers(){
 
     });
 
+
     renderUsers();
+
 
   }catch(error){
 
-    container.innerHTML=`
+    container.innerHTML = `
 
-      <div class="empty">
+      <div class="error">
 
-        ❌ فشل تحميل المستخدمين
+        ❌ فشل تحميل البيانات
 
         <br><br>
 
@@ -234,18 +385,22 @@ async function loadUsers(){
 
     `;
 
-    document.getElementById("count").textContent="";
+
+    document.getElementById("count")
+      .textContent = "";
 
   }
 
 }
 
 
-/* عرض جميع المستخدمين */
+/* ==============================
+   عرض المستخدمين
+============================== */
 
 function renderUsers(){
 
-  const q=
+  const search =
     document
       .getElementById("search")
       .value
@@ -253,122 +408,207 @@ function renderUsers(){
       .toLowerCase();
 
 
-  const result=users.filter(user=>{
+  /* البحث */
 
-    if(!q)
-      return true;
+  let result =
+    users.filter(user => {
 
-    return JSON.stringify(user)
-      .toLowerCase()
-      .includes(q);
+      if(!search)
+        return true;
+
+
+      return JSON.stringify(user)
+        .toLowerCase()
+        .includes(search);
+
+    });
+
+
+  /* ==============================
+     الأدمن أولاً
+  ============================== */
+
+  result.sort((a,b) => {
+
+    const aAdmin = isAdmin(a);
+    const bAdmin = isAdmin(b);
+
+
+    if(aAdmin && !bAdmin)
+      return -1;
+
+
+    if(!aAdmin && bAdmin)
+      return 1;
+
+
+    return 0;
 
   });
 
 
-  document.getElementById("count").textContent=
-    `المستخدمون: ${result.length} / ${users.length}`;
+  document.getElementById("count")
+    .textContent =
+      `المستخدمون: ${result.length} / ${users.length}`;
 
 
   if(!result.length){
 
-    document.getElementById("users").innerHTML=`
+    document.getElementById("users")
+      .innerHTML = `
 
-      <div class="empty">
-        لا توجد نتائج.
-      </div>
+        <div class="empty">
+          لا توجد نتائج.
+        </div>
 
-    `;
+      `;
 
     return;
 
   }
 
 
-  document.getElementById("users").innerHTML=
-
-    result.map((user,index)=>{
-
-      const name=
-        user.name ||
-        user.username ||
-        user.fullName ||
-        user.displayName ||
-        "بدون اسم";
+  let html = "";
 
 
-      const fields=
-        Object.keys(user)
-          .filter(key=>key!=="documentId");
+  result.forEach((user,index) => {
+
+    const admin =
+      isAdmin(user);
 
 
-      let fieldsHTML="";
+    const name =
+      user.name ||
+      user.username ||
+      user.fullName ||
+      user.displayName ||
+      "بدون اسم";
 
 
-      fields.forEach(key=>{
-
-        fieldsHTML+=`
-
-          <div class="field">
-
-            <span class="key">
-              ${escapeHTML(key)}
-            </span>
-
-            <span class="value">
-              ${escapeHTML(
-                formatValue(user[key])
-              )}
-            </span>
-
-          </div>
-
-        `;
-
-      });
+    const fields =
+      Object.keys(user)
+        .filter(
+          key => key !== "documentId"
+        );
 
 
-      return`
+    let fieldsHTML = "";
 
-        <div class="user">
 
-          <div class="head">
+    fields.forEach(key => {
 
-            <h3>
-              👤 ${escapeHTML(name)}
-            </h3>
+      fieldsHTML += `
 
-            <div class="meta">
-              Document ID:
-              ${escapeHTML(user.documentId)}
-            </div>
+        <div class="field">
 
-            <div class="meta">
-              المستخدم رقم:
-              ${index+1}
-            </div>
+          <span class="key">
+            ${escapeHTML(key)}
+          </span>
 
-          </div>
-
-          <div class="body">
-
-            <div class="grid">
-
-              ${fieldsHTML}
-
-            </div>
-
-          </div>
+          <span class="value">
+            ${escapeHTML(
+              formatValue(user[key])
+            )}
+          </span>
 
         </div>
 
       `;
 
-    }).join("");
+    });
+
+
+    html += `
+
+      <div class="user ${admin ? "admin-user" : ""}">
+
+        <div class="head">
+
+          <h3>
+
+            ${admin ? "🛡️" : "👤"}
+
+            ${escapeHTML(name)}
+
+            ${
+              admin
+
+              ? `
+
+                <span class="admin-badge">
+                  ADMIN / مسؤول
+                </span>
+
+              `
+
+              : ""
+
+            }
+
+          </h3>
+
+
+          <div class="meta">
+
+            🆔 Document ID:
+            ${escapeHTML(user.documentId)}
+
+          </div>
+
+
+          <div class="meta">
+
+            #${index + 1}
+
+          </div>
+
+
+          ${
+            admin
+
+            ? `
+
+              <div class="admin-label">
+
+                🛡️ هذا الحساب مسؤول
+
+              </div>
+
+            `
+
+            : ""
+
+          }
+
+        </div>
+
+
+        <div class="body">
+
+          <div class="grid">
+
+            ${fieldsHTML}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+
+  });
+
+
+  document.getElementById("users")
+    .innerHTML = html;
 
 }
 
 
-/* البحث */
+/* ==============================
+   البحث المباشر
+============================== */
 
 document
   .getElementById("search")
@@ -378,7 +618,19 @@ document
   );
 
 
+/* ==============================
+   تشغيل
+============================== */
+
 loadUsers();
+
+
+/* تحديث تلقائي كل دقيقة */
+
+setInterval(
+  loadUsers,
+  60000
+);
 
 </script>
 
