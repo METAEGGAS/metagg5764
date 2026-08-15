@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة Firebase - عرض شامل</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+        
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            font-weight: 700;
+        }
+        
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background: #e9ecef;
+            color: var(--primary-color);
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            background: white;
+            border-radius: 0 15px 15px 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            border-right: 4px solid var(--primary-color);
+        }
+        
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .card-item.deposit {
+            border-right-color: var(--success-color);
+        }
+        
+        .card-item.withdrawal {
+            border-right-color: var(--danger-color);
+        }
+        
+        .card-item.referral {
+            border-right-color: var(--warning-color);
+        }
+        
+        .card-item.transaction {
+            border-right-color: var(--info-color);
+        }
+        
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .stat-box .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .stat-box .number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-box .label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .badge-status {
+            font-size: 12px;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .firebase-config {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        .firebase-config .key { color: #9cdcfe; }
+        .firebase-config .value { color: #ce9178; }
+        .firebase-config .comment { color: #6a9955; }
+        
+        .amount-positive { color: var(--success-color); font-weight: bold; }
+        .amount-negative { color: var(--danger-color); font-weight: bold; }
+        
+        .search-box {
+            position: relative;
+        }
+        
+        .search-box input {
+            padding-right: 40px;
+        }
+        
+        .search-box .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.5rem; }
+            .stat-box .number { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="bi bi-fire me-2"></i>نظام إدارة Firebase الشامل</h1>
+                <p class="mb-0">عرض جميع بيانات النظام: المستخدمين، الإيداعات، السحوبات، الإحالات، والمعاملات</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-danger p-2 me-2"><i class="bi bi-database"></i> Firebase</span>
+                <span class="badge bg-warning text-dark p-2"><i class="bi bi-clock-history"></i> تحديث لحظي</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Config -->
+    <div class="firebase-config">
+        <span class="comment">// تكوين Firebase - للاتصال بقاعدة البيانات</span><br>
+        <span class="key">const</span> firebaseConfig = {<br>
+        &nbsp;&nbsp;<span class="key">apiKey</span>: <span class="value">"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M"</span>,<br>
+        &nbsp;&nbsp;<span class="key">authDomain</span>: <span class="value">"asse-app-16998.firebaseapp.com"</span>,<br>
+        &nbsp;&nbsp;<span class="key">projectId</span>: <span class="value">"asse-app-16998"</span>,<br>
+        &nbsp;&nbsp;<span class="key">storageBucket</span>: <span class="value">"asse-app-16998.firebasestorage.app"</span>,<br>
+        &nbsp;&nbsp;<span class="key">messagingSenderId</span>: <span class="value">"835771799328"</span>,<br>
+        &nbsp;&nbsp;<span class="key">appId</span>: <span class="value">"1:835771799328:web:b587a5da0cb129c2042945"</span><br>
+        };
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-box">
+                <div class="icon text-primary"><i class="bi bi-people-fill"></i></div>
+                <div class="number" id="totalUsers">0</div>
+                <div class="label">إجمالي المستخدمين</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-box">
+                <div class="icon text-success"><i class="bi bi-arrow-down-circle-fill"></i></div>
+                <div class="number" id="totalDeposits">$0</div>
+                <div class="label">إجمالي الإيداعات</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-box">
+                <div class="icon text-danger"><i class="bi bi-arrow-up-circle-fill"></i></div>
+                <div class="number" id="totalWithdrawals">$0</div>
+                <div class="label">إجمالي السحوبات</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-box">
+                <div class="icon text-warning"><i class="bi bi-gift-fill"></i></div>
+                <div class="number" id="totalReferrals">0</div>
+                <div class="label">إجمالي الإحالات</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab">
+                <i class="bi bi-people"></i> المستخدمين
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#deposits" type="button" role="tab">
+                <i class="bi bi-arrow-down-circle text-success"></i> الإيداعات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab">
+                <i class="bi bi-arrow-up-circle text-danger"></i> السحوبات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="referrals-tab" data-bs-toggle="tab" data-bs-target="#referrals" type="button" role="tab">
+                <i class="bi bi-tree text-warning"></i> الإحالات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                <i class="bi bi-list-ul text-info"></i> المعاملات
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">
+                <i class="bi bi-gear text-secondary"></i> النظام
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="myTabContent">
+        <!-- Users Tab -->
+        <div class="tab-pane fade show active" id="users" role="tabpanel">
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="search-box">
+                            <span class="search-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchUsers" placeholder="بحث عن مستخدم..." onkeyup="filterUsers()">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filterUserStatus" onchange="filterUsers()">
+                            <option value="all">جميع الحالات</option>
+                            <option value="نشط">نشط</option>
+                            <option value="قيد الانتظار">قيد الانتظار</option>
+                            <option value="غير نشط">غير نشط</option>
+                            <option value="محظور">محظور</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="refreshData()">
+                            <i class="bi bi-arrow-clockwise"></i> تحديث الكل
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="usersContainer">
+                <div class="loading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات المستخدمين...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposits Tab -->
+        <div class="tab-pane fade" id="deposits" role="tabpanel">
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="search-box">
+                            <span class="search-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchDeposits" placeholder="بحث عن إيداع..." onkeyup="filterDeposits()">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="filterDepositStatus" onchange="filterDeposits()">
+                            <option value="all">جميع الحالات</option>
+                            <option value="مكتمل">مكتمل</option>
+                            <option value="قيد المعالجة">قيد المعالجة</option>
+                            <option value="معلق">معلق</option>
+                            <option value="ملغي">ملغي</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="filterDepositMethod" onchange="filterDeposits()">
+                            <option value="all">جميع الطرق</option>
+                            <option value="USDT-TRC20">USDT-TRC20</option>
+                            <option value="USDT-BEP20">USDT-BEP20</option>
+                            <option value="USDT-Polygon">USDT-Polygon</option>
+                            <option value="Bitcoin">Bitcoin</option>
+                            <option value="Ethereum">Ethereum</option>
+                            <option value="Bank Transfer">تحويل بنكي</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="depositsContainer">
+                <div class="loading">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات الإيداعات...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawals Tab -->
+        <div class="tab-pane fade" id="withdrawals" role="tabpanel">
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="search-box">
+                            <span class="search-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchWithdrawals" placeholder="بحث عن سحب..." onkeyup="filterWithdrawals()">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="filterWithdrawalStatus" onchange="filterWithdrawals()">
+                            <option value="all">جميع الحالات</option>
+                            <option value="مكتمل">مكتمل</option>
+                            <option value="قيد المعالجة">قيد المعالجة</option>
+                            <option value="معلق">معلق</option>
+                            <option value="مرفوض">مرفوض</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="filterWithdrawalMethod" onchange="filterWithdrawals()">
+                            <option value="all">جميع الطرق</option>
+                            <option value="USDT-TRC20">USDT-TRC20</option>
+                            <option value="USDT-BEP20">USDT-BEP20</option>
+                            <option value="Bank Transfer">تحويل بنكي</option>
+                            <option value="PayPal">PayPal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="withdrawalsContainer">
+                <div class="loading">
+                    <div class="spinner-border text-danger" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات السحوبات...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referrals Tab -->
+        <div class="tab-pane fade" id="referrals" role="tabpanel">
+            <div id="referralsContainer">
+                <div class="loading">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات الإحالات...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel">
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="search-box">
+                            <span class="search-icon"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="searchTransactions" placeholder="بحث عن معاملة..." onkeyup="filterTransactions()">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="filterTransactionType" onchange="filterTransactions()">
+                            <option value="all">جميع الأنواع</option>
+                            <option value="إيداع">إيداع</option>
+                            <option value="سحب">سحب</option>
+                            <option value="مكافأة إحالة">مكافأة إحالة</option>
+                            <option value="ربح">ربح</option>
+                            <option value="رسوم">رسوم</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" class="form-control" id="filterTransactionDate" onchange="filterTransactions()" placeholder="تاريخ">
+                    </div>
+                </div>
+            </div>
+            <div id="transactionsContainer">
+                <div class="loading">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات المعاملات...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Tab -->
+        <div class="tab-pane fade" id="system" role="tabpanel">
+            <div id="systemContainer">
+                <div class="loading">
+                    <div class="spinner-border text-secondary" role="status">
+                        <span class="visually-hidden">جاري التحميل...</span>
+                    </div>
+                    <p class="mt-2">جاري تحميل بيانات النظام...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+<script>
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
+    authDomain: "asse-app-16998.firebaseapp.com",
+    projectId: "asse-app-16998",
+    storageBucket: "asse-app-16998.firebasestorage.app",
+    messagingSenderId: "835771799328",
+    appId: "1:835771799328:web:b587a5da0cb129c2042945"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Global data stores
+let allUsers = [];
+let allDeposits = [];
+let allWithdrawals = [];
+let allReferrals = [];
+let allTransactions = [];
+let systemData = {};
+
+// ==================== GENERATE MOCK DATA ====================
+function generateMockData() {
+    const names = [
+        'أحمد محمد علي', 'سارة خالد عبدالله', 'محمد إبراهيم حسن', 'نورة سعيد أحمد',
+        'عبدالله راشد سالم', 'فاطمة علي حسن', 'خالد سليمان محمد', 'منى عبدالرحمن',
+        'عمر فيصل محمود', 'ليلى إبراهيم حسن', 'حسن عبدالله سالم', 'نوال خالد سعيد',
+        'سالم محمد راشد', 'غالية عبيد عبدالله', 'زايد سعيد سليمان', 'حصة عبدالعزيز',
+        'مبارك علي خميس', 'شيخة راشد محمد', 'سعيد مبارك سليمان', 'أمينة حسن علي',
+        'يوسف عبدالله سالم', 'مريم سعيد خالد', 'ناصر محمد سليمان', 'عائشة راشد عبدالله',
+        'علي حسن محمد', 'هدى سعد عبدالله', 'سليمان مبارك سعيد', 'نورة أحمد سليمان',
+        'رشيد عمر علي', 'منيرة خالد سعيد', 'عبدالعزيز محمد راشد', 'موزة سعد سليمان',
+        'سلطان راشد حميد', 'سعاد مبارك علي', 'صالح محمد عبدالله', 'ميثاء سعيد راشد',
+        'حمدان علي سالم', 'شمسة خليفة محمد', 'راشد سعيد مبارك', 'حصة علي سليمان'
+    ];
+    
+    const statuses = ['نشط', 'نشط', 'نشط', 'قيد الانتظار', 'غير نشط', 'محظور'];
+    const depositMethods = ['USDT-TRC20', 'USDT-BEP20', 'USDT-Polygon', 'Bitcoin', 'Ethereum', 'Bank Transfer'];
+    const withdrawalMethods = ['USDT-TRC20', 'USDT-BEP20', 'Bank Transfer', 'PayPal'];
+    const depositStatuses = ['مكتمل', 'مكتمل', 'مكتمل', 'قيد المعالجة', 'معلق', 'ملغي'];
+    const withdrawalStatuses = ['مكتمل', 'قيد المعالجة', 'معلق', 'مرفوض'];
+    const transactionTypes = ['إيداع', 'سحب', 'مكافأة إحالة', 'ربح', 'رسوم'];
+    const referralLevels = [1, 2, 3];
+    
+    const now = new Date();
+    const startDate = new Date(2026, 7, 10); // August 10, 2026
+    
+    // Generate users
+    for (let i = 0; i < 40; i++) {
+        const id = `user_${String(i + 1).padStart(3, '0')}`;
+        const balance = Math.floor(Math.random() * 50000) / 100;
+        const totalDeposits = Math.floor(Math.random() * 70000) / 100;
+        const totalWithdrawals = Math.floor(Math.random() * totalDeposits) / 100;
+        const referrals = Math.floor(Math.random() * 20);
+        const referralCode = `DB${String(Math.floor(Math.random() * 90000) + 10000)}`;
+        const joinDate = new Date(startDate.getTime() + Math.random() * (now.getTime() - startDate.getTime()));
+        
+        allUsers.push({
+            id: id,
+            name: names[i % names.length],
+            email: `${names[i % names.length].replace(/\s/g, '').toLowerCase()}@example.com`,
+            phone: `05${String(Math.floor(Math.random() * 90000000) + 10000000)}`,
+            balance: balance,
+            totalDeposits: totalDeposits,
+            totalWithdrawals: totalWithdrawals,
+            referrals: referrals,
+            referralCode: referralCode,
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            joinDate: joinDate.toISOString().split('T')[0],
+            lastLogin: new Date(joinDate.getTime() + Math.random() * (now.getTime() - joinDate.getTime())).toISOString().split('T')[0],
+            level: Math.floor(Math.random() * 6) + 1,
+            isVerified: Math.random() > 0.3,
+            emailVerified: Math.random() > 0.4,
+            twoFactorEnabled: Math.random() > 0.7,
+            kycStatus: ['مكتمل', 'قيد المراجعة', 'غير مكتمل'][Math.floor(Math.random() * 3)]
+        });
+    }
+    
+    // Generate deposits
+    for (let i = 0; i < 60; i++) {
+        const user = allUsers[Math.floor(Math.random() * allUsers.length)];
+        const amount = Math.floor(Math.random() * 10000) / 100 + 10;
+        const date = new Date(new Date(2026, 7, 10).getTime() + Math.random() * (now.getTime() - new Date(2026, 7, 10).getTime()));
+        
+        allDeposits.push({
+            id: `dep_${String(i + 1).padStart(3, '0')}`,
+            userId: user.id,
+            userName: user.name,
+            amount: amount,
+            method: depositMethods[Math.floor(Math.random() * depositMethods.length)],
+            status: depositStatuses[Math.floor(Math.random() * depositStatuses.length)],
+            transactionHash: `0x${Math.random().toString(16).substring(2, 42)}`,
+            date: date.toISOString().split('T')[0],
+            time: date.toTimeString().split(' ')[0],
+            confirmations: Math.floor(Math.random() * 6) + 1,
+            network: ['TRC20', 'BEP20', 'ERC20', 'Native'][Math.floor(Math.random() * 4)],
+            walletAddress: `0x${Math.random().toString(16).substring(2, 42)}`,
+            fee: Math.floor(Math.random() * 50) / 100,
+            notes: Math.random() > 0.7 ? 'تم الإيداع بنجاح' : ''
+        });
+    }
+    
+    // Generate withdrawals
+    for (let i = 0; i < 40; i++) {
+        const user = allUsers[Math.floor(Math.random() * allUsers.length)];
+        const amount = Math.floor(Math.random() * 5000) / 100 + 16;
+        const date = new Date(new Date(2026, 7, 10).getTime() + Math.random() * (now.getTime() - new Date(2026, 7, 10).getTime()));
+        
+        allWithdrawals.push({
+            id: `wd_${String(i + 1).padStart(3, '0')}`,
+            userId: user.id,
+            userName: user.name,
+            amount: amount,
+            method: withdrawalMethods[Math.floor(Math.random() * withdrawalMethods.length)],
+            status: withdrawalStatuses[Math.floor(Math.random() * withdrawalStatuses.length)],
+            address: Math.random() > 0.5 ? `0x${Math.random().toString(16).substring(2, 42)}` : `T${Math.random().toString(36).substring(2, 15)}`,
+            date: date.toISOString().split('T')[0],
+            time: date.toTimeString().split(' ')[0],
+            processingTime: Math.floor(Math.random() * 48) + 2,
+            fee: Math.floor(Math.random() * 20) / 100,
+            notes: ['تمت الموافقة', 'قيد المراجعة', 'يرجى التحقق من العنوان'][Math.floor(Math.random() * 3)]
+        });
+    }
+    
+    // Generate referrals
+    for (let i = 0; i < 30; i++) {
+        const referrer = allUsers[Math.floor(Math.random() * allUsers.length)];
+        const referred = allUsers[Math.floor(Math.random() * allUsers.length)];
+        if (referrer.id === referred.id) continue;
+        
+        const date = new Date(new Date(2026, 7, 10).getTime() + Math.random() * (now.getTime() - new Date(2026, 7, 10).getTime()));
+        const level = referralLevels[Math.floor(Math.random() * referralLevels.length)];
+        const bonus = Math.floor(Math.random() * 200) / 100 + 5;
+        
+        allReferrals.push({
+            id: `ref_${String(i + 1).padStart(3, '0')}`,
+            referrerId: referrer.id,
+            referrerName: referrer.name,
+            referredId: referred.id,
+            referredName: referred.name,
+            level: level,
+            bonus: bonus,
+            commission: bonus * (level === 1 ? 0.12 : level === 2 ? 0.05 : 0.02),
+            date: date.toISOString().split('T')[0],
+            status: ['مكتمل', 'مكتمل', 'مكتمل', 'قيد المعالجة'][Math.floor(Math.random() * 4)],
+            rewardPercentage: [12, 5, 2][level - 1]
+        });
+    }
+    
+    // Generate transactions
+    for (let i = 0; i < 80; i++) {
+        const user = allUsers[Math.floor(Math.random() * allUsers.length)];
+        const type = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+        const amount = Math.floor(Math.random() * 5000) / 100 + 1;
+        const date = new Date(new Date(2026, 7, 10).getTime() + Math.random() * (now.getTime() - new Date(2026, 7, 10).getTime()));
+        
+        allTransactions.push({
+            id: `txn_${String(i + 1).padStart(3, '0')}`,
+            userId: user.id,
+            userName: user.name,
+            type: type,
+            amount: amount,
+            balanceAfter: user.balance + (type === 'إيداع' || type === 'مكافأة إحالة' || type === 'ربح' ? amount : -amount),
+            date: date.toISOString().split('T')[0],
+            time: date.toTimeString().split(' ')[0],
+            status: ['مكتمل', 'مكتمل', 'مكتمل', 'معلق'][Math.floor(Math.random() * 4)],
+            description: `${type} - ${Math.random() > 0.5 ? 'عملية ناجحة' : 'قيد المعالجة'}`,
+            reference: `REF-${String(Math.floor(Math.random() * 90000) + 10000)}`
+        });
+    }
+    
+    // System data
+    systemData = {
+        totalUsers: allUsers.length,
+        totalDeposits: allDeposits.reduce((sum, d) => sum + (d.status === 'مكتمل' ? d.amount : 0), 0),
+        totalWithdrawals: allWithdrawals.reduce((sum, w) => sum + (w.status === 'مكتمل' ? w.amount : 0), 0),
+        totalReferrals: allReferrals.length,
+        totalTransactions: allTransactions.length,
+        activeUsers: allUsers.filter(u => u.status === 'نشط').length,
+        pendingDeposits: allDeposits.filter(d => d.status === 'قيد المعالجة' || d.status === 'معلق').length,
+        pendingWithdrawals: allWithdrawals.filter(w => w.status === 'قيد المعالجة' || w.status === 'معلق').length,
+        totalFees: allTransactions.filter(t => t.type === 'رسوم').reduce((sum, t) => sum + t.amount, 0),
+        averageBalance: allUsers.reduce((sum, u) => sum + u.balance, 0) / allUsers.length,
+        systemUptime: '99.9%',
+        lastBackup: new Date().toISOString().split('T')[0],
+        serverStatus: 'مستقر',
+        databaseConnections: Math.floor(Math.random() * 100) + 50,
+        cacheHitRate: Math.floor(Math.random() * 30) + 70
+    };
+}
+
+// ==================== DISPLAY FUNCTIONS ====================
+
+function displayUsers(users) {
+    const container = document.getElementById('usersContainer');
+    if (!users || users.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">لا يوجد مستخدمين</div>`;
+        return;
+    }
+    
+    let html = '<div class="row">';
+    users.forEach(user => {
+        const statusColor = user.status === 'نشط' ? 'success' : 
+                           user.status === 'قيد الانتظار' ? 'warning' : 
+                           user.status === 'محظور' ? 'danger' : 'secondary';
+        const balanceColor = user.balance > 5000 ? 'text-success' : 
+                            user.balance > 1000 ? 'text-primary' : 'text-danger';
+        
+        html += `
+            <div class="col-lg-4 col-md-6">
+                <div class="card-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5><i class="bi bi-person-circle me-2"></i>${user.name}</h5>
+                            <small class="text-muted">${user.email}</small>
+                            <div><small class="text-muted">${user.phone}</small></div>
+                        </div>
+                        <span class="badge bg-${statusColor} badge-status">${user.status}</span>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <span class="balance ${balanceColor}">$${user.balance?.toFixed(2) || '0.00'}</span>
+                        <small class="text-muted d-block">الرصيد الحالي</small>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <small class="text-muted">كود الإحالة</small>
+                            <div><code>${user.referralCode}</code></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">المستوى</small>
+                            <div>المستوى ${user.level}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">الإيداعات</small>
+                            <div>$${user.totalDeposits?.toFixed(2) || '0.00'}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">السحوبات</small>
+                            <div>$${user.totalWithdrawals?.toFixed(2) || '0.00'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">الإحالات</small>
+                            <div><span class="badge bg-warning text-dark">${user.referrals}</span></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">تاريخ التسجيل</small>
+                            <div>${user.joinDate}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-2">
+                        ${user.isVerified ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> موثق</span>' : 
+                                           '<span class="badge bg-secondary">غير موثق</span>'}
+                        ${user.twoFactorEnabled ? '<span class="badge bg-primary"><i class="bi bi-shield-lock"></i> 2FA</span>' : ''}
+                        <span class="badge bg-info">KYC: ${user.kycStatus}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function displayDeposits(deposits) {
+    const container = document.getElementById('depositsContainer');
+    if (!deposits || deposits.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">لا يوجد إيداعات</div>`;
+        return;
+    }
+    
+    let html = '';
+    deposits.forEach(deposit => {
+        const statusColor = deposit.status === 'مكتمل' ? 'success' : 
+                           deposit.status === 'قيد المعالجة' ? 'warning' : 
+                           deposit.status === 'ملغي' ? 'danger' : 'secondary';
+        
+        html += `
+            <div class="card-item deposit">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-person"></i> ${deposit.userName}</h6>
+                        <small class="text-muted">${deposit.userId}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="amount-positive">$${deposit.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-${statusColor} badge-status">${deposit.status}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${deposit.method}</small>
+                        <small class="text-muted">${deposit.network}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${deposit.date}</small>
+                        <small class="text-muted">${deposit.time}</small>
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDetails('${deposit.id}', 'deposit')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Tx: ${deposit.transactionHash.substring(0, 16)}...</small>
+                    <span class="badge bg-secondary">تأكيدات: ${deposit.confirmations}</span>
+                    <small class="text-muted">الرسوم: $${deposit.fee.toFixed(2)}</small>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function displayWithdrawals(withdrawals) {
+    const container = document.getElementById('withdrawalsContainer');
+    if (!withdrawals || withdrawals.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">لا يوجد سحوبات</div>`;
+        return;
+    }
+    
+    let html = '';
+    withdrawals.forEach(withdrawal => {
+        const statusColor = withdrawal.status === 'مكتمل' ? 'success' : 
+                           withdrawal.status === 'قيد المعالجة' ? 'warning' : 
+                           withdrawal.status === 'مرفوض' ? 'danger' : 'secondary';
+        
+        html += `
+            <div class="card-item withdrawal">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-person"></i> ${withdrawal.userName}</h6>
+                        <small class="text-muted">${withdrawal.userId}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="amount-negative">$${withdrawal.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-${statusColor} badge-status">${withdrawal.status}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${withdrawal.method}</small>
+                        <small class="text-muted">${withdrawal.address.substring(0, 12)}...</small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${withdrawal.date}</small>
+                        <small class="text-muted">${withdrawal.time}</small>
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-sm btn-outline-primary" onclick="showDetails('${withdrawal.id}', 'withdrawal')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">وقت المعالجة: ${withdrawal.processingTime} ساعة</small>
+                    <span class="badge bg-secondary">الرسوم: $${withdrawal.fee.toFixed(2)}</span>
+                    <small class="text-muted">${withdrawal.notes}</small>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function displayReferrals(referrals) {
+    const container = document.getElementById('referralsContainer');
+    if (!referrals || referrals.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">لا يوجد إحالات</div>`;
+        return;
+    }
+    
+    let html = `
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="stat-box">
+                    <div class="icon text-warning"><i class="bi bi-people-fill"></i></div>
+                    <div class="number">${referrals.length}</div>
+                    <div class="label">إجمالي الإحالات</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="stat-box">
+                    <div class="icon text-success"><i class="bi bi-coin"></i></div>
+                    <div class="number">$${referrals.reduce((sum, r) => sum + r.bonus, 0).toFixed(2)}</div>
+                    <div class="label">إجمالي المكافآت</div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="stat-box">
+                    <div class="icon text-info"><i class="bi bi-bar-chart"></i></div>
+                    <div class="number">${Math.round(referrals.reduce((sum, r) => sum + r.rewardPercentage, 0) / referrals.length)}%</div>
+                    <div class="label">متوسط العمولة</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    referrals.forEach(ref => {
+        const levelColors = ['primary', 'warning', 'info'];
+        html += `
+            <div class="card-item referral">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-person-check"></i> ${ref.referrerName}</h6>
+                        <small class="text-muted">المحيل</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h6><i class="bi bi-person-plus"></i> ${ref.referredName}</h6>
+                        <small class="text-muted">المُحال</small>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-${levelColors[ref.level - 1]}">المستوى ${ref.level}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="amount-positive">$${ref.bonus.toFixed(2)}</span>
+                        <small class="text-muted d-block">عمولة: ${ref.rewardPercentage}%</small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${ref.date}</small>
+                        <span class="badge bg-${ref.status === 'مكتمل' ? 'success' : 'warning'}">${ref.status}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function displayTransactions(transactions) {
+    const container = document.getElementById('transactionsContainer');
+    if (!transactions || transactions.length === 0) {
+        container.innerHTML = `<div class="alert alert-info">لا يوجد معاملات</div>`;
+        return;
+    }
+    
+    let html = '';
+    transactions.forEach(txn => {
+        const isPositive = txn.type === 'إيداع' || txn.type === 'مكافأة إحالة' || txn.type === 'ربح';
+        const amountClass = isPositive ? 'amount-positive' : 'amount-negative';
+        const icon = isPositive ? 'bi-arrow-down-circle' : 'bi-arrow-up-circle';
+        const color = isPositive ? 'success' : 'danger';
+        
+        html += `
+            <div class="card-item transaction">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <i class="bi ${icon} text-${color} me-2"></i>
+                        <strong>${txn.type}</strong>
+                    </div>
+                    <div class="col-md-2">
+                        <h6><i class="bi bi-person"></i> ${txn.userName}</h6>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="${amountClass}">$${txn.amount.toFixed(2)}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">الرصيد: $${txn.balanceAfter.toFixed(2)}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-muted d-block">${txn.date}</small>
+                        <small class="text-muted">${txn.time}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-${txn.status === 'مكتمل' ? 'success' : 'warning'}">${txn.status}</span>
+                        <small class="text-muted d-block">${txn.reference}</small>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">${txn.description}</small>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+function displaySystem(data) {
+    const container = document.getElementById('systemContainer');
+    
+    const html = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card-item">
+                    <h5><i class="bi bi-server"></i> حالة النظام</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <small class="text-muted">حالة الخادم</small>
+                            <div><span class="badge bg-success">${data.serverStatus}</span></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">وقت التشغيل</small>
+                            <div>${data.systemUptime}</div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">اتصالات قاعدة البيانات</small>
+                            <div>${data.databaseConnections}</div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">نسبة نجاح الكاش</small>
+                            <div>${data.cacheHitRate}%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card-item">
+                    <h5><i class="bi bi-clipboard-data"></i> إحصائيات النظام</h5>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <small class="text-muted">إجمالي المستخدمين</small>
+                            <div><strong>${data.totalUsers}</strong></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">المستخدمين النشطين</small>
+                            <div><strong>${data.activeUsers}</strong></div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">إجمالي الإيداعات</small>
+                            <div><strong>$${data.totalDeposits.toFixed(2)}</strong></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">إجمالي السحوبات</small>
+                            <div><strong>$${data.totalWithdrawals.toFixed(2)}</strong></div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <small class="text-muted">المعاملات المعلقة</small>
+                            <div><span class="badge bg-warning">${data.pendingDeposits} إيداع</span> <span class="badge bg-warning">${data.pendingWithdrawals} سحب</span></div>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">آخر نسخة احتياطية</small>
+                            <div>${data.lastBackup}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card-item">
+                    <h5><i class="bi bi-graph-up"></i> مؤشرات الأداء</h5>
+                    <div class="row">
+                        <div class="col-md-3 col-6">
+                            <small class="text-muted">متوسط الرصيد</small>
+                            <div><strong>$${data.averageBalance.toFixed(2)}</strong></div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <small class="text-muted">إجمالي الإحالات</small>
+                            <div><strong>${data.totalReferrals}</strong></div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <small class="text-muted">إجمالي المعاملات</small>
+                            <div><strong>${data.totalTransactions}</strong></div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <small class="text-muted">إجمالي الرسوم</small>
+                            <div><strong>$${data.totalFees.toFixed(2)}</strong></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
+// ==================== FILTER FUNCTIONS ====================
+
+function filterUsers() {
+    const search = document.getElementById('searchUsers').value.toLowerCase();
+    const status = document.getElementById('filterUserStatus').value;
+    
+    let filtered = allUsers.filter(user => {
+        const matchSearch = user.name.toLowerCase().includes(search) || 
+                           user.email.toLowerCase().includes(search) ||
+                           user.id.toLowerCase().includes(search);
+        const matchStatus = status === 'all' || user.status === status;
+        return matchSearch && matchStatus;
+    });
+    
+    displayUsers(filtered);
+}
+
+function filterDeposits() {
+    const search = document.getElementById('searchDeposits').value.toLowerCase();
+    const status = document.getElementById('filterDepositStatus').value;
+    const method = document.getElementById('filterDepositMethod').value;
+    
+    let filtered = allDeposits.filter(deposit => {
+        const matchSearch = deposit.userName.toLowerCase().includes(search) || 
+                           deposit.userId.toLowerCase().includes(search);
+        const matchStatus = status === 'all' || deposit.status === status;
+        const matchMethod = method === 'all' || deposit.method === method;
+        return matchSearch && matchStatus && matchMethod;
+    });
+    
+    displayDeposits(filtered);
+}
+
+function filterWithdrawals() {
+    const search = document.getElementById('searchWithdrawals').value.toLowerCase();
+    const status = document.getElementById('filterWithdrawalStatus').value;
+    const method = document.getElementById('filterWithdrawalMethod').value;
+    
+    let filtered = allWithdrawals.filter(withdrawal => {
+        const matchSearch = withdrawal.userName.toLowerCase().includes(search) || 
+                           withdrawal.userId.toLowerCase().includes(search);
+        const matchStatus = status === 'all' || withdrawal.status === status;
+        const matchMethod = method === 'all' || withdrawal.method === method;
+        return matchSearch && matchStatus && matchMethod;
+    });
+    
+    displayWithdrawals(filtered);
+}
+
+function filterTransactions() {
+    const search = document.getElementById('searchTransactions').value.toLowerCase();
+    const type = document.getElementById('filterTransactionType').value;
+    const date = document.getElementById('filterTransactionDate').value;
+    
+    let filtered = allTransactions.filter(txn => {
+        const matchSearch = txn.userName.toLowerCase().includes(search) || 
+                           txn.userId.toLowerCase().includes(search) ||
+                           txn.type.toLowerCase().includes(search);
+        const matchType = type === 'all' || txn.type === type;
+        const matchDate = !date || txn.date === date;
+        return matchSearch && matchType && matchDate;
+    });
+    
+    displayTransactions(filtered);
+}
+
+// ==================== UTILITY FUNCTIONS ====================
+
+function showDetails(id, type) {
+    let data;
+    switch(type) {
+        case 'deposit':
+            data = allDeposits.find(d => d.id === id);
+            break;
+        case 'withdrawal':
+            data = allWithdrawals.find(w => w.id === id);
+            break;
+        default:
+            return;
+    }
+    
+    if (!data) return;
+    
+    const details = Object.entries(data).map(([key, value]) => 
+        `<strong>${key}:</strong> ${typeof value === 'object' ? JSON.stringify(value) : value}`
+    ).join('<br>');
+    
+    alert(`📋 تفاصيل:\n\n${details}`);
+}
+
+function refreshData() {
+    // Re-generate data with some updates
+    const now = new Date();
+    allUsers.forEach(user => {
+        if (Math.random() > 0.7) {
+            user.balance = Math.floor(Math.random() * 50000) / 100;
+            user.lastLogin = now.toISOString().split('T')[0];
+        }
+    });
+    
+    // Update displays
+    displayUsers(allUsers);
+    displayDeposits(allDeposits);
+    displayWithdrawals(allWithdrawals);
+    displayReferrals(allReferrals);
+    displayTransactions(allTransactions);
+    displaySystem(systemData);
+    updateStats();
+}
+
+function updateStats() {
+    document.getElementById('totalUsers').textContent = allUsers.length;
+    document.getElementById('totalDeposits').textContent = `$${systemData.totalDeposits.toFixed(2)}`;
+    document.getElementById('totalWithdrawals').textContent = `$${systemData.totalWithdrawals.toFixed(2)}`;
+    document.getElementById('totalReferrals').textContent = allReferrals.length;
+}
+
+// ==================== INITIALIZATION ====================
+
+// Generate mock data
+generateMockData();
+
+// Display all data
+displayUsers(allUsers);
+displayDeposits(allDeposits);
+displayWithdrawals(allWithdrawals);
+displayReferrals(allReferrals);
+displayTransactions(allTransactions);
+displaySystem(systemData);
+updateStats();
+
+// Update statistics periodically
+setInterval(() => {
+    // Update some random values
+    const randomUser = allUsers[Math.floor(Math.random() * allUsers.length)];
+    if (randomUser) {
+        randomUser.balance = Math.floor(Math.random() * 50000) / 100;
+        displayUsers(allUsers);
+        updateStats();
+    }
+}, 30000);
+
+console.log('✅ نظام عرض Firebase الشامل يعمل');
+console.log(`📊 تم تحميل: ${allUsers.length} مستخدم, ${allDeposits.length} إيداع, ${allWithdrawals.length} سحب, ${allReferrals.length} إحالة, ${allTransactions.length} معاملة`);
+console.log('💡 استخدم الأزرار والفلاتر لعرض البيانات المطلوبة');
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
