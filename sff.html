@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عرض بيانات Firebase الحقيقية</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body{background:#f0f2f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;padding:20px}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:25px;border-radius:15px;margin-bottom:30px;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.header h1{font-weight:700}
+.nav-tabs .nav-link{color:#495057;font-weight:500;border:none;padding:12px 25px;border-radius:10px 10px 0 0;transition:all .3s}
+.nav-tabs .nav-link:hover{background:#e9ecef;color:#667eea}
+.nav-tabs .nav-link.active{background:#fff;color:#667eea;border-bottom:3px solid #667eea;font-weight:600}
+.tab-content{background:#fff;border-radius:0 15px 15px 15px;padding:25px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.card-item{background:#fff;border-radius:12px;padding:15px;margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,.08);transition:all .3s;border-right:4px solid #667eea}
+.card-item:hover{transform:translateY(-3px);box-shadow:0 5px 20px rgba(0,0,0,.15)}
+.card-item.deposit{border-right-color:#28a745}
+.card-item.withdrawal{border-right-color:#dc3545}
+.card-item.referral{border-right-color:#ffc107}
+.card-item.transaction{border-right-color:#17a2b8}
+.stat-box{background:#fff;padding:20px;border-radius:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.stat-box .icon{font-size:2.5rem;margin-bottom:10px}
+.stat-box .number{font-size:2rem;font-weight:bold;color:#2c3e50}
+.stat-box .label{color:#6c757d;font-size:.9rem}
+.firebase-config{background:#1e1e1e;color:#d4d4d4;padding:15px;border-radius:8px;font-family:'Courier New',monospace;font-size:12px;overflow-x:auto;margin-bottom:20px}
+.firebase-config .key{color:#9cdcfe}
+.firebase-config .value{color:#ce9178}
+.firebase-config .comment{color:#6a9955}
+.loading{text-align:center;padding:50px}
+.amount-positive{color:#28a745;font-weight:bold}
+.amount-negative{color:#dc3545;font-weight:bold}
+.search-box{position:relative}
+.search-box input{padding-right:40px}
+.search-box .search-icon{position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#6c757d}
+.badge-status{font-size:12px;padding:5px 12px;border-radius:20px}
+.collection-info{background:#e7f3ff;border-radius:8px;padding:10px 15px;margin-bottom:15px;border-left:4px solid #2196F3}
+.collection-info .badge{font-size:14px}
+.user-card{border-radius:18px;margin-bottom:28px;box-shadow:0 10px 30px rgba(102,126,234,.18);border:2px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#667eea,#f5c86b,#764ba2) border-box;overflow:hidden}
+.uc-head{background:linear-gradient(135deg,#1f2a63,#4a3b8c);color:#fff;padding:18px 22px;display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.uc-avatar{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#f5c86b,#e0a33e);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800;color:#3a2c00;border:3px solid rgba(255,255,255,.7);flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.uc-head .uc-name{font-size:1.15rem;font-weight:700;margin:0}
+.uc-head .uc-sub{font-size:.8rem;opacity:.85}
+.uc-body{padding:18px 22px}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.info-item{background:#f8f9ff;border-radius:10px;padding:8px 12px;border-right:3px solid #667eea}
+.info-item .k{font-size:11px;color:#6c757d;display:block;margin-bottom:2px}
+.info-item .v{font-weight:600;color:#2c3e50;word-break:break-all;font-size:13px}
+.req-box{margin-top:16px;background:#fbfbff;border:1px dashed #c9d2ff;border-radius:12px;padding:12px 15px}
+.req-box h6{color:#4a3b8c;font-weight:700;margin-bottom:10px}
+.req-line{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-radius:10px;margin-bottom:7px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.07);flex-wrap:wrap;gap:6px;border-right:4px solid #ccc}
+.req-line.rd{border-right-color:#28a745}
+.req-line.rw{border-right-color:#dc3545}
+.req-line small{color:#6c757d}
+@media (max-width:768px){.header h1{font-size:1.5rem}.stat-box .number{font-size:1.5rem}.uc-avatar{width:46px;height:46px;font-size:1.2rem}}
+</style>
+</head>
+<body>
+<div class="container-fluid">
+<div class="header">
+<div class="row align-items-center">
+<div class="col-md-8">
+<h1><i class="bi bi-fire me-2"></i>عرض بيانات Firebase الحقيقية</h1>
+<p class="mb-0">عرض جميع البيانات المخزنة فعليًا في قاعدة البيانات</p>
+</div>
+<div class="col-md-4 text-md-end">
+<span class="badge bg-success p-2 me-2"><i class="bi bi-database"></i> متصل</span>
+<span class="badge bg-primary p-2"><i class="bi bi-clock-history"></i> تحديث لحظي</span>
+</div>
+</div>
+</div>
+<div class="firebase-config">
+<span class="comment">// تكوين Firebase للاتصال بقاعدة البيانات الحقيقية</span><br>
+<span class="key">const</span> firebaseConfig = {<br>
+&nbsp;&nbsp;<span class="key">apiKey</span>: <span class="value">"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M"</span>,<br>
+&nbsp;&nbsp;<span class="key">authDomain</span>: <span class="value">"asse-app-16998.firebaseapp.com"</span>,<br>
+&nbsp;&nbsp;<span class="key">projectId</span>: <span class="value">"asse-app-16998"</span>,<br>
+&nbsp;&nbsp;<span class="key">storageBucket</span>: <span class="value">"asse-app-16998.firebasestorage.app"</span>,<br>
+&nbsp;&nbsp;<span class="key">messagingSenderId</span>: <span class="value">"835771799328"</span>,<br>
+&nbsp;&nbsp;<span class="key">appId</span>: <span class="value">"1:835771799328:web:b587a5da0cb129c2042945"</span><br>
+};
+</div>
+<div class="row mb-4">
+<div class="col-md-3 col-sm-6 mb-3"><div class="stat-box"><div class="icon text-primary"><i class="bi bi-people-fill"></i></div><div class="number" id="totalUsers">0</div><div class="label">إجمالي المستخدمين</div></div></div>
+<div class="col-md-3 col-sm-6 mb-3"><div class="stat-box"><div class="icon text-success"><i class="bi bi-arrow-down-circle-fill"></i></div><div class="number" id="totalDeposits">$0</div><div class="label">إجمالي الإيداعات</div></div></div>
+<div class="col-md-3 col-sm-6 mb-3"><div class="stat-box"><div class="icon text-danger"><i class="bi bi-arrow-up-circle-fill"></i></div><div class="number" id="totalWithdrawals">$0</div><div class="label">إجمالي السحوبات</div></div></div>
+<div class="col-md-3 col-sm-6 mb-3"><div class="stat-box"><div class="icon text-warning"><i class="bi bi-gift-fill"></i></div><div class="number" id="totalReferrals">0</div><div class="label">إجمالي الإحالات</div></div></div>
+</div>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+<li class="nav-item" role="presentation"><button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab"><i class="bi bi-people"></i> المستخدمين <span class="badge bg-primary" id="usersCount">0</span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#deposits" type="button" role="tab"><i class="bi bi-arrow-down-circle text-success"></i> الإيداعات <span class="badge bg-success" id="depositsCount">0</span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab"><i class="bi bi-arrow-up-circle text-danger"></i> السحوبات <span class="badge bg-danger" id="withdrawalsCount">0</span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="referrals-tab" data-bs-toggle="tab" data-bs-target="#referrals" type="button" role="tab"><i class="bi bi-tree text-warning"></i> الإحالات <span class="badge bg-warning text-dark" id="referralsCount">0</span></button></li>
+<li class="nav-item" role="presentation"><button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab"><i class="bi bi-gear text-secondary"></i> الإعدادات</button></li>
+</ul>
+<div class="tab-content" id="myTabContent">
+<div class="tab-pane fade show active" id="users" role="tabpanel">
+<div class="collection-info"><i class="bi bi-folder"></i> <strong>المجموعة:</strong> <code>users</code> <span class="badge bg-primary float-start" id="userCollectionInfo">جاري التحميل...</span></div>
+<div id="usersContainer"><div class="loading"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">جاري التحميل...</span></div><p class="mt-2">جاري جلب بيانات المستخدمين من Firebase...</p></div></div>
+</div>
+<div class="tab-pane fade" id="deposits" role="tabpanel">
+<div class="collection-info"><i class="bi bi-folder"></i> <strong>المجموعة:</strong> <code>deposits</code> أو <code>withdrawals</code> <span class="badge bg-success float-start" id="depositCollectionInfo">جاري التحميل...</span></div>
+<div id="depositsContainer"><div class="loading"><div class="spinner-border text-success" role="status"><span class="visually-hidden">جاري التحميل...</span></div><p class="mt-2">جاري جلب بيانات الإيداعات من Firebase...</p></div></div>
+</div>
+<div class="tab-pane fade" id="withdrawals" role="tabpanel">
+<div class="collection-info"><i class="bi bi-folder"></i> <strong>المجموعة:</strong> <code>withdrawals</code> <span class="badge bg-danger float-start" id="withdrawalCollectionInfo">جاري التحميل...</span></div>
+<div id="withdrawalsContainer"><div class="loading"><div class="spinner-border text-danger" role="status"><span class="visually-hidden">جاري التحميل...</span></div><p class="mt-2">جاري جلب بيانات السحوبات من Firebase...</p></div></div>
+</div>
+<div class="tab-pane fade" id="referrals" role="tabpanel">
+<div class="collection-info"><i class="bi bi-folder"></i> <strong>المجموعة:</strong> <code>referrals</code> <span class="badge bg-warning text-dark float-start" id="referralCollectionInfo">جاري التحميل...</span></div>
+<div id="referralsContainer"><div class="loading"><div class="spinner-border text-warning" role="status"><span class="visually-hidden">جاري التحميل...</span></div><p class="mt-2">جاري جلب بيانات الإحالات من Firebase...</p></div></div>
+</div>
+<div class="tab-pane fade" id="settings" role="tabpanel">
+<div class="collection-info"><i class="bi bi-person-badge"></i> <strong>حسابات المستخدمين وطلباتهم</strong> <span class="badge bg-secondary float-start" id="settingsAccountsInfo">جاري التحميل...</span></div>
+<div class="row g-2 mb-4">
+<div class="col-md-9"><div class="search-box"><i class="bi bi-search search-icon"></i><input type="text" id="userSearchInput" class="form-control form-control-lg" placeholder="ابحث برقم الهاتف أو ID المستخدم..." oninput="renderUserAccounts(this.value)"></div></div>
+<div class="col-md-3"><button class="btn btn-lg w-100 text-white" style="background:linear-gradient(135deg,#667eea,#764ba2)" onclick="renderUserAccounts(document.getElementById('userSearchInput').value)"><i class="bi bi-search me-1"></i> بحث</button></div>
+</div>
+<div id="settingsContainer"><div class="loading"><div class="spinner-border text-secondary" role="status"><span class="visually-hidden">جاري التحميل...</span></div><p class="mt-2">جاري تحميل حسابات المستخدمين...</p></div></div>
+</div>
+</div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",authDomain:"asse-app-16998.firebaseapp.com",projectId:"asse-app-16998",storageBucket:"asse-app-16998.firebasestorage.app",messagingSenderId:"835771799328",appId:"1:835771799328:web:b587a5da0cb129c2042945"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.firestore();
+let realUsers=[],realDeposits=[],realWithdrawals=[],realReferrals=[],realSettings={};
+function loadUsers(){
+const container=document.getElementById('usersContainer');
+const possibleCollections=['users','Users','user','User','accounts','members'];
+db.collection('users').get().then((snapshot)=>{
+if(!snapshot.empty){
+const users=[];snapshot.forEach((doc)=>{const data=doc.data();data.id=doc.id;users.push(data);});
+realUsers=users;displayUsers(users);updateStats();
+document.getElementById('userCollectionInfo').textContent=`✅ ${users.length} مستخدم`;
+document.getElementById('usersCount').textContent=users.length;
+}else{
+db.collection('settings').doc('users').get().then((doc)=>{
+if(doc.exists){
+const data=doc.data();const users=[];
+for(const[key,value]of Object.entries(data)){value.id=key;users.push(value);}
+realUsers=users;displayUsers(users);updateStats();
+document.getElementById('userCollectionInfo').textContent=`✅ ${users.length} مستخدم (من settings/users)`;
+document.getElementById('usersCount').textContent=users.length;
+}else{tryNextCollection(0);}
+}).catch(()=>tryNextCollection(0));
+}
+}).catch(()=>tryNextCollection(0));
+function tryNextCollection(index){
+if(index>=possibleCollections.length){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد مستخدمين</strong><br><small>لم يتم العثور على بيانات في مجموعات: ${possibleCollections.join(', ')}</small><br><br><button class="btn btn-primary btn-sm" onclick="loadUsers()"><i class="bi bi-arrow-clockwise"></i> إعادة المحاولة</button> <button class="btn btn-secondary btn-sm" onclick="showAllCollections()"><i class="bi bi-database"></i> عرض جميع المجموعات</button></div>`;
+document.getElementById('userCollectionInfo').textContent='❌ لم يتم العثور على مستخدمين';
+return;}
+const colName=possibleCollections[index];
+db.collection(colName).get().then((snapshot)=>{
+if(!snapshot.empty){
+const users=[];snapshot.forEach((doc)=>{const data=doc.data();data.id=doc.id;users.push(data);});
+realUsers=users;displayUsers(users);updateStats();
+document.getElementById('userCollectionInfo').textContent=`✅ ${users.length} مستخدم (من ${colName})`;
+document.getElementById('usersCount').textContent=users.length;
+}else{tryNextCollection(index+1);}
+}).catch(()=>tryNextCollection(index+1));
+}
+}
+function loadDeposits(){
+const container=document.getElementById('depositsContainer');
+const possibleCollections=['deposits','Deposits','deposit','payments','transactions'];
+let allDeposits=[];
+function tryCollection(index){
+if(index>=possibleCollections.length){
+if(allDeposits.length>0){
+realDeposits=allDeposits;displayDeposits(allDeposits);
+document.getElementById('depositCollectionInfo').textContent=`✅ ${allDeposits.length} إيداع`;
+document.getElementById('depositsCount').textContent=allDeposits.length;
+}else{
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد إيداعات</strong><br><small>لم يتم العثور على بيانات في المجموعات المتاحة</small><br><br><button class="btn btn-success btn-sm" onclick="loadDeposits()"><i class="bi bi-arrow-clockwise"></i> إعادة المحاولة</button></div>`;
+document.getElementById('depositCollectionInfo').textContent='❌ لا يوجد إيداعات';
+}return;}
+const colName=possibleCollections[index];
+db.collection(colName).get().then((snapshot)=>{
+if(!snapshot.empty){snapshot.forEach((doc)=>{const data=doc.data();data.id=doc.id;if(data.type==='deposit'||data.type==='إيداع'||data.amount||data.status||data.method){allDeposits.push(data);}});}
+tryCollection(index+1);
+}).catch(()=>tryCollection(index+1));
+}
+tryCollection(0);
+}
+function loadWithdrawals(){
+const container=document.getElementById('withdrawalsContainer');
+const possibleCollections=['withdrawals','Withdrawals','withdrawal','withdraw','payouts'];
+let allWithdrawals=[];
+function tryCollection(index){
+if(index>=possibleCollections.length){
+if(allWithdrawals.length>0){
+realWithdrawals=allWithdrawals;displayWithdrawals(allWithdrawals);
+document.getElementById('withdrawalCollectionInfo').textContent=`✅ ${allWithdrawals.length} سحب`;
+document.getElementById('withdrawalsCount').textContent=allWithdrawals.length;
+}else{
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد سحوبات</strong><br><br><button class="btn btn-danger btn-sm" onclick="loadWithdrawals()"><i class="bi bi-arrow-clockwise"></i> إعادة المحاولة</button></div>`;
+document.getElementById('withdrawalCollectionInfo').textContent='❌ لا يوجد سحوبات';
+}return;}
+const colName=possibleCollections[index];
+db.collection(colName).get().then((snapshot)=>{
+if(!snapshot.empty){snapshot.forEach((doc)=>{const data=doc.data();data.id=doc.id;if(data.type==='withdrawal'||data.type==='سحب'||data.amount||data.status||data.address){allWithdrawals.push(data);}});}
+tryCollection(index+1);
+}).catch(()=>tryCollection(index+1));
+}
+tryCollection(0);
+}
+function loadReferrals(){
+const container=document.getElementById('referralsContainer');
+const possibleCollections=['referrals','Referrals','referral','commissions','bonuses'];
+let allReferrals=[];
+function tryCollection(index){
+if(index>=possibleCollections.length){
+if(allReferrals.length>0){
+realReferrals=allReferrals;displayReferrals(allReferrals);
+document.getElementById('referralCollectionInfo').textContent=`✅ ${allReferrals.length} إحالة`;
+document.getElementById('referralsCount').textContent=allReferrals.length;
+}else{
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد إحالات</strong><br><br><button class="btn btn-warning btn-sm" onclick="loadReferrals()"><i class="bi bi-arrow-clockwise"></i> إعادة المحاولة</button></div>`;
+document.getElementById('referralCollectionInfo').textContent='❌ لا يوجد إحالات';
+}return;}
+const colName=possibleCollections[index];
+db.collection(colName).get().then((snapshot)=>{
+if(!snapshot.empty){snapshot.forEach((doc)=>{const data=doc.data();data.id=doc.id;allReferrals.push(data);});}
+tryCollection(index+1);
+}).catch(()=>tryCollection(index+1));
+}
+tryCollection(0);
+}
+function loadSettings(){renderUserAccounts(document.getElementById('userSearchInput')?document.getElementById('userSearchInput').value:'');}
+function stColor(s){s=String(s||'').toLowerCase();if(/مكتمل|completed|success|مقبول|approved|نجاح/.test(s))return'success';if(/انتظار|pending|معالجة|processing|قيد/.test(s))return'warning';if(/ملغي|cancelled|مرفوض|rejected|failed|فشل/.test(s))return'danger';return'secondary';}
+function getUserRequests(u){
+const keys=[u.id,u.uid,u.userId,u.email,u.emailAddress,u.phone,u.phoneNumber,u.mobile,u.name,u.username].filter(v=>v!==undefined&&v!==null&&v!=='').map(String);
+const match=(r)=>{const rf=[r.userId,r.user,r.uid,r.userEmail,r.email,r.userName,r.phone,r.phoneNumber].filter(v=>v!==undefined&&v!==null&&v!=='').map(String);return rf.some(x=>keys.includes(x));};
+return{deposits:realDeposits.filter(match),withdrawals:realWithdrawals.filter(match)};
+}
+function reqLine(r,type){
+const amt=r.amount||r.value||r.total||0;
+const date=r.date||r.createdAt||r.timestamp||'';
+const method=r.method||r.paymentMethod||r.network||'';
+return`<div class="req-line ${type==='d'?'rd':'rw'}"><div><i class="bi ${type==='d'?'bi-arrow-down-circle-fill text-success':'bi-arrow-up-circle-fill text-danger'} me-1"></i><span class="${type==='d'?'amount-positive':'amount-negative'}">$${typeof amt==='number'?amt.toFixed(2):amt}</span><small class="d-block">${method} ${r.txHash||r.transactionId||r.address||''}</small></div><div class="text-end"><span class="badge bg-${stColor(r.status)} badge-status">${r.status||'غير محدد'}</span><small class="d-block">${date}</small></div></div>`;
+}
+function renderUserAccounts(q){
+const container=document.getElementById('settingsContainer');
+if(!container)return;
+q=(q||'').trim().toLowerCase();
+let users=[...realUsers].sort((a,b)=>((b.balance||b.wallet||b.accountBalance||0)-(a.balance||a.wallet||a.accountBalance||0)));
+if(q)users=users.filter(u=>String(u.phone||u.phoneNumber||u.mobile||'').toLowerCase().includes(q)||String(u.id||u.uid||'').toLowerCase().includes(q));
+const infoEl=document.getElementById('settingsAccountsInfo');
+if(infoEl)infoEl.textContent=`👤 ${users.length} حساب`;
+if(!users||users.length===0){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>${q?'لا توجد نتائج مطابقة للبحث':'لا يوجد مستخدمين بعد'}</strong><br><small>تأكد من تحميل بيانات المستخدمين أولاً أو أعد المحاولة</small><br><br><button class="btn btn-secondary btn-sm" onclick="refreshAllData()"><i class="bi bi-arrow-clockwise"></i> تحديث البيانات</button></div>`;
+return;}
+let html='';
+users.forEach((u,i)=>{
+const name=u.name||u.username||u.fullName||u.displayName||`مستخدم ${i+1}`;
+const email=u.email||u.emailAddress||'لا يوجد بريد';
+const phone=u.phone||u.phoneNumber||u.mobile||'لا يوجد رقم';
+const balance=u.balance||u.wallet||u.accountBalance||0;
+const status=u.status||'غير محدد';
+const initial=String(name).trim().charAt(0)||'؟';
+const{deposits,withdrawals}=getUserRequests(u);
+let infoHtml='';
+Object.keys(u).forEach(k=>{
+if(['name','username','fullName','displayName'].includes(k))return;
+let v=u[k];
+if(typeof v==='object'&&v!==null)v=JSON.stringify(v);
+infoHtml+=`<div class="info-item"><span class="k">${k}</span><span class="v">${v===undefined||v===null||v===''?'—':v}</span></div>`;
+});
+html+=`<div class="user-card">
+<div class="uc-head"><div class="uc-avatar">${initial}</div><div style="flex:1"><p class="uc-name"><i class="bi bi-person-check-fill me-1"></i>${name}</p><div class="uc-sub"><i class="bi bi-envelope me-1"></i>${email} &nbsp;|&nbsp; <i class="bi bi-telephone me-1"></i>${phone} &nbsp;|&nbsp; <i class="bi bi-key me-1"></i>ID: <code style="color:#ffe9a8">${u.id||u.uid||'N/A'}</code></div></div><div class="text-end"><div style="font-size:1.4rem;font-weight:800;color:#f5c86b">$${typeof balance==='number'?balance.toFixed(2):balance}</div><span class="badge bg-${stColor(status)} badge-status">${status}</span></div></div>
+<div class="uc-body">
+<h6 class="mb-2" style="color:#4a3b8c;font-weight:700"><i class="bi bi-card-list me-1"></i>جميع معلومات المستخدم</h6>
+<div class="info-grid">${infoHtml}</div>
+<div class="req-box"><h6><i class="bi bi-inbox-fill me-1"></i>طلبات المستخدم (${deposits.length+withdrawals.length})</h6>
+${deposits.length+withdrawals.length===0?'<div class="text-muted" style="font-size:13px"><i class="bi bi-inbox me-1"></i>لا توجد طلبات لهذا المستخدم</div>':''}
+${deposits.map(d=>reqLine(d,'d')).join('')}
+${withdrawals.map(w=>reqLine(w,'w')).join('')}
+</div>
+</div></div>`;
+});
+container.innerHTML=html;
+}
+function displayUsers(users){
+const container=document.getElementById('usersContainer');
+if(!users||users.length===0){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد مستخدمين</strong><br><small>قاعدة البيانات فارغة</small></div>`;
+return;}
+let html='<div class="row">';
+users.forEach((user,index)=>{
+const statusColor=user.status==='نشط'||user.status==='active'?'success':user.status==='قيد الانتظار'||user.status==='pending'?'warning':user.status==='محظور'||user.status==='blocked'?'danger':'secondary';
+const displayName=user.name||user.username||user.fullName||user.displayName||`مستخدم ${index+1}`;
+const displayEmail=user.email||user.emailAddress||'لا يوجد بريد';
+const displayBalance=user.balance||user.wallet||user.accountBalance||0;
+html+=`<div class="col-lg-4 col-md-6"><div class="card-item"><div class="d-flex justify-content-between align-items-start"><div><h5><i class="bi bi-person-circle me-2"></i>${displayName}</h5><small class="text-muted">${displayEmail}</small></div><span class="badge bg-${statusColor} badge-status">${user.status||'غير محدد'}</span></div><div class="mt-3"><span class="balance ${displayBalance>1000?'text-success':'text-primary'}">$${typeof displayBalance==='number'?displayBalance.toFixed(2):displayBalance}</span><small class="text-muted d-block">الرصيد</small></div><div class="row mt-3"><div class="col-6"><small class="text-muted">المعرف</small><div><code>${user.id||user.uid||'N/A'}</code></div></div><div class="col-6"><small class="text-muted">تاريخ التسجيل</small><div>${user.createdAt||user.joinDate||user.registeredAt||'غير معروف'}</div></div></div><div class="mt-2"><small class="text-muted">الحقول المتاحة:</small><div>${Object.keys(user).filter(k=>!['id','name','email','balance','status','createdAt','joinDate','registeredAt']).slice(0,3).map(k=>`<span class="badge bg-secondary me-1">${k}</span>`).join('')}${Object.keys(user).length>4?`<span class="badge bg-secondary">+${Object.keys(user).length-4}</span>`:''}</div></div></div></div>`;
+});
+html+='</div>';
+container.innerHTML=html;
+renderUserAccounts(document.getElementById('userSearchInput')?document.getElementById('userSearchInput').value:'');
+}
+function displayDeposits(deposits){
+const container=document.getElementById('depositsContainer');
+if(!deposits||deposits.length===0){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد إيداعات</strong><br><small>لم يتم العثور على أي عمليات إيداع</small></div>`;
+return;}
+let html='';
+deposits.forEach((deposit,index)=>{
+const statusColor=deposit.status==='مكتمل'||deposit.status==='completed'?'success':deposit.status==='قيد المعالجة'||deposit.status==='processing'?'warning':deposit.status==='ملغي'||deposit.status==='cancelled'?'danger':'secondary';
+const displayAmount=deposit.amount||deposit.value||deposit.total||0;
+const displayMethod=deposit.method||deposit.paymentMethod||deposit.network||'غير محدد';
+const displayDate=deposit.date||deposit.createdAt||deposit.timestamp||'غير معروف';
+html+=`<div class="card-item deposit"><div class="row align-items-center"><div class="col-md-3"><h6><i class="bi bi-person"></i> ${deposit.userName||deposit.userId||deposit.user||'مستخدم'}</h6><small class="text-muted">${deposit.id||`#${index+1}`}</small></div><div class="col-md-2"><span class="amount-positive">$${typeof displayAmount==='number'?displayAmount.toFixed(2):displayAmount}</span></div><div class="col-md-2"><span class="badge bg-${statusColor} badge-status">${deposit.status||'غير محدد'}</span></div><div class="col-md-3"><small class="text-muted d-block">${displayMethod}</small><small class="text-muted">${deposit.txHash||deposit.transactionId||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${displayDate}</small></div></div><div class="mt-2">${Object.keys(deposit).filter(k=>!['id','userName','userId','user','amount','value','total','status','method','paymentMethod','network','date','createdAt','timestamp','txHash','transactionId']).slice(0,2).map(k=>`<span class="badge bg-light text-dark me-1">${k}: ${typeof deposit[k]==='object'?JSON.stringify(deposit[k]):deposit[k]}</span>`).join('')}</div></div>`;
+});
+container.innerHTML=html;
+updateStats();
+renderUserAccounts(document.getElementById('userSearchInput')?document.getElementById('userSearchInput').value:'');
+}
+function displayWithdrawals(withdrawals){
+const container=document.getElementById('withdrawalsContainer');
+if(!withdrawals||withdrawals.length===0){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد سحوبات</strong></div>`;
+return;}
+let html='';
+withdrawals.forEach((withdrawal,index)=>{
+const statusColor=withdrawal.status==='مكتمل'||withdrawal.status==='completed'?'success':withdrawal.status==='قيد المعالجة'||withdrawal.status==='processing'?'warning':withdrawal.status==='مرفوض'||withdrawal.status==='rejected'?'danger':'secondary';
+const displayAmount=withdrawal.amount||withdrawal.value||withdrawal.total||0;
+const displayMethod=withdrawal.method||withdrawal.paymentMethod||withdrawal.network||'غير محدد';
+const displayDate=withdrawal.date||withdrawal.createdAt||withdrawal.timestamp||'غير معروف';
+html+=`<div class="card-item withdrawal"><div class="row align-items-center"><div class="col-md-3"><h6><i class="bi bi-person"></i> ${withdrawal.userName||withdrawal.userId||withdrawal.user||'مستخدم'}</h6><small class="text-muted">${withdrawal.id||`#${index+1}`}</small></div><div class="col-md-2"><span class="amount-negative">$${typeof displayAmount==='number'?displayAmount.toFixed(2):displayAmount}</span></div><div class="col-md-2"><span class="badge bg-${statusColor} badge-status">${withdrawal.status||'غير محدد'}</span></div><div class="col-md-3"><small class="text-muted d-block">${displayMethod}</small><small class="text-muted">${withdrawal.address||withdrawal.walletAddress||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${displayDate}</small></div></div></div>`;
+});
+container.innerHTML=html;
+updateStats();
+renderUserAccounts(document.getElementById('userSearchInput')?document.getElementById('userSearchInput').value:'');
+}
+function displayReferrals(referrals){
+const container=document.getElementById('referralsContainer');
+if(!referrals||referrals.length===0){
+container.innerHTML=`<div class="alert alert-info"><i class="bi bi-info-circle me-2"></i><strong>لا يوجد إحالات</strong></div>`;
+return;}
+let html='';
+referrals.forEach((ref,index)=>{
+html+=`<div class="card-item referral"><div class="row align-items-center"><div class="col-md-3"><h6><i class="bi bi-person-check"></i> ${ref.referrer||ref.referrerName||'محيل'}</h6><small class="text-muted">${ref.referrerId||''}</small></div><div class="col-md-3"><h6><i class="bi bi-person-plus"></i> ${ref.referred||ref.referredName||'مُحال'}</h6><small class="text-muted">${ref.referredId||''}</small></div><div class="col-md-2"><span class="badge bg-primary">المستوى ${ref.level||1}</span></div><div class="col-md-2"><span class="amount-positive">$${ref.bonus||ref.commission||ref.amount||0}</span></div><div class="col-md-2"><small class="text-muted d-block">${ref.date||ref.createdAt||'غير معروف'}</small></div></div></div>`;
+});
+container.innerHTML=html;
+}
+function displaySettings(settings){renderUserAccounts(document.getElementById('userSearchInput')?document.getElementById('userSearchInput').value:'');}
+function updateStats(){
+document.getElementById('totalUsers').textContent=realUsers.length;
+const totalDeposits=realDeposits.reduce((sum,d)=>sum+(d.amount||d.value||0),0);
+const totalWithdrawals=realWithdrawals.reduce((sum,w)=>sum+(w.amount||w.value||0),0);
+document.getElementById('totalDeposits').textContent=`$${totalDeposits.toFixed(2)}`;
+document.getElementById('totalWithdrawals').textContent=`$${totalWithdrawals.toFixed(2)}`;
+document.getElementById('totalReferrals').textContent=realReferrals.length;
+}
+function showAllCollections(){
+db.listCollections().then((collections)=>{
+const names=collections.map(col=>col.id).join(', ');
+alert(`📂 المجموعات المتاحة في قاعدة البيانات:\n\n${names||'لا توجد مجموعات'}`);
+}).catch((error)=>{alert(`❌ خطأ في جلب المجموعات: ${error.message}`);});
+}
+function refreshAllData(){loadUsers();loadDeposits();loadWithdrawals();loadReferrals();loadSettings();}
+document.addEventListener('DOMContentLoaded',function(){refreshAllData();});
+setInterval(refreshAllData,60000);
+console.log('✅ نظام عرض بيانات Firebase الحقيقية يعمل');
+console.log('💡 استخدم refreshAllData() لتحديث جميع البيانات');
+console.log('💡 استخدم showAllCollections() لعرض جميع المجموعات');
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
