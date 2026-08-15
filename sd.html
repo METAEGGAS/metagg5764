@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين والطلبات 🔥</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui; padding: 20px; }
+        .glass-card { background: rgba(255,255,255,0.75); backdrop-filter: blur(8px); border-radius: 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.08); padding: 24px; border: 1px solid rgba(255,255,255,0.6); transition: all 0.2s; }
+        .header-gradient { background: linear-gradient(145deg, #0b1120, #1a2639); color: white; border-radius: 28px; padding: 28px 32px; box-shadow: 0 8px 30px rgba(0,20,50,0.3); }
+        .stat-box { background: white; border-radius: 20px; padding: 18px 12px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #eee; transition: 0.2s; }
+        .stat-box:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.05); }
+        .user-master-card { background: white; border-radius: 28px; padding: 0; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.03); margin-bottom: 28px; transition: 0.2s; }
+        .user-master-card:hover { box-shadow: 0 16px 48px rgba(0,0,0,0.08); }
+        .user-profile-header { background: linear-gradient(145deg, #f8faff, #eef2f8); padding: 28px 28px 20px; border-bottom: 1px solid #e9edf4; }
+        .user-avatar-lg { width: 72px; height: 72px; background: linear-gradient(135deg, #6c7ae0, #a26cdb); border-radius: 24px; display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 600; box-shadow: 0 6px 16px rgba(108,122,224,0.25); }
+        .user-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px 24px; background: #f9fbfe; padding: 16px 28px; border-bottom: 1px solid #eef2f8; }
+        .user-info-item { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+        .user-info-item .label { color: #6b7a8f; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.3px; text-transform: uppercase; }
+        .user-info-item .value { font-weight: 600; color: #0b1a2e; font-size: 0.95rem; word-break: break-word; }
+        .requests-section { padding: 16px 28px 24px; background: white; }
+        .request-item { background: #f8fafc; border-radius: 18px; padding: 14px 18px; margin-bottom: 10px; border-right: 4px solid #6c7ae0; transition: 0.15s; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+        .request-item:hover { background: #f1f5fe; }
+        .request-badge { font-size: 0.7rem; padding: 4px 12px; border-radius: 40px; font-weight: 600; }
+        .search-box-custom { position: relative; }
+        .search-box-custom input { padding-right: 44px; border-radius: 40px; border: 1px solid #dce1ea; background: #f8fafc; height: 48px; font-size: 0.95rem; }
+        .search-box-custom i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #7a8aa0; font-size: 1.1rem; }
+        .btn-outline-soft { border-radius: 40px; border: 1px solid #dce1ea; padding: 8px 22px; color: #1f2a3e; background: white; }
+        .btn-outline-soft:hover { background: #f0f4fe; border-color: #6c7ae0; }
+        .badge-soft { background: #eef2f8; color: #1f2a3e; font-weight: 500; padding: 6px 14px; border-radius: 40px; }
+        .firebase-config { background: #131c2b; color: #cbd5e1; padding: 14px 20px; border-radius: 20px; font-size: 12px; overflow-x: auto; margin-bottom: 24px; border: 1px solid #2a3a52; }
+        .firebase-config .key { color: #93c5fd; }
+        .firebase-config .value { color: #fcd34d; }
+        .firebase-config .comment { color: #6b8c9e; }
+        .empty-state { padding: 40px 20px; text-align: center; color: #6b7a8f; }
+        .tab-custom .nav-link { border-radius: 40px; padding: 8px 24px; margin-left: 6px; font-weight: 500; color: #3a4a60; border: 1px solid transparent; }
+        .tab-custom .nav-link.active { background: white; border-color: #dce1ea; box-shadow: 0 2px 8px rgba(0,0,0,0.02); color: #0b1a2e; font-weight: 600; }
+        .tab-custom .nav-link:hover { background: rgba(255,255,255,0.5); }
+        .amount-positive { color: #16a34a; font-weight: 700; }
+        .amount-negative { color: #dc2626; font-weight: 700; }
+        @media (max-width: 640px) { .user-info-grid { grid-template-columns: 1fr; } .header-gradient h1 { font-size: 1.6rem; } }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="header-gradient d-flex flex-wrap align-items-center justify-content-between mb-4">
+        <div><h1 class="fw-bold mb-0"><i class="bi bi-fire me-2"></i>Firebase <span style="font-weight:300;">|</span> المستخدمين والطلبات</h1><small class="opacity-75">بيانات حقيقية · تحديث لحظي</small></div>
+        <div><span class="badge bg-success bg-opacity-25 text-white p-2 px-3 me-2"><i class="bi bi-database"></i> متصل</span><span class="badge bg-primary bg-opacity-25 text-white p-2 px-3"><i class="bi bi-arrow-repeat"></i> 60s</span></div>
+    </div>
+
+    <!-- Firebase Config (مضغوط) -->
+    <div class="firebase-config"><span class="comment">// config</span> <span class="key">apiKey</span>:<span class="value">"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M"</span> <span class="comment">|</span> <span class="key">project</span>:<span class="value">"asse-app-16998"</span></div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3"><div class="stat-box"><i class="bi bi-people-fill fs-2 text-primary"></i><div class="number fs-3 fw-bold" id="totalUsers">0</div><div class="label text-muted small">المستخدمين</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-box"><i class="bi bi-arrow-down-circle-fill fs-2 text-success"></i><div class="number fs-3 fw-bold" id="totalDeposits">$0</div><div class="label text-muted small">إيداعات</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-box"><i class="bi bi-arrow-up-circle-fill fs-2 text-danger"></i><div class="number fs-3 fw-bold" id="totalWithdrawals">$0</div><div class="label text-muted small">سحوبات</div></div></div>
+        <div class="col-6 col-md-3"><div class="stat-box"><i class="bi bi-gift-fill fs-2 text-warning"></i><div class="number fs-3 fw-bold" id="totalReferrals">0</div><div class="label text-muted small">إحالات</div></div></div>
+    </div>
+
+    <!-- Search + Refresh -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
+        <div class="search-box-custom flex-grow-1" style="max-width:320px;"><i class="bi bi-search"></i><input type="text" id="searchInput" class="form-control" placeholder="بحث بالرقم أو المعرف ..."></div>
+        <button class="btn btn-outline-soft" onclick="refreshAllData()"><i class="bi bi-arrow-clockwise"></i> تحديث</button>
+        <button class="btn btn-outline-soft" onclick="showAllCollections()"><i class="bi bi-database"></i> المجموعات</button>
+        <span class="badge-soft ms-auto"><i class="bi bi-funnel"></i> <span id="resultCount">0</span> مستخدم</span>
+    </div>
+
+    <!-- Tab: الإعدادات (حسابات المستخدمين) + الطلبات -->
+    <ul class="nav nav-tabs tab-custom border-0" id="myTab" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="users-tab" data-bs-toggle="tab" data-bs-target="#usersTab" type="button"><i class="bi bi-people"></i> الحسابات <span class="badge bg-primary rounded-pill ms-1" id="usersCount">0</span></button></li>
+        <li class="nav-item"><button class="nav-link" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#depositsTab" type="button"><i class="bi bi-arrow-down-circle text-success"></i> الإيداعات</button></li>
+        <li class="nav-item"><button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawalsTab" type="button"><i class="bi bi-arrow-up-circle text-danger"></i> السحوبات</button></li>
+        <li class="nav-item"><button class="nav-link" id="referrals-tab" data-bs-toggle="tab" data-bs-target="#referralsTab" type="button"><i class="bi bi-tree text-warning"></i> الإحالات</button></li>
+    </ul>
+
+    <div class="tab-content mt-3" id="myTabContent">
+        <!-- المستخدمين (الاعدادات + طلبات كل مستخدم) -->
+        <div class="tab-pane fade show active" id="usersTab" role="tabpanel">
+            <div id="usersContainer"><div class="text-center p-5"><div class="spinner-border text-primary"></div><p class="mt-2">جاري تحميل المستخدمين...</p></div></div>
+        </div>
+        <!-- باقي التبويبات (مضغوطة) -->
+        <div class="tab-pane fade" id="depositsTab"><div id="depositsContainer"><div class="text-center p-5"><div class="spinner-border text-success"></div></div></div></div>
+        <div class="tab-pane fade" id="withdrawalsTab"><div id="withdrawalsContainer"><div class="text-center p-5"><div class="spinner-border text-danger"></div></div></div></div>
+        <div class="tab-pane fade" id="referralsTab"><div id="referralsContainer"><div class="text-center p-5"><div class="spinner-border text-warning"></div></div></div></div>
+    </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script>
+// Firebase Config
+const firebaseConfig = { apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M", authDomain:"asse-app-16998.firebaseapp.com", projectId:"asse-app-16998", storageBucket:"asse-app-16998.firebasestorage.app", messagingSenderId:"835771799328", appId:"1:835771799328:web:b587a5da0cb129c2042945" };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let realUsers=[], realDeposits=[], realWithdrawals=[], realReferrals=[], allRequests=[];
+
+// ========== تحميل المستخدمين + طلباتهم ==========
+async function loadUsers() {
+    const container = document.getElementById('usersContainer');
+    try {
+        const snapshot = await db.collection('users').get();
+        if (!snapshot.empty) {
+            realUsers = []; snapshot.forEach(doc=>{ let d=doc.data(); d.id=doc.id; realUsers.push(d); });
+        } else {
+            // محاولة settings/users
+            const doc = await db.collection('settings').doc('users').get();
+            if(doc.exists){ let data=doc.data(); realUsers=Object.entries(data).map(([k,v])=>({...v,id:k})); }
+            else { realUsers=[]; }
+        }
+        // تحميل الطلبات من deposits+withdrawals
+        await loadAllRequests();
+        renderUsers(realUsers);
+        document.getElementById('usersCount').textContent = realUsers.length;
+        document.getElementById('totalUsers').textContent = realUsers.length;
+    } catch(e) { container.innerHTML='<div class="alert alert-warning">⚠️ خطأ في التحميل</div>'; }
+}
+
+// تحميل الإيداعات والسحوبات لتكون طلبات
+async function loadAllRequests() {
+    allRequests=[];
+    try {
+        const depSnap = await db.collection('deposits').get();
+        depSnap.forEach(d=>{ let data=d.data(); data.id=d.id; data._type='إيداع'; data._status=data.status||'قيد'; allRequests.push(data); });
+    } catch(e){}
+    try {
+        const witSnap = await db.collection('withdrawals').get();
+        witSnap.forEach(d=>{ let data=d.data(); data.id=d.id; data._type='سحب'; data._status=data.status||'قيد'; allRequests.push(data); });
+    } catch(e){}
+    // كذلك من collections بديلة
+    try { const d2=await db.collection('payments').get(); d2.forEach(d=>{ let data=d.data(); data.id=d.id; data._type='إيداع'; data._status=data.status||'قيد'; allRequests.push(data); }); } catch(e){}
+    try { const w2=await db.collection('payouts').get(); w2.forEach(d=>{ let data=d.data(); data.id=d.id; data._type='سحب'; data._status=data.status||'قيد'; allRequests.push(data); }); } catch(e){}
+}
+
+// عرض المستخدمين مع طلباتهم (تصميم فخم)
+function renderUsers(users) {
+    const container = document.getElementById('usersContainer');
+    if(!users || users.length===0){ container.innerHTML=`<div class="glass-card text-center py-5"><i class="bi bi-people fs-1 text-muted"></i><p class="mt-3">لا يوجد مستخدمين</p></div>`; return; }
+
+    let html='<div class="row g-4">';
+    users.forEach((user, idx)=>{
+        // استخراج الطلبات الخاصة بهذا المستخدم (حسب userId / email / name)
+        const userId = user.id || user.uid || '';
+        const userEmail = user.email || user.emailAddress || '';
+        const userName = user.name || user.username || user.displayName || user.fullName || `مستخدم ${idx+1}`;
+        // طلبات مرتبطة
+        const userRequests = allRequests.filter(r => 
+            r.userId === userId || r.user === userId || r.userName === userName || r.email === userEmail || r.userId === user.uid
+        );
+        // إحصاء
+        const depCount = userRequests.filter(r=> r._type==='إيداع').length;
+        const witCount = userRequests.filter(r=> r._type==='سحب').length;
+        const totalReq = userRequests.length;
+
+        html+=`<div class="col-12"><div class="user-master-card">`;
+        // header
+        html+=`<div class="user-profile-header d-flex flex-wrap align-items-center gap-3">
+            <div class="user-avatar-lg">${userName.charAt(0).toUpperCase()}</div>
+            <div><h4 class="fw-bold mb-1">${userName}</h4><div class="d-flex flex-wrap gap-2"><span class="badge bg-light text-dark">${user.id||'N/A'}</span><span class="badge bg-${user.status==='نشط'?'success':user.status==='قيد'?'warning':'secondary'}">${user.status||'نشط'}</span></div></div>
+            <div class="ms-auto d-flex gap-3"><span class="badge-soft"><i class="bi bi-arrow-down-circle text-success"></i> ${depCount} إيداع</span><span class="badge-soft"><i class="bi bi-arrow-up-circle text-danger"></i> ${witCount} سحب</span><span class="badge-soft"><i class="bi bi-files"></i> ${totalReq} طلب</span></div>
+        </div>`;
+        // معلومات شاملة (بريد, رقم, رصيد, تاريخ)
+        html+=`<div class="user-info-grid">
+            <div class="user-info-item"><span class="label">📧 البريد</span><span class="value">${userEmail||'غير متوفر'}</span></div>
+            <div class="user-info-item"><span class="label">📱 الهاتف</span><span class="value">${user.phone||user.mobile||user.phoneNumber||'غير متوفر'}</span></div>
+            <div class="user-info-item"><span class="label">💰 الرصيد</span><span class="value">$${user.balance||user.wallet||user.accountBalance||0}</span></div>
+            <div class="user-info-item"><span class="label">📅 تاريخ التسجيل</span><span class="value">${user.createdAt||user.joinDate||user.registeredAt||'غير معروف'}</span></div>
+            <div class="user-info-item"><span class="label">🆔 المعرف</span><span class="value"><code>${user.id||user.uid||'N/A'}</code></span></div>
+            <div class="user-info-item"><span class="label">🏷️ الحالة</span><span class="value">${user.status||'نشط'}</span></div>
+        </div>`;
+        // الطلبات (أسفل نفس المربع)
+        html+=`<div class="requests-section"><div class="d-flex justify-content-between align-items-center mb-2"><span class="fw-semibold"><i class="bi bi-list-ul"></i> طلبات ${userName}</span><span class="badge bg-light text-dark">${userRequests.length}</span></div>`;
+        if(userRequests.length===0){ html+=`<div class="text-muted small">لا توجد طلبات لهذا المستخدم</div>`; }
+        else {
+            userRequests.slice(0,10).forEach(req=>{
+                const statusColor = req._status==='مكتمل'||req._status==='completed'?'success':req._status==='قيد'||req._status==='processing'?'warning':req._status==='ملغي'?'danger':'secondary';
+                html+=`<div class="request-item"><span><i class="bi bi-${req._type==='إيداع'?'arrow-down-circle text-success':'arrow-up-circle text-danger'}"></i> ${req._type}</span>
+                <span><strong>$${req.amount||req.value||0}</strong></span>
+                <span class="request-badge bg-${statusColor} bg-opacity-10 text-${statusColor}">${req._status}</span>
+                <span class="text-muted small">${req.method||req.paymentMethod||req.network||''}</span>
+                <span class="text-muted small">${req.date||req.createdAt||''}</span>
+                <span class="text-muted small"><code>${req.id?.slice(0,6)||''}</code></span></div>`;
+            });
+            if(userRequests.length>10) html+=`<div class="text-muted small">+ ${userRequests.length-10} طلب إضافي</div>`;
+        }
+        html+=`</div></div></div>`;
+    });
+    html+='</div>';
+    container.innerHTML=html;
+    document.getElementById('resultCount').textContent = users.length;
+    // تطبيق البحث
+    applySearch();
+}
+
+// ========== بحث بالرقم أو المعرف ==========
+function applySearch() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if(!q) { renderUsers(realUsers); return; }
+    const filtered = realUsers.filter(u => 
+        (u.id && u.id.toLowerCase().includes(q)) || 
+        (u.uid && u.uid.toLowerCase().includes(q)) ||
+        (u.phone && u.phone.includes(q)) ||
+        (u.mobile && u.mobile.includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.name && u.name.toLowerCase().includes(q))
+    );
+    renderUsers(filtered);
+}
+
+// ========== باقي الوظائف (مضغوطة) ==========
+function displayDeposits(d){ let c=document.getElementById('depositsContainer'); if(!d||d.length===0){c.innerHTML='<div class="alert alert-info">لا يوجد إيداعات</div>';return;} let h=''; d.forEach(r=>{ h+=`<div class="card-item deposit p-3 mb-2 bg-white rounded-3 shadow-sm border-start border-4 border-success"><div class="row"><div class="col-4"><b>${r.userName||r.userId||'مستخدم'}</b></div><div class="col-3"><span class="amount-positive">$${r.amount||0}</span></div><div class="col-3"><span class="badge bg-${r.status==='مكتمل'?'success':'warning'}">${r.status||'قيد'}</span></div><div class="col-2"><small>${r.date||''}</small></div></div></div>`; }); c.innerHTML=h; }
+function displayWithdrawals(d){ let c=document.getElementById('withdrawalsContainer'); if(!d||d.length===0){c.innerHTML='<div class="alert alert-info">لا يوجد سحوبات</div>';return;} let h=''; d.forEach(r=>{ h+=`<div class="card-item withdrawal p-3 mb-2 bg-white rounded-3 shadow-sm border-start border-4 border-danger"><div class="row"><div class="col-4"><b>${r.userName||r.userId||'مستخدم'}</b></div><div class="col-3"><span class="amount-negative">$${r.amount||0}</span></div><div class="col-3"><span class="badge bg-${r.status==='مكتمل'?'success':'warning'}">${r.status||'قيد'}</span></div><div class="col-2"><small>${r.date||''}</small></div></div></div>`; }); c.innerHTML=h; }
+function displayReferrals(d){ let c=document.getElementById('referralsContainer'); if(!d||d.length===0){c.innerHTML='<div class="alert alert-info">لا يوجد إحالات</div>';return;} let h=''; d.forEach(r=>{ h+=`<div class="card-item referral p-2 mb-1 bg-white rounded-3"><div class="row"><div class="col-4">${r.referrer||'محيل'}</div><div class="col-4">${r.referred||'مُحال'}</div><div class="col-2">$${r.bonus||0}</div><div class="col-2"><small>${r.date||''}</small></div></div></div>`; }); c.innerHTML=h; }
+
+async function loadDeposits(){ try{ const snap=await db.collection('deposits').get(); let arr=[]; snap.forEach(d=>{let data=d.data();data.id=d.id; arr.push(data);}); realDeposits=arr; displayDeposits(arr); document.getElementById('depositsCount')&&(document.getElementById('depositsCount').textContent=arr.length); }catch(e){} }
+async function loadWithdrawals(){ try{ const snap=await db.collection('withdrawals').get(); let arr=[]; snap.forEach(d=>{let data=d.data();data.id=d.id; arr.push(data);}); realWithdrawals=arr; displayWithdrawals(arr); document.getElementById('withdrawalsCount')&&(document.getElementById('withdrawalsCount').textContent=arr.length); }catch(e){} }
+async function loadReferrals(){ try{ const snap=await db.collection('referrals').get(); let arr=[]; snap.forEach(d=>{let data=d.data();data.id=d.id; arr.push(data);}); realReferrals=arr; displayReferrals(arr); document.getElementById('referralsCount')&&(document.getElementById('referralsCount').textContent=arr.length); }catch(e){} }
+
+function updateStats(){ 
+    document.getElementById('totalUsers').textContent=realUsers.length; 
+    let td=realDeposits.reduce((s,r)=>s+(r.amount||0),0); 
+    let tw=realWithdrawals.reduce((s,r)=>s+(r.amount||0),0); 
+    document.getElementById('totalDeposits').textContent='$'+td.toFixed(2); 
+    document.getElementById('totalWithdrawals').textContent='$'+tw.toFixed(2); 
+    document.getElementById('totalReferrals').textContent=realReferrals.length; 
+}
+
+function showAllCollections(){ db.listCollections().then(cols=>{ alert('📂 المجموعات:\n'+cols.map(c=>c.id).join(', ')); }).catch(()=>alert('لا يمكن جلب المجموعات')); }
+function refreshAllData(){ loadUsers(); loadDeposits(); loadWithdrawals(); loadReferrals(); setTimeout(updateStats,500); }
+
+document.addEventListener('DOMContentLoaded', ()=>{ refreshAllData(); setInterval(refreshAllData,60000); document.getElementById('searchInput').addEventListener('input', applySearch); });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
