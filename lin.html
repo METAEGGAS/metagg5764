@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عرض الإيداعات والسحوبات</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+body{background:#f0f2f5;padding:15px;font-family:'Segoe UI',sans-serif}
+.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px}
+.header h1{font-size:1.8rem;font-weight:700}
+.nav-tabs .nav-link{color:#495057;border:none;padding:10px 20px;border-radius:8px 8px 0 0}
+.nav-tabs .nav-link.active{background:#fff;color:#667eea;border-bottom:3px solid #667eea;font-weight:600}
+.tab-content{background:#fff;border-radius:0 12px 12px 12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.card-item{background:#fff;border-radius:10px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-right:4px solid #667eea;transition:.2s}
+.card-item:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.15)}
+.card-item.deposit{border-right-color:#28a745}
+.card-item.withdrawal{border-right-color:#dc3545}
+.stat-box{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.stat-box .number{font-size:1.8rem;font-weight:700;color:#2c3e50}
+.stat-box .label{color:#6c757d;font-size:.85rem}
+.badge-status{font-size:11px;padding:4px 12px;border-radius:20px}
+.loading{text-align:center;padding:40px}
+.filter-section{background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:15px}
+.firebase-config{background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:8px;font-family:'Courier New',monospace;font-size:11px;overflow-x:auto;margin-bottom:15px}
+.firebase-config .key{color:#9cdcfe}
+.firebase-config .value{color:#ce9178}
+.amount-pos{color:#28a745;font-weight:700}
+.amount-neg{color:#dc3545;font-weight:700}
+.search-box{position:relative}
+.search-box input{padding-right:35px}
+.search-box .search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#6c757d}
+@media(max-width:768px){.header h1{font-size:1.3rem}}
+</style>
+</head>
+<body>
+<div class="container-fluid">
+<div class="header">
+<div class="row align-items-center">
+<div class="col-md-8"><h1><i class="bi bi-fire me-2"></i>الإيداعات والسحوبات</h1><p class="mb-0">عرض جميع الطلبات من Firebase</p></div>
+<div class="col-md-4 text-md-end"><span class="badge bg-success p-2"><i class="bi bi-database"></i> Firebase</span> <span class="badge bg-primary p-2"><i class="bi bi-clock"></i> لحظي</span></div>
+</div>
+</div>
+<div class="firebase-config">
+<span class="comment">// تكوين Firebase</span><br>
+<span class="key">const</span> firebaseConfig = {<br>
+&nbsp;&nbsp;<span class="key">apiKey</span>: <span class="value">"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M"</span>,<br>
+&nbsp;&nbsp;<span class="key">authDomain</span>: <span class="value">"asse-app-16998.firebaseapp.com"</span>,<br>
+&nbsp;&nbsp;<span class="key">projectId</span>: <span class="value">"asse-app-16998"</span>,<br>
+&nbsp;&nbsp;<span class="key">storageBucket</span>: <span class="value">"asse-app-16998.firebasestorage.app"</span>,<br>
+&nbsp;&nbsp;<span class="key">messagingSenderId</span>: <span class="value">"835771799328"</span>,<br>
+&nbsp;&nbsp;<span class="key">appId</span>: <span class="value">"1:835771799328:web:b587a5da0cb129c2042945"</span><br>
+};
+</div>
+<div class="row mb-3">
+<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="totalDeposits">0</div><div class="label">إجمالي الإيداعات</div></div></div>
+<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="totalWithdrawals">0</div><div class="label">إجمالي السحوبات</div></div></div>
+<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="pendingCount">0</div><div class="label">قيد المعالجة</div></div></div>
+<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="completedCount">0</div><div class="label">مكتملة</div></div></div>
+</div>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+<li class="nav-item"><button class="nav-link active" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#deposits" type="button" role="tab"><i class="bi bi-arrow-down-circle text-success"></i> الإيداعات <span class="badge bg-success" id="depBadge">0</span></button></li>
+<li class="nav-item"><button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab"><i class="bi bi-arrow-up-circle text-danger"></i> السحوبات <span class="badge bg-danger" id="wdBadge">0</span></button></li>
+</ul>
+<div class="tab-content" id="myTabContent">
+<div class="tab-pane fade show active" id="deposits" role="tabpanel">
+<div class="filter-section"><div class="row"><div class="col-md-6"><div class="search-box"><span class="search-icon"><i class="bi bi-search"></i></span><input type="text" class="form-control" id="searchDep" placeholder="بحث..." onkeyup="filterDeposits()"></div></div><div class="col-md-3"><select class="form-select" id="filterDepStatus" onchange="filterDeposits()"><option value="all">جميع الحالات</option><option value="مكتمل">مكتمل</option><option value="completed">completed</option><option value="قيد المعالجة">قيد المعالجة</option><option value="processing">processing</option><option value="معلق">معلق</option><option value="pending">pending</option><option value="ملغي">ملغي</option><option value="cancelled">cancelled</option></select></div><div class="col-md-3"><button class="btn btn-primary w-100" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> تحديث</button></div></div></div>
+<div id="depositsContainer"><div class="loading"><div class="spinner-border text-success"></div><p>جاري تحميل الإيداعات...</p></div></div>
+</div>
+<div class="tab-pane fade" id="withdrawals" role="tabpanel">
+<div class="filter-section"><div class="row"><div class="col-md-6"><div class="search-box"><span class="search-icon"><i class="bi bi-search"></i></span><input type="text" class="form-control" id="searchWd" placeholder="بحث..." onkeyup="filterWithdrawals()"></div></div><div class="col-md-3"><select class="form-select" id="filterWdStatus" onchange="filterWithdrawals()"><option value="all">جميع الحالات</option><option value="مكتمل">مكتمل</option><option value="completed">completed</option><option value="قيد المعالجة">قيد المعالجة</option><option value="processing">processing</option><option value="معلق">معلق</option><option value="pending">pending</option><option value="مرفوض">مرفوض</option><option value="rejected">rejected</option></select></div><div class="col-md-3"><button class="btn btn-danger w-100" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> تحديث</button></div></div></div>
+<div id="withdrawalsContainer"><div class="loading"><div class="spinner-border text-danger"></div><p>جاري تحميل السحوبات...</p></div></div>
+</div>
+</div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig={apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",authDomain:"asse-app-16998.firebaseapp.com",projectId:"asse-app-16998",storageBucket:"asse-app-16998.firebasestorage.app",messagingSenderId:"835771799328",appId:"1:835771799328:web:b587a5da0cb129c2042945"};
+firebase.initializeApp(firebaseConfig);const db=firebase.firestore();
+let depData=[],wdData=[];
+
+function loadDeposits(){
+const c=document.getElementById('depositsContainer');
+const cols=['deposits','Deposits','deposit','Deposit','payments','transactions'];
+let all=[],idx=0;
+function tryCol(){
+if(idx>=cols.length){depData=all;showDeposits(all);document.getElementById('depBadge').textContent=all.length;updateStats();return;}
+db.collection(cols[idx]).get().then(s=>{if(!s.empty){s.forEach(d=>{let data=d.data();data.id=d.id;if(data.amount||data.status||data.method||data.userName||data.userId){all.push(data);}})}idx++;tryCol();}).catch(()=>{idx++;tryCol();});
+}
+tryCol();
+}
+
+function loadWithdrawals(){
+const c=document.getElementById('withdrawalsContainer');
+const cols=['withdrawals','Withdrawals','withdrawal','Withdrawal','withdraw','payouts'];
+let all=[],idx=0;
+function tryCol(){
+if(idx>=cols.length){wdData=all;showWithdrawals(all);document.getElementById('wdBadge').textContent=all.length;updateStats();return;}
+db.collection(cols[idx]).get().then(s=>{if(!s.empty){s.forEach(d=>{let data=d.data();data.id=d.id;if(data.amount||data.status||data.method||data.userName||data.userId){all.push(data);}})}idx++;tryCol();}).catch(()=>{idx++;tryCol();});
+}
+tryCol();
+}
+
+function showDeposits(data){
+const c=document.getElementById('depositsContainer');
+if(!data||!data.length){c.innerHTML='<div class="alert alert-info"><i class="bi bi-info-circle"></i> لا يوجد إيداعات</div>';return;}
+let h='';
+data.forEach((d,i)=>{
+const st=d.status||'غير محدد';
+const sc=st==='مكتمل'||st==='completed'?'success':st==='قيد المعالجة'||st==='processing'?'warning':st==='ملغي'||st==='cancelled'?'danger':'secondary';
+const amt=typeof d.amount==='number'?d.amount.toFixed(2):d.amount||0;
+const usr=d.userName||d.userId||d.user||'مستخدم';
+const met=d.method||d.paymentMethod||d.network||'غير محدد';
+const dt=d.date||d.createdAt||d.timestamp||'غير معروف';
+h+=`<div class="card-item deposit"><div class="row align-items-center"><div class="col-md-2"><strong><i class="bi bi-person"></i> ${usr}</strong></div><div class="col-md-2"><span class="amount-pos">$${amt}</span></div><div class="col-md-2"><span class="badge bg-${sc} badge-status">${st}</span></div><div class="col-md-3"><small class="text-muted d-block">${met}</small><small class="text-muted">${d.transactionHash||d.txHash||d.txid||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${dt}</small></div><div class="col-md-1"><button class="btn btn-sm btn-outline-primary" onclick="showDepDetails('${d.id}')"><i class="bi bi-eye"></i></button></div></div><div class="mt-1">${d.notes?`<small class="text-muted">${d.notes}</small>`:''} ${d.confirmations?`<span class="badge bg-secondary">تأكيدات: ${d.confirmations}</span>`:''}</div></div>`;
+});
+c.innerHTML=h;
+}
+
+function showWithdrawals(data){
+const c=document.getElementById('withdrawalsContainer');
+if(!data||!data.length){c.innerHTML='<div class="alert alert-info"><i class="bi bi-info-circle"></i> لا يوجد سحوبات</div>';return;}
+let h='';
+data.forEach((d,i)=>{
+const st=d.status||'غير محدد';
+const sc=st==='مكتمل'||st==='completed'?'success':st==='قيد المعالجة'||st==='processing'?'warning':st==='مرفوض'||st==='rejected'?'danger':'secondary';
+const amt=typeof d.amount==='number'?d.amount.toFixed(2):d.amount||0;
+const usr=d.userName||d.userId||d.user||'مستخدم';
+const met=d.method||d.paymentMethod||d.network||'غير محدد';
+const dt=d.date||d.createdAt||d.timestamp||'غير معروف';
+h+=`<div class="card-item withdrawal"><div class="row align-items-center"><div class="col-md-2"><strong><i class="bi bi-person"></i> ${usr}</strong></div><div class="col-md-2"><span class="amount-neg">$${amt}</span></div><div class="col-md-2"><span class="badge bg-${sc} badge-status">${st}</span></div><div class="col-md-3"><small class="text-muted d-block">${met}</small><small class="text-muted">${d.address||d.walletAddress||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${dt}</small></div><div class="col-md-1"><button class="btn btn-sm btn-outline-primary" onclick="showWdDetails('${d.id}')"><i class="bi bi-eye"></i></button></div></div><div class="mt-1">${d.notes?`<small class="text-muted">${d.notes}</small>`:''} ${d.processingTime?`<span class="badge bg-secondary">معالجة: ${d.processingTime}h</span>`:''}</div></div>`;
+});
+c.innerHTML=h;
+}
+
+function showDepDetails(id){
+const d=depData.find(x=>x.id===id);
+if(!d)return;
+let msg='📋 تفاصيل الإيداع:\n\n';
+Object.entries(d).forEach(([k,v])=>{msg+=`${k}: ${typeof v==='object'?JSON.stringify(v):v}\n`;});
+alert(msg);
+}
+
+function showWdDetails(id){
+const d=wdData.find(x=>x.id===id);
+if(!d)return;
+let msg='📋 تفاصيل السحب:\n\n';
+Object.entries(d).forEach(([k,v])=>{msg+=`${k}: ${typeof v==='object'?JSON.stringify(v):v}\n`;});
+alert(msg);
+}
+
+function filterDeposits(){
+const s=document.getElementById('searchDep').value.toLowerCase();
+const st=document.getElementById('filterDepStatus').value;
+let f=depData.filter(d=>{
+const matchS=(d.userName||d.userId||'').toLowerCase().includes(s)||(d.id||'').toLowerCase().includes(s);
+const matchSt=st==='all'||d.status===st;
+return matchS&&matchSt;
+});
+showDeposits(f);
+}
+
+function filterWithdrawals(){
+const s=document.getElementById('searchWd').value.toLowerCase();
+const st=document.getElementById('filterWdStatus').value;
+let f=wdData.filter(d=>{
+const matchS=(d.userName||d.userId||'').toLowerCase().includes(s)||(d.id||'').toLowerCase().includes(s);
+const matchSt=st==='all'||d.status===st;
+return matchS&&matchSt;
+});
+showWithdrawals(f);
+}
+
+function updateStats(){
+const totalD=depData.reduce((s,d)=>s+(typeof d.amount==='number'?d.amount:0),0);
+const totalW=wdData.reduce((s,d)=>s+(typeof d.amount==='number'?d.amount:0),0);
+const pending=depData.filter(d=>d.status==='قيد المعالجة'||d.status==='processing'||d.status==='معلق'||d.status==='pending').length+
+wdData.filter(d=>d.status==='قيد المعالجة'||d.status==='processing'||d.status==='معلق'||d.status==='pending').length;
+const completed=depData.filter(d=>d.status==='مكتمل'||d.status==='completed').length+
+wdData.filter(d=>d.status==='مكتمل'||d.status==='completed').length;
+document.getElementById('totalDeposits').textContent='$'+totalD.toFixed(2);
+document.getElementById('totalWithdrawals').textContent='$'+totalW.toFixed(2);
+document.getElementById('pendingCount').textContent=pending;
+document.getElementById('completedCount').textContent=completed;
+}
+
+function refreshAll(){loadDeposits();loadWithdrawals();}
+
+document.addEventListener('DOMContentLoaded',function(){refreshAll();});
+setInterval(refreshAll,60000);
+console.log('✅ نظام الإيداعات والسحوبات يعمل');
+</script>
+</body>
+</html>
