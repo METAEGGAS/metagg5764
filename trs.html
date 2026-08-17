@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لوحة تحكم الأدمن · إنشاء حسابات</title>
+    <!-- Firebase v10.12.0 compat (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #0b0f1a; color: #eaeef5; padding: 20px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .card { max-width: 520px; width: 100%; background: #141b2b; border-radius: 32px; padding: 24px 20px 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #2a3450; }
+        h1 { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; letter-spacing: -0.3px; }
+        h1 small { font-size: 14px; font-weight: 400; color: #8a99c7; margin-right: auto; }
+        .badge { background: #1f2a44; padding: 6px 14px; border-radius: 40px; font-size: 13px; color: #b6c8ff; border: 1px solid #2f3d66; }
+        .sub { color: #a2b1dd; font-size: 15px; margin-bottom: 24px; border-bottom: 1px dashed #293450; padding-bottom: 16px; }
+        .field { margin-bottom: 18px; }
+        label { display: block; font-size: 14px; font-weight: 500; color: #bcc9f0; margin-bottom: 5px; letter-spacing: 0.2px; }
+        input, select { width: 100%; padding: 14px 16px; background: #101826; border: 1px solid #293a5a; border-radius: 18px; color: #f0f4ff; font-size: 16px; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: #5b7cff; background: #0f1629; box-shadow: 0 0 0 3px rgba(70, 120, 255, 0.2); }
+        input::placeholder { color: #55648b; font-weight: 300; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { width: 100%; padding: 16px; background: #2b3f7a; border: none; border-radius: 60px; font-weight: 600; font-size: 17px; color: white; cursor: pointer; transition: 0.2s; margin-top: 6px; box-shadow: 0 6px 14px rgba(0, 30, 80, 0.5); }
+        .btn:hover { background: #3d58b0; transform: scale(1.01); }
+        .btn:active { transform: scale(0.97); }
+        .btn-success { background: #1d7a4b; }
+        .btn-success:hover { background: #279a5e; }
+        .output { margin-top: 28px; background: #0e1424; border-radius: 24px; padding: 18px 16px; border: 1px solid #273453; }
+        .output h3 { font-size: 16px; color: #a2b9ff; margin-bottom: 12px; display: flex; gap: 10px; align-items: center; }
+        .pre-wrap { background: #0a0f1c; padding: 16px; border-radius: 18px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-break: break-all; color: #c6d4ff; border: 1px solid #1f2d4a; max-height: 240px; overflow-y: auto; }
+        .pre-wrap strong { color: #ffd966; }
+        .footnote { margin-top: 16px; font-size: 13px; color: #6c7da8; text-align: center; border-top: 1px solid #1f2940; padding-top: 16px; }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+        .flex .btn { width: auto; padding: 10px 20px; }
+        .warn-badge { background: #c73d3d20; border: 1px solid #c73d3d; color: #ff9696; border-radius: 40px; padding: 2px 14px; font-size: 13px; }
+        .copy-btn { background: #2b3a62; border: none; color: #b3c9ff; padding: 6px 16px; border-radius: 40px; font-size: 13px; cursor: pointer; }
+        .copy-btn:hover { background: #3b4f82; }
+        .alert { background: #c73d3d18; border-right: 4px solid #f25a5a; padding: 12px 16px; border-radius: 16px; margin-bottom: 20px; font-size: 14px; color: #f0baba; }
+    </style>
+</head>
+<body>
+<div class="card" id="app">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1>🔐 <span>آسِ</span><small>· إنشاء حسابات</small></h1>
+        <span class="badge">⚡ ADMIN</span>
+    </div>
+    <div class="sub">📌 المستخدم الحالي: <span id="currentUserDisplay" style="color:#b3ccff;">—</span></div>
+
+    <!-- تنبيه أمني -->
+    <div class="alert">⚠️ بيانات الأدمن مضمّنة (admin/db2024admin) — تحقق client-side · يُنصح بالتحديث فوراً.</div>
+
+    <!-- حقل التحقق (ضروري لفتح اللوحة) -->
+    <div style="display: flex; gap: 8px; margin-bottom: 20px; background: #101b2b; padding: 8px 10px; border-radius: 60px; border: 1px solid #2d3d62;">
+        <input type="password" id="adminPassInput" placeholder="كلمة مرور الأدمن" style="border: none; background: transparent; padding: 8px 12px; flex:1;">
+        <button id="unlockBtn" class="copy-btn" style="background:#2d4680;">🔓 فتح</button>
+    </div>
+
+    <!-- نموذج إنشاء الحساب -->
+    <div style="margin-top: 8px;">
+        <div class="field">
+            <label>📱 رقم الهاتف (فريد)</label>
+            <input type="text" id="phoneInput" placeholder="مثال: 966512345678" value="966512345678">
+        </div>
+        <div class="field">
+            <label>👤 الاسم</label>
+            <input type="text" id="nameInput" placeholder="الاسم الكامل" value="مستخدم تجريبي">
+        </div>
+        <div class="row2">
+            <div class="field">
+                <label>🔑 كلمة المرور</label>
+                <input type="text" id="passInput" placeholder="********" value="Pass123!">
+            </div>
+            <div class="field">
+                <label>💰 الرصيد الابتدائي</label>
+                <input type="number" id="balanceInput" placeholder="0" value="0">
+            </div>
+        </div>
+        <div class="row2">
+            <div class="field">
+                <label>📋 الخطة</label>
+                <select id="planSelect">
+                    <option value="S1">S1 · $120</option>
+                    <option value="S2">S2 · $600</option>
+                    <option value="S3">S3 · $1200</option>
+                    <option value="A4">A4 · $2600</option>
+                    <option value="A5">A5 · $6000</option>
+                    <option value="H6">H6 · قريباً</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>📎 كود الإحالة (اختياري)</label>
+                <input type="text" id="refCodeInput" placeholder="DB#####" value="DB1001">
+            </div>
+        </div>
+
+        <button id="createUserBtn" class="btn btn-success">➕ إنشاء حساب + توثيق Firebase</button>
+
+        <div style="display: flex; gap: 6px; margin-top: 12px;">
+            <button id="resetFormBtn" class="copy-btn" style="flex:1;">🗑️ إعادة ضبط</button>
+            <button id="genRandomBtn" class="copy-btn" style="flex:1;">🎲 عشوائي</button>
+        </div>
+    </div>
+
+    <!-- مخرجات / سجل -->
+    <div class="output">
+        <h3>📋 <span>نتيجة الإنشاء</span> <span style="margin-right: auto; font-size: 12px; background: #1b2642; padding: 2px 12px; border-radius: 40px;">آخر عملية</span></h3>
+        <div id="resultArea" class="pre-wrap">⏳ انتظر ...</div>
+        <div style="display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap;">
+            <button id="copyResultBtn" class="copy-btn">📄 نسخ النتيجة</button>
+            <button id="clearResultBtn" class="copy-btn">🧹 مسح</button>
+        </div>
+    </div>
+
+    <div class="footnote">
+        ⚙️ يعمل مع Firebase (config مضمّن) · يخزن المستخدم في <strong>users</strong> ويسجّل في <strong>settings/logs</strong> · التحكم يدوي.
+    </div>
+</div>
+<script>
+    (function() {
+        // ---------- Firebase Config (المستخرج من التقرير) ----------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
+            authDomain: "asse-app-16998.firebaseapp.com",
+            projectId: "asse-app-16998",
+            storageBucket: "asse-app-16998.firebasestorage.app",
+            messagingSenderId: "835771799328",
+            appId: "1:835771799328:web:b587a5da0cb129c2042945",
+            measurementId: "G-DJR968QCWK"
+        };
+
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        // ---------- بيانات الأدمن (Hardcoded كما في التقرير) ----------
+        const ADMIN_CRED = { username: 'admin', password: 'db2024admin' };
+        let adminUnlocked = false;   // يتحقق منها client-side
+
+        // عناصر DOM
+        const phoneInp = document.getElementById('phoneInput');
+        const nameInp = document.getElementById('nameInput');
+        const passInp = document.getElementById('passInput');
+        const balanceInp = document.getElementById('balanceInput');
+        const planSelect = document.getElementById('planSelect');
+        const refCodeInp = document.getElementById('refCodeInput');
+        const createBtn = document.getElementById('createUserBtn');
+        const resultArea = document.getElementById('resultArea');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const adminPassInput = document.getElementById('adminPassInput');
+        const currentUserDisplay = document.getElementById('currentUserDisplay');
+
+        // عناصر إضافية
+        const resetBtn = document.getElementById('resetFormBtn');
+        const genRandomBtn = document.getElementById('genRandomBtn');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+        const clearResultBtn = document.getElementById('clearResultBtn');
+
+        // ---------- دوال مساعدة ----------
+        function logToResult(msg, isError = false) {
+            const prefix = isError ? '❌ ' : '✅ ';
+            resultArea.innerHTML = prefix + msg + '\n' + resultArea.innerHTML.split('\n').slice(0, 30).join('\n');
+            if (resultArea.innerHTML.split('\n').length > 40) {
+                const lines = resultArea.innerHTML.split('\n');
+                resultArea.innerHTML = lines.slice(0, 35).join('\n') + '\n... (مقتطع)';
+            }
+        }
+
+        function setResult(msg) {
+            resultArea.innerHTML = msg;
+        }
+
+        // تحديث عرض المستخدم الحالي
+        function updateUserDisplay() {
+            const user = auth.currentUser;
+            if (user) {
+                currentUserDisplay.textContent = user.email || user.uid || 'مصادق';
+            } else {
+                currentUserDisplay.textContent = 'غير مصادق (استخدم admin)';
+            }
+        }
+        auth.onAuthStateChanged(() => { updateUserDisplay(); });
+        updateUserDisplay();
+
+        // فتح الجلسة (admin) – client-side
+        function attemptAdminUnlock() {
+            const inputPass = adminPassInput.value.trim();
+            if (inputPass === ADMIN_CRED.password) {
+                adminUnlocked = true;
+                logToResult('🔓 تم فتح صلاحيات الأدمن (client-side)');
+                adminPassInput.value = '';
+                adminPassInput.placeholder = '✅ مفعل';
+                adminPassInput.style.borderColor = '#3ca85a';
+                // محاكاة دخول (لكننا لا نستخدم Auth للأدمن)
+                return true;
+            } else {
+                adminUnlocked = false;
+                logToResult('❌ كلمة مرور الأدمن غير صحيحة', true);
+                adminPassInput.style.borderColor = '#c73d3d';
+                return false;
+            }
+        }
+
+        unlockBtn.addEventListener('click', () => {
+            attemptAdminUnlock();
+        });
+
+        // التحقق من القفل (تجاوز سريع)
+        function isAdminAuthorized() {
+            if (!adminUnlocked) {
+                logToResult('⛔ يلزم فتح قفل الأدمن أولاً (admin password)', true);
+                return false;
+            }
+            return true;
+        }
+
+        // إنشاء مستند مستخدم في Firestore مع كامل الحقول حسب التقرير
+        async function createUserDocument(uid, phone, name, pass, balance, plan, refCode) {
+            if (!uid) throw new Error('UID مطلوب');
+
+            // هيكل المستند حسب التقرير
+            const userData = {
+                phone: phone,
+                id: uid,
+                name: name,
+                pass: pass,            // ⚠️ مخزنة نص صريح (كما هو موجود)
+                txPass: '',
+                bal: parseFloat(balance) || 0,
+                totalEarned: 0,
+                refBonus: 0,
+                workDays: 0,
+                plan: plan || 'S1',
+                tasksDone: 0,
+                lastTaskDate: new Date().toISOString().split('T')[0],
+                lastIncDate: new Date().toISOString().split('T')[0],
+                deposits: [],
+                withdrawals: [],
+                planPurchased: false,
+                walletAddr: '',
+                refCode: refCode || ('DB' + Math.floor(Math.random() * 90000 + 10000)),
+                refs: [],
+                joined: new Date().toISOString(),
+                lockedFunds: 0,
+                teamCommission: 0,
+                teamCommToday: 0,
+                refBy: ''
+            };
+
+            // كتابة في users/{uid}
+            await db.collection('users').doc(uid).set(userData);
+
+            // تسجيل في logs (settings/logs)
+            const logEntry = {
+                action: 'create_user',
+                by: 'admin_console',
+                target: uid,
+                phone: phone,
+                timestamp: new Date().toISOString(),
+                details: { name, plan, balance }
+            };
+            await db.collection('settings').doc('logs').set({
+                entries: firebase.firestore.FieldValue.arrayUnion(logEntry)
+            }, { merge: true });
+
+            return userData;
+        }
+
+        // إنشاء حساب Firebase Auth (Email/Password) ثم تخزين البيانات
+        async function handleCreateUser() {
+            if (!isAdminAuthorized()) return;
+
+            const phone = phoneInp.value.trim();
+            const name = nameInp.value.trim() || 'مستخدم';
+            const pass = passInp.value.trim();
+            const balance = parseFloat(balanceInp.value) || 0;
+            const plan = planSelect.value;
+            let refCode = refCodeInp.value.trim();
+
+            // تحقق بسيط
+            if (!phone || phone.length < 8) {
+                logToResult('⚠️ رقم الهاتف مطلوب (على الأقل 8 أرقام)', true);
+                return;
+            }
+            if (!pass || pass.length < 6) {
+                logToResult('⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل', true);
+                return;
+            }
+
+            // إنشاء بريد إلكتروني وهمي من رقم الهاتف (لتسهيل Auth)
+            const email = phone + '@asse-app.tmp';   // مؤقت
+
+            try {
+                setResult('⏳ جاري إنشاء الحساب ...');
+                logToResult(`🔄 بدء إنشاء حساب للرقم ${phone}`);
+
+                // 1. إنشاء مستخدم في Firebase Auth
+                const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+                const uid = userCred.user.uid;
+
+                // 2. إنشاء المستند في Firestore
+                const userData = await createUserDocument(uid, phone, name, pass, balance, plan, refCode);
+
+                // 3. عرض النتيجة
+                const output = `✅ تم إنشاء الحساب بنجاح!\n` +
+                    `📱 الهاتف: ${phone}\n` +
+                    `🆔 UID: ${uid}\n` +
+                    `👤 الاسم: ${name}\n` +
+                    `💰 الرصيد: $${balance}\n` +
+                    `📋 الخطة: ${plan}\n` +
+                    `🔗 كود الإحالة: ${userData.refCode}\n` +
+                    `📅 تاريخ الإنشاء: ${new Date().toISOString()}`;
+                setResult(output);
+                logToResult(`✅ تم إنشاء حساب ${phone} (${uid})`);
+
+                // إعادة تعيين جزئي
+                phoneInp.value = '';
+                nameInp.value = '';
+                passInp.value = '';
+                balanceInp.value = '0';
+                // الاحتفاظ بالـ plan و refCode
+
+            } catch (error) {
+                console.error(error);
+                let msg = error.message;
+                if (error.code === 'auth/email-already-in-use') {
+                    msg = 'البريد المستخدم موجود مسبقاً (ربما الرقم مستخدم)';
+                }
+                logToResult(`❌ فشل الإنشاء: ${msg}`, true);
+                setResult(`❌ خطأ: ${msg}`);
+            }
+        }
+
+        createBtn.addEventListener('click', handleCreateUser);
+
+        // إعادة ضبط النموذج
+        resetBtn.addEventListener('click', () => {
+            phoneInp.value = '';
+            nameInp.value = '';
+            passInp.value = '';
+            balanceInp.value = '0';
+            planSelect.value = 'S1';
+            refCodeInp.value = 'DB' + Math.floor(Math.random() * 90000 + 10000);
+            setResult('🔄 تم إعادة ضبط النموذج');
+        });
+
+        // تعبئة عشوائية
+        genRandomBtn.addEventListener('click', () => {
+            const rand = Math.floor(Math.random() * 9000000 + 1000000);
+            phoneInp.value = '9665' + String(rand).slice(0, 8);
+            nameInp.value = 'مستخدم ' + String(rand).slice(0, 4);
+            passInp.value = 'Pass' + String(rand).slice(0, 4) + '!';
+            balanceInp.value = Math.floor(Math.random() * 500 + 50);
+            planSelect.value = ['S1','S2','S3','A4','A5'][Math.floor(Math.random()*5)];
+            refCodeInp.value = 'DB' + String(Math.floor(Math.random() * 90000 + 10000));
+            setResult('🎲 تم توليد بيانات عشوائية');
+        });
+
+        // نسخ النتيجة
+        copyResultBtn.addEventListener('click', () => {
+            const text = resultArea.innerText || resultArea.textContent;
+            if (text && text.length > 5) {
+                navigator.clipboard?.writeText(text).then(() => {
+                    logToResult('📋 تم نسخ النتيجة');
+                }).catch(() => {
+                    // fallback
+                    const range = document.createRange();
+                    range.selectNode(resultArea);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    logToResult('📋 نسخ (fallback)');
+                });
+            } else {
+                logToResult('⚠️ لا يوجد نص للنسخ', true);
+            }
+        });
+
+        clearResultBtn.addEventListener('click', () => {
+            setResult('🧹 تم المسح');
+        });
+
+        // خدعة: الضغط 5 مرات على الزاوية (محاكاة) – لكننا نفضل الزر
+        // تذكير: unlockBtn موجود
+
+        // بداية: نعرض رسالة ترحيبية
+        setResult('🔐 قم بفتح قفل الأدمن أولاً (admin/db2024admin) ثم أنشئ حسابات.');
+
+        // إضافة دعم Enter في حقل كلمة المرور
+        adminPassInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                attemptAdminUnlock();
+            }
+        });
+
+        // اختصار: نافذة صريحة لوضع الأدمن
+        console.log('🔑 Admin creds: admin / db2024admin (hardcoded)');
+
+        // عرض معلومات إضافية في console
+        console.log('✅ لوحة إنشاء الحسابات جاهزة (client-side)');
+
+        // الحفاظ على مرجع الحقل uid إن وجد.
+        // نهاية.
+    })();
+</script>
+</body>
+</html>
