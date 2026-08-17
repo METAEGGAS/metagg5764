@@ -1,196 +1,448 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>عرض الإيداعات والسحوبات</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-<style>
-body{background:#f0f2f5;padding:15px;font-family:'Segoe UI',sans-serif}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px}
-.header h1{font-size:1.8rem;font-weight:700}
-.nav-tabs .nav-link{color:#495057;border:none;padding:10px 20px;border-radius:8px 8px 0 0}
-.nav-tabs .nav-link.active{background:#fff;color:#667eea;border-bottom:3px solid #667eea;font-weight:600}
-.tab-content{background:#fff;border-radius:0 12px 12px 12px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-.card-item{background:#fff;border-radius:10px;padding:15px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-right:4px solid #667eea;transition:.2s}
-.card-item:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.15)}
-.card-item.deposit{border-right-color:#28a745}
-.card-item.withdrawal{border-right-color:#dc3545}
-.stat-box{background:#fff;padding:15px;border-radius:10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.stat-box .number{font-size:1.8rem;font-weight:700;color:#2c3e50}
-.stat-box .label{color:#6c757d;font-size:.85rem}
-.badge-status{font-size:11px;padding:4px 12px;border-radius:20px}
-.loading{text-align:center;padding:40px}
-.filter-section{background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:15px}
-.firebase-config{background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:8px;font-family:'Courier New',monospace;font-size:11px;overflow-x:auto;margin-bottom:15px}
-.firebase-config .key{color:#9cdcfe}
-.firebase-config .value{color:#ce9178}
-.amount-pos{color:#28a745;font-weight:700}
-.amount-neg{color:#dc3545;font-weight:700}
-.search-box{position:relative}
-.search-box input{padding-right:35px}
-.search-box .search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#6c757d}
-@media(max-width:768px){.header h1{font-size:1.3rem}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>آسِ · لوحة إنشاء حسابات مرعبة</title>
+    <!-- Firebase v10.12.0 compat (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: #0a0e18; color: #e2eaff; padding: 16px; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
+        .card { max-width: 600px; width: 100%; background: #121b2e; border-radius: 36px; padding: 24px 22px 32px; border: 1px solid #2d3d62; box-shadow: 0 20px 40px rgba(0,0,0,0.8); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+        h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 8px; letter-spacing: -0.5px; }
+        h1 small { font-size: 14px; font-weight: 400; color: #7b8fc7; margin-left: 6px; }
+        .badge-admin { background: #1f2a44; padding: 4px 16px; border-radius: 60px; font-size: 13px; border: 1px solid #3f5a8a; color: #b6ccff; }
+        .sub { color: #9aafdf; font-size: 14px; margin-bottom: 18px; border-bottom: 1px dashed #253452; padding-bottom: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .unlock-area { display: flex; gap: 6px; background: #0e1629; padding: 6px 8px; border-radius: 60px; border: 1px solid #2e406a; margin-bottom: 20px; }
+        .unlock-area input { flex: 1; background: transparent; border: none; padding: 10px 14px; color: #dce6ff; font-size: 15px; outline: none; }
+        .unlock-area button { background: #2d4680; border: none; color: white; padding: 8px 22px; border-radius: 40px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .unlock-area button:hover { background: #3d5caa; }
+        .field { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #b2c6f5; margin-bottom: 4px; letter-spacing: 0.3px; }
+        input, select { width: 100%; padding: 14px 16px; background: #0d1426; border: 1px solid #26375a; border-radius: 20px; color: #f0f6ff; font-size: 15px; outline: none; transition: 0.2s; }
+        input:focus, select:focus { border-color: #5f81ff; background: #0b1124; box-shadow: 0 0 0 3px #1f3b8a55; }
+        .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn { width: 100%; padding: 16px; background: #253b70; border: none; border-radius: 60px; font-weight: 700; font-size: 16px; color: white; cursor: pointer; transition: 0.2s; box-shadow: 0 6px 12px #0b142a; }
+        .btn:hover { background: #3d5bb0; transform: scale(1.01); }
+        .btn:active { transform: scale(0.97); }
+        .btn-success { background: #1f7a4f; }
+        .btn-success:hover { background: #2a9a65; }
+        .btn-outline { background: transparent; border: 1.5px solid #3f5a8a; box-shadow: none; }
+        .btn-outline:hover { background: #1f2d50; }
+        .btn-danger { background: #8f2d3e; }
+        .btn-danger:hover { background: #b43a50; }
+        .flex { display: flex; gap: 8px; flex-wrap: wrap; }
+        .flex .btn { width: auto; padding: 10px 18px; font-size: 14px; }
+        .output { margin-top: 24px; background: #0b1224; border-radius: 24px; padding: 16px; border: 1px solid #22335a; }
+        .output h3 { font-size: 15px; color: #a7beff; display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .pre-wrap { background: #070c1a; padding: 16px; border-radius: 18px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; color: #c8d8ff; max-height: 260px; overflow-y: auto; border: 1px solid #1b2a4a; }
+        .pre-wrap strong { color: #ffd966; }
+        .copy-btn { background: #263a62; border: none; color: #c2d4ff; padding: 6px 18px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+        .copy-btn:hover { background: #3a5290; }
+        .footnote { margin-top: 16px; font-size: 12px; color: #62749e; text-align: center; border-top: 1px solid #1c2945; padding-top: 14px; }
+        .alert { background: #8f2d3e30; border-right: 4px solid #e65a6a; padding: 10px 16px; border-radius: 16px; margin-bottom: 16px; font-size: 13px; color: #f0baba; }
+        .warn { color: #ffb07c; }
+        .scary-name { font-family: 'Courier New', monospace; color: #ff8a8a; }
+    </style>
 </head>
 <body>
-<div class="container-fluid">
-<div class="header">
-<div class="row align-items-center">
-<div class="col-md-8"><h1><i class="bi bi-fire me-2"></i>الإيداعات والسحوبات</h1><p class="mb-0">عرض جميع الطلبات من Firebase</p></div>
-<div class="col-md-4 text-md-end"><span class="badge bg-success p-2"><i class="bi bi-database"></i> Firebase</span> <span class="badge bg-primary p-2"><i class="bi bi-clock"></i> لحظي</span></div>
+<div class="card" id="app">
+    <div class="header">
+        <h1>👻 <span>آسِ</span><small>· إنشاء مرعب</small></h1>
+        <span class="badge-admin">⚡ أدمن</span>
+    </div>
+    <div class="sub">
+        <span id="currentUserDisplay">🔒 غير مصادق</span>
+        <span style="color:#7f94c9;">🔑 admin/db2024admin</span>
+    </div>
+
+    <div class="alert">⚠️ بيانات الأدمن مضمّنة · تحقق client-side · يُنصح بالتحديث فوراً.</div>
+
+    <!-- قفل الأدمن -->
+    <div class="unlock-area">
+        <input type="password" id="adminPassInput" placeholder="كلمة مرور الأدمن">
+        <button id="unlockBtn">🔓 فتح</button>
+    </div>
+
+    <!-- نموذج الإنشاء -->
+    <div>
+        <div class="field">
+            <label>👤 الاسم (مخصص أو عشوائي مرعب)</label>
+            <input type="text" id="nameInput" placeholder="اكتب اسماً أو اتركه عشوائياً" value="Shadow_Wraith">
+        </div>
+        <div class="row2">
+            <div class="field">
+                <label>📱 الهاتف</label>
+                <input type="text" id="phoneInput" placeholder="9665..." value="966512345678">
+            </div>
+            <div class="field">
+                <label>🔑 كلمة المرور</label>
+                <input type="text" id="passInput" placeholder="********" value="DarkPass2026!">
+            </div>
+        </div>
+        <div class="row2">
+            <div class="field">
+                <label>💰 الرصيد $</label>
+                <input type="number" id="balanceInput" value="0">
+            </div>
+            <div class="field">
+                <label>📋 الخطة</label>
+                <select id="planSelect">
+                    <option value="S1">S1 · $120</option>
+                    <option value="S2">S2 · $600</option>
+                    <option value="S3">S3 · $1200</option>
+                    <option value="A4">A4 · $2600</option>
+                    <option value="A5">A5 · $6000</option>
+                    <option value="H6">H6 · قريباً</option>
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <label>🔗 كود الإحالة (اختياري)</label>
+            <input type="text" id="refCodeInput" placeholder="DB#####" value="DB1001">
+        </div>
+
+        <button id="createUserBtn" class="btn btn-success">➕ إنشاء حساب (مرعب)</button>
+
+        <div class="flex" style="margin-top: 10px;">
+            <button id="randomScaryBtn" class="btn btn-outline" style="flex:1;">👻 اسم مرعب عشوائي</button>
+            <button id="resetFormBtn" class="btn btn-outline" style="flex:1;">🔄 إعادة ضبط</button>
+        </div>
+        <div class="flex" style="margin-top: 6px;">
+            <button id="genCustomBtn" class="btn btn-outline" style="flex:1;">⚡ توليد بيانات كاملة</button>
+            <button id="bulkCreateBtn" class="btn btn-danger" style="flex:1;">👹 إنشاء 5 حسابات (دفعة)</button>
+        </div>
+    </div>
+
+    <!-- المخرجات -->
+    <div class="output">
+        <h3>📜 <span>سجل الإنشاء</span> <span style="margin-right: auto; font-size: 11px; background: #18223f; padding: 2px 14px; border-radius: 40px;">آخر العمليات</span></h3>
+        <div id="resultArea" class="pre-wrap">🔮 انتظر ...</div>
+        <div class="flex" style="margin-top: 10px;">
+            <button id="copyResultBtn" class="copy-btn">📄 نسخ</button>
+            <button id="clearResultBtn" class="copy-btn">🧹 مسح</button>
+        </div>
+    </div>
+
+    <div class="footnote">
+        🧛 أسماء مرعبة مدمجة · إنشاء فردي أو دفعة (5) · جميع الحقول تُحفظ في Firestore وفق هيكل التقرير.
+    </div>
 </div>
-</div>
-<div class="firebase-config">
-<span class="comment">// تكوين Firebase</span><br>
-<span class="key">const</span> firebaseConfig = {<br>
-&nbsp;&nbsp;<span class="key">apiKey</span>: <span class="value">"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M"</span>,<br>
-&nbsp;&nbsp;<span class="key">authDomain</span>: <span class="value">"asse-app-16998.firebaseapp.com"</span>,<br>
-&nbsp;&nbsp;<span class="key">projectId</span>: <span class="value">"asse-app-16998"</span>,<br>
-&nbsp;&nbsp;<span class="key">storageBucket</span>: <span class="value">"asse-app-16998.firebasestorage.app"</span>,<br>
-&nbsp;&nbsp;<span class="key">messagingSenderId</span>: <span class="value">"835771799328"</span>,<br>
-&nbsp;&nbsp;<span class="key">appId</span>: <span class="value">"1:835771799328:web:b587a5da0cb129c2042945"</span><br>
-};
-</div>
-<div class="row mb-3">
-<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="totalDeposits">0</div><div class="label">إجمالي الإيداعات</div></div></div>
-<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="totalWithdrawals">0</div><div class="label">إجمالي السحوبات</div></div></div>
-<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="pendingCount">0</div><div class="label">قيد المعالجة</div></div></div>
-<div class="col-md-3 col-6 mb-2"><div class="stat-box"><div class="number" id="completedCount">0</div><div class="label">مكتملة</div></div></div>
-</div>
-<ul class="nav nav-tabs" id="myTab" role="tablist">
-<li class="nav-item"><button class="nav-link active" id="deposits-tab" data-bs-toggle="tab" data-bs-target="#deposits" type="button" role="tab"><i class="bi bi-arrow-down-circle text-success"></i> الإيداعات <span class="badge bg-success" id="depBadge">0</span></button></li>
-<li class="nav-item"><button class="nav-link" id="withdrawals-tab" data-bs-toggle="tab" data-bs-target="#withdrawals" type="button" role="tab"><i class="bi bi-arrow-up-circle text-danger"></i> السحوبات <span class="badge bg-danger" id="wdBadge">0</span></button></li>
-</ul>
-<div class="tab-content" id="myTabContent">
-<div class="tab-pane fade show active" id="deposits" role="tabpanel">
-<div class="filter-section"><div class="row"><div class="col-md-6"><div class="search-box"><span class="search-icon"><i class="bi bi-search"></i></span><input type="text" class="form-control" id="searchDep" placeholder="بحث..." onkeyup="filterDeposits()"></div></div><div class="col-md-3"><select class="form-select" id="filterDepStatus" onchange="filterDeposits()"><option value="all">جميع الحالات</option><option value="مكتمل">مكتمل</option><option value="completed">completed</option><option value="قيد المعالجة">قيد المعالجة</option><option value="processing">processing</option><option value="معلق">معلق</option><option value="pending">pending</option><option value="ملغي">ملغي</option><option value="cancelled">cancelled</option></select></div><div class="col-md-3"><button class="btn btn-primary w-100" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> تحديث</button></div></div></div>
-<div id="depositsContainer"><div class="loading"><div class="spinner-border text-success"></div><p>جاري تحميل الإيداعات...</p></div></div>
-</div>
-<div class="tab-pane fade" id="withdrawals" role="tabpanel">
-<div class="filter-section"><div class="row"><div class="col-md-6"><div class="search-box"><span class="search-icon"><i class="bi bi-search"></i></span><input type="text" class="form-control" id="searchWd" placeholder="بحث..." onkeyup="filterWithdrawals()"></div></div><div class="col-md-3"><select class="form-select" id="filterWdStatus" onchange="filterWithdrawals()"><option value="all">جميع الحالات</option><option value="مكتمل">مكتمل</option><option value="completed">completed</option><option value="قيد المعالجة">قيد المعالجة</option><option value="processing">processing</option><option value="معلق">معلق</option><option value="pending">pending</option><option value="مرفوض">مرفوض</option><option value="rejected">rejected</option></select></div><div class="col-md-3"><button class="btn btn-danger w-100" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i> تحديث</button></div></div></div>
-<div id="withdrawalsContainer"><div class="loading"><div class="spinner-border text-danger"></div><p>جاري تحميل السحوبات...</p></div></div>
-</div>
-</div>
-</div>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 <script>
-const firebaseConfig={apiKey:"AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",authDomain:"asse-app-16998.firebaseapp.com",projectId:"asse-app-16998",storageBucket:"asse-app-16998.firebasestorage.app",messagingSenderId:"835771799328",appId:"1:835771799328:web:b587a5da0cb129c2042945"};
-firebase.initializeApp(firebaseConfig);const db=firebase.firestore();
-let depData=[],wdData=[];
+    (function() {
+        // ---------- Firebase Config (نفس التقرير) ----------
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSqx1BR2nf16PTJ5h7POC7ccYByPJtP6M",
+            authDomain: "asse-app-16998.firebaseapp.com",
+            projectId: "asse-app-16998",
+            storageBucket: "asse-app-16998.firebasestorage.app",
+            messagingSenderId: "835771799328",
+            appId: "1:835771799328:web:b587a5da0cb129c2042945",
+            measurementId: "G-DJR968QCWK"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
 
-function loadDeposits(){
-const c=document.getElementById('depositsContainer');
-const cols=['deposits','Deposits','deposit','Deposit','payments','transactions'];
-let all=[],idx=0;
-function tryCol(){
-if(idx>=cols.length){depData=all;showDeposits(all);document.getElementById('depBadge').textContent=all.length;updateStats();return;}
-db.collection(cols[idx]).get().then(s=>{if(!s.empty){s.forEach(d=>{let data=d.data();data.id=d.id;if(data.amount||data.status||data.method||data.userName||data.userId){all.push(data);}})}idx++;tryCol();}).catch(()=>{idx++;tryCol();});
-}
-tryCol();
-}
+        // ---------- بيانات الأدمن (Hardcoded) ----------
+        const ADMIN_CRED = { username: 'admin', password: 'db2024admin' };
+        let adminUnlocked = false;
 
-function loadWithdrawals(){
-const c=document.getElementById('withdrawalsContainer');
-const cols=['withdrawals','Withdrawals','withdrawal','Withdrawal','withdraw','payouts'];
-let all=[],idx=0;
-function tryCol(){
-if(idx>=cols.length){wdData=all;showWithdrawals(all);document.getElementById('wdBadge').textContent=all.length;updateStats();return;}
-db.collection(cols[idx]).get().then(s=>{if(!s.empty){s.forEach(d=>{let data=d.data();data.id=d.id;if(data.amount||data.status||data.method||data.userName||data.userId){all.push(data);}})}idx++;tryCol();}).catch(()=>{idx++;tryCol();});
-}
-tryCol();
-}
+        // عناصر DOM
+        const phoneInp = document.getElementById('phoneInput');
+        const nameInp = document.getElementById('nameInput');
+        const passInp = document.getElementById('passInput');
+        const balanceInp = document.getElementById('balanceInput');
+        const planSelect = document.getElementById('planSelect');
+        const refCodeInp = document.getElementById('refCodeInput');
+        const createBtn = document.getElementById('createUserBtn');
+        const resultArea = document.getElementById('resultArea');
+        const unlockBtn = document.getElementById('unlockBtn');
+        const adminPassInput = document.getElementById('adminPassInput');
+        const currentUserDisplay = document.getElementById('currentUserDisplay');
+        const randomScaryBtn = document.getElementById('randomScaryBtn');
+        const resetFormBtn = document.getElementById('resetFormBtn');
+        const genCustomBtn = document.getElementById('genCustomBtn');
+        const bulkCreateBtn = document.getElementById('bulkCreateBtn');
+        const copyResultBtn = document.getElementById('copyResultBtn');
+        const clearResultBtn = document.getElementById('clearResultBtn');
 
-function showDeposits(data){
-const c=document.getElementById('depositsContainer');
-if(!data||!data.length){c.innerHTML='<div class="alert alert-info"><i class="bi bi-info-circle"></i> لا يوجد إيداعات</div>';return;}
-let h='';
-data.forEach((d,i)=>{
-const st=d.status||'غير محدد';
-const sc=st==='مكتمل'||st==='completed'?'success':st==='قيد المعالجة'||st==='processing'?'warning':st==='ملغي'||st==='cancelled'?'danger':'secondary';
-const amt=typeof d.amount==='number'?d.amount.toFixed(2):d.amount||0;
-const usr=d.userName||d.userId||d.user||'مستخدم';
-const met=d.method||d.paymentMethod||d.network||'غير محدد';
-const dt=d.date||d.createdAt||d.timestamp||'غير معروف';
-h+=`<div class="card-item deposit"><div class="row align-items-center"><div class="col-md-2"><strong><i class="bi bi-person"></i> ${usr}</strong></div><div class="col-md-2"><span class="amount-pos">$${amt}</span></div><div class="col-md-2"><span class="badge bg-${sc} badge-status">${st}</span></div><div class="col-md-3"><small class="text-muted d-block">${met}</small><small class="text-muted">${d.transactionHash||d.txHash||d.txid||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${dt}</small></div><div class="col-md-1"><button class="btn btn-sm btn-outline-primary" onclick="showDepDetails('${d.id}')"><i class="bi bi-eye"></i></button></div></div><div class="mt-1">${d.notes?`<small class="text-muted">${d.notes}</small>`:''} ${d.confirmations?`<span class="badge bg-secondary">تأكيدات: ${d.confirmations}</span>`:''}</div></div>`;
-});
-c.innerHTML=h;
-}
+        // ---------- قائمة أسماء مرعبة (مخيفة) ----------
+        const SCARY_NAMES = [
+            "Shadow_Wraith", "Nightmare_Reaper", "Dark_Soul", "Crimson_Phantom",
+            "Void_Walker", "Blood_King", "Frost_Doom", "Ashen_One", "Dread_Lord",
+            "Silent_Stalker", "Grim_Harbinger", "Nether_Spawn", "Abyss_Guardian",
+            "Wraith_King", "Sorrow_Eater", "Phantom_Reaper", "Doom_Bringer",
+            "Dark_Prophet", "Shadow_Revenant", "Cursed_Blade", "Eternal_Night",
+            "Soul_Thief", "Gloom_Walker", "Raven_Death", "Scarlet_Doom",
+            "Fury_Shadow", "Dusk_Tyrant", "Bane_Of_Light", "Mourning_Star",
+            "Vengeance_Spirit", "Crypt_Keeper", "Necro_Warlock", "Blight_Reaper"
+        ];
 
-function showWithdrawals(data){
-const c=document.getElementById('withdrawalsContainer');
-if(!data||!data.length){c.innerHTML='<div class="alert alert-info"><i class="bi bi-info-circle"></i> لا يوجد سحوبات</div>';return;}
-let h='';
-data.forEach((d,i)=>{
-const st=d.status||'غير محدد';
-const sc=st==='مكتمل'||st==='completed'?'success':st==='قيد المعالجة'||st==='processing'?'warning':st==='مرفوض'||st==='rejected'?'danger':'secondary';
-const amt=typeof d.amount==='number'?d.amount.toFixed(2):d.amount||0;
-const usr=d.userName||d.userId||d.user||'مستخدم';
-const met=d.method||d.paymentMethod||d.network||'غير محدد';
-const dt=d.date||d.createdAt||d.timestamp||'غير معروف';
-h+=`<div class="card-item withdrawal"><div class="row align-items-center"><div class="col-md-2"><strong><i class="bi bi-person"></i> ${usr}</strong></div><div class="col-md-2"><span class="amount-neg">$${amt}</span></div><div class="col-md-2"><span class="badge bg-${sc} badge-status">${st}</span></div><div class="col-md-3"><small class="text-muted d-block">${met}</small><small class="text-muted">${d.address||d.walletAddress||''}</small></div><div class="col-md-2"><small class="text-muted d-block">${dt}</small></div><div class="col-md-1"><button class="btn btn-sm btn-outline-primary" onclick="showWdDetails('${d.id}')"><i class="bi bi-eye"></i></button></div></div><div class="mt-1">${d.notes?`<small class="text-muted">${d.notes}</small>`:''} ${d.processingTime?`<span class="badge bg-secondary">معالجة: ${d.processingTime}h</span>`:''}</div></div>`;
-});
-c.innerHTML=h;
-}
+        // ---------- دوال مساعدة ----------
+        function getRandomScaryName() {
+            return SCARY_NAMES[Math.floor(Math.random() * SCARY_NAMES.length)];
+        }
 
-function showDepDetails(id){
-const d=depData.find(x=>x.id===id);
-if(!d)return;
-let msg='📋 تفاصيل الإيداع:\n\n';
-Object.entries(d).forEach(([k,v])=>{msg+=`${k}: ${typeof v==='object'?JSON.stringify(v):v}\n`;});
-alert(msg);
-}
+        function getRandomPhone() {
+            return '9665' + String(Math.floor(Math.random() * 90000000 + 10000000)).slice(0, 8);
+        }
 
-function showWdDetails(id){
-const d=wdData.find(x=>x.id===id);
-if(!d)return;
-let msg='📋 تفاصيل السحب:\n\n';
-Object.entries(d).forEach(([k,v])=>{msg+=`${k}: ${typeof v==='object'?JSON.stringify(v):v}\n`;});
-alert(msg);
-}
+        function getRandomPass() {
+            const words = ['Dark', 'Shadow', 'Night', 'Crimson', 'Void', 'Frost', 'Dread', 'Grim', 'Nether', 'Abyss'];
+            return words[Math.floor(Math.random() * words.length)] + 
+                   String(Math.floor(Math.random() * 9000 + 1000)) + 
+                   ['!','@','#','$','&'][Math.floor(Math.random()*5)];
+        }
 
-function filterDeposits(){
-const s=document.getElementById('searchDep').value.toLowerCase();
-const st=document.getElementById('filterDepStatus').value;
-let f=depData.filter(d=>{
-const matchS=(d.userName||d.userId||'').toLowerCase().includes(s)||(d.id||'').toLowerCase().includes(s);
-const matchSt=st==='all'||d.status===st;
-return matchS&&matchSt;
-});
-showDeposits(f);
-}
+        function getRandomPlan() {
+            const plans = ['S1','S2','S3','A4','A5'];
+            return plans[Math.floor(Math.random() * plans.length)];
+        }
 
-function filterWithdrawals(){
-const s=document.getElementById('searchWd').value.toLowerCase();
-const st=document.getElementById('filterWdStatus').value;
-let f=wdData.filter(d=>{
-const matchS=(d.userName||d.userId||'').toLowerCase().includes(s)||(d.id||'').toLowerCase().includes(s);
-const matchSt=st==='all'||d.status===st;
-return matchS&&matchSt;
-});
-showWithdrawals(f);
-}
+        function getRandomRefCode() {
+            return 'DB' + String(Math.floor(Math.random() * 90000 + 10000));
+        }
 
-function updateStats(){
-const totalD=depData.reduce((s,d)=>s+(typeof d.amount==='number'?d.amount:0),0);
-const totalW=wdData.reduce((s,d)=>s+(typeof d.amount==='number'?d.amount:0),0);
-const pending=depData.filter(d=>d.status==='قيد المعالجة'||d.status==='processing'||d.status==='معلق'||d.status==='pending').length+
-wdData.filter(d=>d.status==='قيد المعالجة'||d.status==='processing'||d.status==='معلق'||d.status==='pending').length;
-const completed=depData.filter(d=>d.status==='مكتمل'||d.status==='completed').length+
-wdData.filter(d=>d.status==='مكتمل'||d.status==='completed').length;
-document.getElementById('totalDeposits').textContent='$'+totalD.toFixed(2);
-document.getElementById('totalWithdrawals').textContent='$'+totalW.toFixed(2);
-document.getElementById('pendingCount').textContent=pending;
-document.getElementById('completedCount').textContent=completed;
-}
+        function logToResult(msg, isError = false) {
+            const prefix = isError ? '❌ ' : '✅ ';
+            const lines = resultArea.innerHTML.split('\n');
+            lines.unshift(prefix + msg);
+            if (lines.length > 45) lines.pop();
+            resultArea.innerHTML = lines.join('\n');
+        }
 
-function refreshAll(){loadDeposits();loadWithdrawals();}
+        function setResult(msg) {
+            resultArea.innerHTML = msg;
+        }
 
-document.addEventListener('DOMContentLoaded',function(){refreshAll();});
-setInterval(refreshAll,60000);
-console.log('✅ نظام الإيداعات والسحوبات يعمل');
+        function updateUserDisplay() {
+            const user = auth.currentUser;
+            currentUserDisplay.textContent = user ? '👤 ' + (user.email || user.uid) : '🔒 غير مصادق';
+        }
+        auth.onAuthStateChanged(updateUserDisplay);
+        updateUserDisplay();
+
+        // فتح الأدمن
+        function attemptAdminUnlock() {
+            if (adminPassInput.value.trim() === ADMIN_CRED.password) {
+                adminUnlocked = true;
+                logToResult('🔓 تم فتح صلاحيات الأدمن');
+                adminPassInput.value = '';
+                adminPassInput.placeholder = '✅ مفعل';
+                adminPassInput.style.borderColor = '#3ca85a';
+                return true;
+            } else {
+                adminUnlocked = false;
+                logToResult('❌ كلمة مرور الأدمن غير صحيحة', true);
+                adminPassInput.style.borderColor = '#c73d3d';
+                return false;
+            }
+        }
+        unlockBtn.addEventListener('click', attemptAdminUnlock);
+        adminPassInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAdminUnlock(); });
+
+        function isAdminAuthorized() {
+            if (!adminUnlocked) {
+                logToResult('⛔ يجب فتح قفل الأدمن أولاً', true);
+                return false;
+            }
+            return true;
+        }
+
+        // ---------- إنشاء مستند المستخدم ----------
+        async function createUserDocument(uid, phone, name, pass, balance, plan, refCode) {
+            if (!uid) throw new Error('UID مطلوب');
+            const userData = {
+                phone: phone,
+                id: uid,
+                name: name,
+                pass: pass,
+                txPass: '',
+                bal: parseFloat(balance) || 0,
+                totalEarned: 0,
+                refBonus: 0,
+                workDays: 0,
+                plan: plan || 'S1',
+                tasksDone: 0,
+                lastTaskDate: new Date().toISOString().split('T')[0],
+                lastIncDate: new Date().toISOString().split('T')[0],
+                deposits: [],
+                withdrawals: [],
+                planPurchased: false,
+                walletAddr: '',
+                refCode: refCode || getRandomRefCode(),
+                refs: [],
+                joined: new Date().toISOString(),
+                lockedFunds: 0,
+                teamCommission: 0,
+                teamCommToday: 0,
+                refBy: ''
+            };
+            await db.collection('users').doc(uid).set(userData);
+            // تسجيل في logs
+            await db.collection('settings').doc('logs').set({
+                entries: firebase.firestore.FieldValue.arrayUnion({
+                    action: 'create_user',
+                    by: 'admin_console',
+                    target: uid,
+                    phone: phone,
+                    timestamp: new Date().toISOString(),
+                    details: { name, plan, balance }
+                })
+            }, { merge: true });
+            return userData;
+        }
+
+        // ---------- إنشاء حساب فردي ----------
+        async function createSingleUser(phone, name, pass, balance, plan, refCode) {
+            if (!isAdminAuthorized()) return null;
+            try {
+                const email = phone + '@asse-app.tmp';
+                const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+                const uid = userCred.user.uid;
+                const userData = await createUserDocument(uid, phone, name, pass, balance, plan, refCode);
+                return { uid, userData, success: true };
+            } catch (error) {
+                console.error(error);
+                throw error;
+            }
+        }
+
+        // ---------- معالج إنشاء حساب (واجهة) ----------
+        async function handleCreateUser() {
+            if (!isAdminAuthorized()) return;
+            let name = nameInp.value.trim();
+            if (!name) name = getRandomScaryName();
+            const phone = phoneInp.value.trim() || getRandomPhone();
+            const pass = passInp.value.trim() || getRandomPass();
+            const balance = parseFloat(balanceInp.value) || 0;
+            const plan = planSelect.value;
+            const refCode = refCodeInp.value.trim() || getRandomRefCode();
+
+            if (phone.length < 8) { logToResult('⚠️ رقم الهاتف قصير', true); return; }
+            if (pass.length < 6) { logToResult('⚠️ كلمة المرور ضعيفة (6 أحرف على الأقل)', true); return; }
+
+            setResult('⏳ جاري الإنشاء ...');
+            try {
+                const result = await createSingleUser(phone, name, pass, balance, plan, refCode);
+                if (result) {
+                    const output = `✅ تم إنشاء حساب مرعب!\n` +
+                        `👻 الاسم: ${name}\n` +
+                        `📱 الهاتف: ${phone}\n` +
+                        `🆔 UID: ${result.uid}\n` +
+                        `💰 الرصيد: $${balance}\n` +
+                        `📋 الخطة: ${plan}\n` +
+                        `🔗 كود الإحالة: ${result.userData.refCode}`;
+                    setResult(output);
+                    logToResult(`✅ حساب ${name} (${phone})`);
+                    // تنظيف جزئي
+                    phoneInp.value = '';
+                    nameInp.value = '';
+                    passInp.value = '';
+                    balanceInp.value = '0';
+                }
+            } catch (error) {
+                let msg = error.message;
+                if (error.code === 'auth/email-already-in-use') msg = 'البريد/الهاتف مستخدم مسبقاً';
+                logToResult(`❌ فشل: ${msg}`, true);
+                setResult(`❌ خطأ: ${msg}`);
+            }
+        }
+
+        createBtn.addEventListener('click', handleCreateUser);
+
+        // ---------- اسم مرعب عشوائي ----------
+        randomScaryBtn.addEventListener('click', () => {
+            nameInp.value = getRandomScaryName();
+            logToResult(`👻 تم اختيار اسم: ${nameInp.value}`);
+        });
+
+        // ---------- إعادة ضبط ----------
+        resetFormBtn.addEventListener('click', () => {
+            phoneInp.value = '';
+            nameInp.value = '';
+            passInp.value = '';
+            balanceInp.value = '0';
+            planSelect.value = 'S1';
+            refCodeInp.value = getRandomRefCode();
+            setResult('🔄 تم إعادة ضبط النموذج');
+        });
+
+        // ---------- توليد بيانات كاملة (عشوائية مرعبة) ----------
+        genCustomBtn.addEventListener('click', () => {
+            nameInp.value = getRandomScaryName();
+            phoneInp.value = getRandomPhone();
+            passInp.value = getRandomPass();
+            balanceInp.value = Math.floor(Math.random() * 800 + 50);
+            planSelect.value = getRandomPlan();
+            refCodeInp.value = getRandomRefCode();
+            setResult('⚡ تم توليد بيانات مرعبة بالكامل');
+            logToResult(`👻 ${nameInp.value} · ${phoneInp.value}`);
+        });
+
+        // ---------- إنشاء دفعة (5 حسابات) ----------
+        async function handleBulkCreate() {
+            if (!isAdminAuthorized()) return;
+            const count = 5;
+            setResult(`⏳ جاري إنشاء ${count} حسابات مرعبة ...`);
+            let successCount = 0;
+            const errors = [];
+
+            for (let i = 0; i < count; i++) {
+                const name = getRandomScaryName();
+                const phone = getRandomPhone();
+                const pass = getRandomPass();
+                const balance = Math.floor(Math.random() * 600 + 30);
+                const plan = getRandomPlan();
+                const refCode = getRandomRefCode();
+                try {
+                    const result = await createSingleUser(phone, name, pass, balance, plan, refCode);
+                    if (result) {
+                        successCount++;
+                        logToResult(`✅ ${i+1}/${count} ${name} (${phone})`);
+                    }
+                } catch (e) {
+                    errors.push(`${name}: ${e.message}`);
+                    logToResult(`⚠️ فشل ${name}`, true);
+                }
+                // تأخير بسيط لتجنب حدود Firebase
+                await new Promise(r => setTimeout(r, 400));
+            }
+
+            setResult(`👹 تم إنشاء ${successCount} من ${count} حسابات.\n` +
+                (errors.length ? `⚠️ أخطاء: ${errors.join('; ')}` : '🎉 جميع الحسابات بنجاح'));
+            logToResult(`🏁 دفعة: ${successCount}/${count} نجاح`);
+        }
+
+        bulkCreateBtn.addEventListener('click', handleBulkCreate);
+
+        // ---------- نسخ ومسح ----------
+        copyResultBtn.addEventListener('click', () => {
+            const text = resultArea.innerText || resultArea.textContent;
+            if (text && text.length > 5) {
+                navigator.clipboard?.writeText(text).catch(() => {
+                    const range = document.createRange();
+                    range.selectNode(resultArea);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                });
+                logToResult('📋 تم النسخ');
+            }
+        });
+
+        clearResultBtn.addEventListener('click', () => setResult('🧹 تم المسح'));
+
+        // بداية
+        setResult('👻 قم بفتح قفل الأدمن (admin/db2024admin) ثم أنشئ حسابات مرعبة.');
+
+        console.log('🔑 Admin: admin / db2024admin · لوحة الإنشاء المرعب جاهزة.');
+    })();
 </script>
 </body>
 </html>
