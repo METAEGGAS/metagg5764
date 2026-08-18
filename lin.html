@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الأدمن - ASSe Platform</title>
     <style>
-        /* أنماط متقدمة وجذابة */
+        /* ===== جميع الأنماط السابقة ===== */
         * {
             margin: 0;
             padding: 0;
@@ -25,7 +25,6 @@
             margin: 0 auto;
         }
         
-        /* شريط التنقل */
         .navbar {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -78,7 +77,6 @@
             border-color: #f5576c;
         }
         
-        /* بطاقات الإحصائيات */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -114,7 +112,6 @@
             margin-top: 5px;
         }
         
-        /* التبويبات */
         .tabs {
             display: flex;
             gap: 10px;
@@ -142,7 +139,6 @@
             background: rgba(255, 255, 255, 0.1);
         }
         
-        /* جدول البيانات */
         .table-wrapper {
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
@@ -181,7 +177,6 @@
             background: rgba(255, 255, 255, 0.02);
         }
         
-        /* حالة المستخدم */
         .status-badge {
             padding: 4px 12px;
             border-radius: 12px;
@@ -204,7 +199,6 @@
             color: #ffa502;
         }
         
-        /* شريط البحث والفلترة */
         .filters {
             display: flex;
             gap: 15px;
@@ -214,7 +208,8 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         
-        .filters input, .filters select {
+        .filters input,
+        .filters select {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
@@ -228,7 +223,8 @@
             color: rgba(255, 255, 255, 0.3);
         }
         
-        .filters input:focus, .filters select:focus {
+        .filters input:focus,
+        .filters select:focus {
             outline: none;
             border-color: #f5576c;
         }
@@ -237,7 +233,6 @@
             background: #24243e;
         }
         
-        /* رسائل التنبيه */
         .alert {
             padding: 15px 20px;
             border-radius: 10px;
@@ -259,7 +254,13 @@
             display: block;
         }
         
-        /* زر التحميل */
+        .alert-warning {
+            background: rgba(255, 165, 0, 0.1);
+            border: 1px solid rgba(255, 165, 0, 0.3);
+            color: #ffa502;
+            display: block;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
@@ -279,10 +280,129 @@
         }
         
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
         
-        /* التجاوب */
+        /* ===== نافذة إدخال الرمز السري ===== */
+        .secret-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .secret-box {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 50px 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(245, 87, 108, 0.3);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+        }
+        
+        .secret-box .lock-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .secret-box h2 {
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        
+        .secret-box p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+        
+        .secret-box .warning-text {
+            color: #ffa502;
+            font-size: 12px;
+            background: rgba(255, 165, 0, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 165, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        
+        .secret-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .secret-input-group input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 8px;
+            transition: all 0.3s;
+            direction: ltr;
+        }
+        
+        .secret-input-group input:focus {
+            outline: none;
+            border-color: #f5576c;
+            box-shadow: 0 0 30px rgba(245, 87, 108, 0.1);
+        }
+        
+        .secret-input-group button {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            border: none;
+            color: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .secret-input-group button:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
+        }
+        
+        .secret-input-group .error-msg {
+            color: #ff4757;
+            font-size: 13px;
+            display: none;
+        }
+        
+        .secret-box .hint {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            margin-top: 15px;
+        }
+        
         @media (max-width: 768px) {
             .navbar {
                 flex-direction: column;
@@ -295,7 +415,8 @@
                 flex-wrap: wrap;
             }
             
-            th, td {
+            th,
+            td {
                 padding: 10px 12px;
                 font-size: 12px;
             }
@@ -304,28 +425,52 @@
                 flex-direction: column;
             }
             
-            .filters input, .filters select {
+            .filters input,
+            .filters select {
                 width: 100%;
+            }
+            
+            .secret-box {
+                padding: 30px 20px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- شريط التنقل -->
+    <!-- ===== نافذة إدخال الرمز السري ===== -->
+    <div class="secret-overlay" id="secretOverlay">
+        <div class="secret-box">
+            <div class="lock-icon">🔐</div>
+            <h2>لوحة التحكم</h2>
+            <p>أدخل الرمز السري للوصول إلى لوحة الأدمن</p>
+            
+            <div class="warning-text">
+                ⚠️ هذا نظام حساس - الرمز السري هو <strong>1234</strong>
+            </div>
+            
+            <div class="secret-input-group">
+                <input type="password" id="secretInput" maxlength="10" placeholder="••••" autofocus>
+                <button onclick="verifySecret()">🔓 فتح لوحة التحكم</button>
+                <div class="error-msg" id="secretError">❌ رمز غير صحيح، حاول مجدداً</div>
+            </div>
+            
+            <div class="hint">🔑 الرمز السري: 1234</div>
+        </div>
+    </div>
+
+    <!-- ===== محتوى لوحة التحكم ===== -->
+    <div class="container" id="adminPanel" style="display: none;">
         <nav class="navbar">
             <div class="logo">🔐 ASSe Admin</div>
             <div class="admin-info">
                 <span class="admin-badge">👑 أدمن</span>
-                <span id="adminEmail" style="color: rgba(255,255,255,0.6);"></span>
+                <span id="adminEmail" style="color: rgba(255,255,255,0.6);">مستخدم مؤقت</span>
                 <button class="logout-btn" onclick="logout()">تسجيل خروج</button>
             </div>
         </nav>
 
-        <!-- رسائل التنبيه -->
         <div id="alert" class="alert"></div>
 
-        <!-- بطاقات الإحصائيات -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
                 <div class="stat-number" id="totalUsers">0</div>
@@ -345,7 +490,6 @@
             </div>
         </div>
 
-        <!-- التبويبات -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="users">👤 المستخدمين</button>
             <button class="tab-btn" data-tab="deposits">💰 الإيداعات</button>
@@ -353,7 +497,6 @@
             <button class="tab-btn" data-tab="logs">📋 السجلات</button>
         </div>
 
-        <!-- الفلاتر -->
         <div class="filters">
             <input type="text" id="searchInput" placeholder="🔍 بحث عن مستخدم..." onkeyup="filterTable()">
             <select id="planFilter" onchange="filterTable()">
@@ -373,7 +516,6 @@
             </select>
         </div>
 
-        <!-- الجدول -->
         <div class="table-wrapper">
             <div id="loading" class="loading">جاري تحميل البيانات...</div>
             <div id="tableContainer" style="display: none;">
@@ -399,12 +541,17 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js">
+    </script>
+
     <script>
-        // 🔧 إعدادات Firebase (نفس البيانات المستخرجة)
+        // ============================================
+        // 🔧 إعدادات Firebase
+        // ============================================
         const firebaseConfig = {
             apiKey: "AIzaSyAuOzU5mZYMwyycNCgWiLp6FsmNG1eVPZ0",
             authDomain: "asse-platform.firebaseapp.com",
@@ -415,76 +562,77 @@
             measurementId: "G-DYWPCCKM23"
         };
 
-        // تهيئة Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // متغيرات عامة
+        // ============================================
+        // 🔐 الرمز السري
+        // ============================================
+        const SECRET_CODE = '1234'; // 🔑 غير هذا الرقم فوراً!
+        let isAdmin = false;
+
+        // ============================================
+        // 🔓 التحقق من الرمز السري
+        // ============================================
+        function verifySecret() {
+            const input = document.getElementById('secretInput');
+            const error = document.getElementById('secretError');
+            const code = input.value.trim();
+
+            if (code === SECRET_CODE) {
+                // ✅ رمز صحيح
+                error.style.display = 'none';
+                document.getElementById('secretOverlay').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                isAdmin = true;
+                
+                // محاولة المصادقة التلقائية
+                autoAuthenticate();
+                
+                showAlert('✅ تم التحقق من الرمز السري بنجاح', 'success');
+                loadData();
+            } else {
+                // ❌ رمز خاطئ
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+                input.style.borderColor = '#ff4757';
+                setTimeout(() => {
+                    input.style.borderColor = 'rgba(255,255,255,0.1)';
+                }, 1000);
+            }
+        }
+
+        // ============================================
+        // 🔄 المصادقة التلقائية (كمستخدم مؤقت)
+        // ============================================
+        function autoAuthenticate() {
+            // محاولة تسجيل الدخول كمستخدم مؤقت
+            // هذا يسمح بعرض البيانات بدون الحاجة لحساب حقيقي
+            // لكن يجب أن تكون قواعد Firestore تسمح بالقراءة
+            auth.signInAnonymously()
+                .then(() => {
+                    console.log('✅ تم تسجيل الدخول كمستخدم مؤقت');
+                })
+                .catch((error) => {
+                    console.warn('⚠️ لا يمكن تسجيل الدخول كمستخدم مؤقت:', error);
+                    // الاستمرار بدون مصادقة - قد لا تعمل إذا كانت القواعد مقفولة
+                });
+        }
+
+        // ============================================
+        // 📊 تحميل البيانات
+        // ============================================
         let allUsers = [];
         let allDeposits = [];
         let allWithdrawals = [];
         let currentTab = 'users';
 
-        // ============================================
-        // 🔐 المصادقة والتحقق من صلاحية الأدمن
-        // ============================================
-        
-        // التحقق من حالة المصادقة
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // التحقق من أن المستخدم أدمن عبر Custom Claims
-                const token = await user.getIdTokenResult();
-                if (token.claims.admin === true) {
-                    // ✅ مستخدم أدمن موثوق
-                    document.getElementById('adminEmail').textContent = user.email;
-                    loadData();
-                } else {
-                    // ❌ مستخدم عادي يحاول الدخول
-                    showAlert('⚠️ غير مصرح لك بالدخول إلى لوحة التحكم', 'danger');
-                    setTimeout(() => auth.signOut(), 2000);
-                }
-            } else {
-                // 🔒 غير مسجل الدخول - توجيه لتسجيل الدخول
-                showAlert('🔒 يرجى تسجيل الدخول كأدمن أولاً', 'danger');
-                // نافذة تسجيل دخول مبسطة
-                showLoginPopup();
-            }
-        });
-
-        // نافذة تسجيل الدخول
-        function showLoginPopup() {
-            const email = prompt('📧 البريد الإلكتروني للأدمن:');
-            if (!email) return;
-            
-            const password = prompt('🔑 كلمة المرور:');
-            if (!password) return;
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    showAlert('✅ تم تسجيل الدخول بنجاح', 'success');
-                })
-                .catch((error) => {
-                    showAlert('❌ خطأ في تسجيل الدخول: ' + error.message, 'danger');
-                    setTimeout(showLoginPopup, 1000);
-                });
-        }
-
-        // تسجيل الخروج
-        function logout() {
-            auth.signOut().then(() => {
-                location.reload();
-            });
-        }
-
-        // ============================================
-        // 📊 تحميل البيانات وعرضها
-        // ============================================
-        
         async function loadData() {
             try {
                 showLoading(true);
-                
+
                 // تحميل المستخدمين
                 const usersSnap = await db.collection('users').get();
                 allUsers = [];
@@ -498,43 +646,52 @@
                 });
 
                 // تحميل الإيداعات
-                const depositsSnap = await db.collection('settings/recharges').get();
-                allDeposits = [];
-                depositsSnap.forEach(doc => {
-                    allDeposits.push({ id: doc.id, ...doc.data() });
-                });
+                try {
+                    const depositsSnap = await db.collection('settings/recharges').get();
+                    allDeposits = [];
+                    depositsSnap.forEach(doc => {
+                        allDeposits.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (e) {
+                    console.warn('⚠️ لا يمكن تحميل الإيداعات:', e);
+                    allDeposits = [];
+                }
 
                 // تحميل السحوبات
-                const withdrawalsSnap = await db.collection('settings/withdrawals').get();
-                allWithdrawals = [];
-                withdrawalsSnap.forEach(doc => {
-                    allWithdrawals.push({ id: doc.id, ...doc.data() });
-                });
+                try {
+                    const withdrawalsSnap = await db.collection('settings/withdrawals').get();
+                    allWithdrawals = [];
+                    withdrawalsSnap.forEach(doc => {
+                        allWithdrawals.push({ id: doc.id, ...doc.data() });
+                    });
+                } catch (e) {
+                    console.warn('⚠️ لا يمكن تحميل السحوبات:', e);
+                    allWithdrawals = [];
+                }
 
-                // تحديث الإحصائيات
                 updateStats();
-                
-                // عرض البيانات حسب التبويب النشط
                 renderCurrentTab();
-                
+
                 showLoading(false);
                 document.getElementById('tableContainer').style.display = 'block';
-                
+
             } catch (error) {
-                console.error('خطأ في تحميل البيانات:', error);
+                console.error('❌ خطأ في تحميل البيانات:', error);
                 showAlert('❌ خطأ في تحميل البيانات: ' + error.message, 'danger');
                 showLoading(false);
             }
         }
 
-        // تحديث الإحصائيات
+        // ============================================
+        // 📈 تحديث الإحصائيات
+        // ============================================
         function updateStats() {
             document.getElementById('totalUsers').textContent = allUsers.length;
-            
+
             let totalDeposits = 0;
             let totalWithdrawals = 0;
             let totalBalance = 0;
-            
+
             allUsers.forEach(user => {
                 totalBalance += (user.bal || 0);
                 if (user.deposits) {
@@ -548,48 +705,33 @@
                     });
                 }
             });
-            
+
             document.getElementById('totalDeposits').textContent = totalDeposits.toFixed(2);
             document.getElementById('totalWithdrawals').textContent = totalWithdrawals.toFixed(2);
             document.getElementById('totalBalance').textContent = totalBalance.toFixed(2);
         }
 
-        // عرض التبويب الحالي
-        function renderCurrentTab() {
-            if (currentTab === 'users') {
-                renderUsersTable();
-            } else if (currentTab === 'deposits') {
-                renderDepositsTable();
-            } else if (currentTab === 'withdrawals') {
-                renderWithdrawalsTable();
-            } else if (currentTab === 'logs') {
-                renderLogsTable();
-            }
-        }
-
         // ============================================
         // 👤 عرض جدول المستخدمين
         // ============================================
-        
         function renderUsersTable() {
             const tbody = document.getElementById('tableBody');
             const search = document.getElementById('searchInput').value.toLowerCase();
             const planFilter = document.getElementById('planFilter').value;
             const statusFilter = document.getElementById('statusFilter').value;
-            
+
             let filtered = allUsers.filter(user => {
-                const matchSearch = user.id.toLowerCase().includes(search) || 
-                                   (user.email || '').toLowerCase().includes(search);
+                const matchSearch = user.id.toLowerCase().includes(search) ||
+                    (user.email || '').toLowerCase().includes(search);
                 const matchPlan = !planFilter || (user.plan || '').toUpperCase() === planFilter;
-                const matchStatus = !statusFilter || 
+                const matchStatus = !statusFilter ||
                     (statusFilter === 'active' ? (user.bal > 0) : (user.bal <= 0));
                 return matchSearch && matchPlan && matchStatus;
             });
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
-                    📭 لا توجد بيانات مطابقة
-                </td></tr>`;
+                tbody.innerHTML =
+                    `<tr><td colspan="9" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">📭 لا توجد بيانات مطابقة</td></tr>`;
                 return;
             }
 
@@ -613,14 +755,12 @@
         // ============================================
         // 💰 عرض جدول الإيداعات
         // ============================================
-        
         function renderDepositsTable() {
             const tbody = document.getElementById('tableBody');
-            
+
             if (allDeposits.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
-                    📭 لا توجد إيداعات مسجلة
-                </td></tr>`;
+                tbody.innerHTML =
+                    `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">📭 لا توجد إيداعات مسجلة</td></tr>`;
                 return;
             }
 
@@ -640,14 +780,12 @@
         // ============================================
         // 💸 عرض جدول السحوبات
         // ============================================
-        
         function renderWithdrawalsTable() {
             const tbody = document.getElementById('tableBody');
-            
+
             if (allWithdrawals.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
-                    📭 لا توجد سحوبات مسجلة
-                </td></tr>`;
+                tbody.innerHTML =
+                    `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">📭 لا توجد سحوبات مسجلة</td></tr>`;
                 return;
             }
 
@@ -667,19 +805,17 @@
         // ============================================
         // 📋 عرض السجلات
         // ============================================
-        
         async function renderLogsTable() {
             const tbody = document.getElementById('tableBody');
-            
+
             try {
                 const logsSnap = await db.collection('settings/logs').orderBy('timestamp', 'desc').limit(100).get();
                 const logs = [];
                 logsSnap.forEach(doc => logs.push({ id: doc.id, ...doc.data() }));
-                
+
                 if (logs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">
-                        📭 لا توجد سجلات
-                    </td></tr>`;
+                    tbody.innerHTML =
+                        `<tr><td colspan="4" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">📭 لا توجد سجلات</td></tr>`;
                     return;
                 }
 
@@ -691,18 +827,16 @@
                         <td style="font-size:12px;color:rgba(255,255,255,0.4);">${formatDate(log.timestamp)}</td>
                     </tr>
                 `).join('');
-                
+
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:#ff4757;">
-                    ❌ خطأ في تحميل السجلات: ${error.message}
-                </td></tr>`;
+                tbody.innerHTML =
+                    `<tr><td colspan="4" style="text-align:center;padding:40px;color:#ff4757;">❌ خطأ في تحميل السجلات: ${error.message}</td></tr>`;
             }
         }
 
         // ============================================
         // 🛠 أدوات مساعدة
         // ============================================
-        
         function formatDate(date) {
             if (!date) return 'غير محدد';
             try {
@@ -728,7 +862,7 @@
             alert.textContent = message;
             alert.className = 'alert alert-' + type;
             alert.style.display = 'block';
-            
+
             if (type === 'success') {
                 setTimeout(() => {
                     alert.style.display = 'none';
@@ -740,35 +874,70 @@
             renderCurrentTab();
         }
 
+        function renderCurrentTab() {
+            if (currentTab === 'users') {
+                renderUsersTable();
+            } else if (currentTab === 'deposits') {
+                renderDepositsTable();
+            } else if (currentTab === 'withdrawals') {
+                renderWithdrawalsTable();
+            } else if (currentTab === 'logs') {
+                renderLogsTable();
+            }
+        }
+
         // ============================================
         // 🔄 التبويبات
         // ============================================
-        
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 currentTab = this.dataset.tab;
-                
-                // إخفاء البحث والفلاتر لبعض التبويبات
+
                 const filters = document.querySelector('.filters');
                 if (currentTab === 'users') {
                     filters.style.display = 'flex';
                 } else {
                     filters.style.display = 'none';
                 }
-                
+
                 renderCurrentTab();
             });
         });
 
         // ============================================
-        // 🚀 بدء التطبيق
+        // 🚪 تسجيل الخروج
         // ============================================
-        
-        console.log('🔐 لوحة تحكم ASSe Admin - نسخة آمنة');
-        console.log('📌 تم تطويرها وفق معايير الأمان الموصى بها');
-        console.log('⚠️ جميع العمليات تتم عبر Firebase Auth + Custom Claims');
+        function logout() {
+            if (confirm('⚠️ هل أنت متأكد من تسجيل الخروج؟')) {
+                document.getElementById('adminPanel').style.display = 'none';
+                document.getElementById('secretOverlay').style.display = 'flex';
+                document.getElementById('secretInput').value = '';
+                document.getElementById('secretInput').focus();
+                isAdmin = false;
+                auth.signOut();
+            }
+        }
+
+        // ============================================
+        // ⌨️ دعم Enter في حقل الرمز السري
+        // ============================================
+        document.getElementById('secretInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                verifySecret();
+            }
+        });
+
+        // ============================================
+        // 🚀 بدء التطبيق - التركيز على حقل الإدخال
+        // ============================================
+        window.onload = function() {
+            document.getElementById('secretInput').focus();
+            console.log('🔐 لوحة تحكم ASSe Admin - نظام الرمز السري');
+            console.log('🔑 الرمز السري الحالي: 1234');
+            console.log('⚠️ تحذير: هذا نظام اختبار، غير الرمز السري فوراً!');
+        };
     </script>
 </body>
 </html>
