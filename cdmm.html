@@ -1,0 +1,51 @@
+<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000"><title>لوحة تحكم DunFin</title><style>
+*{box-sizing:border-box;font-family:Tahoma,Arial,sans-serif}body{margin:0;background:#0b0e14;color:#e8ecf3;min-height:100vh}
+#lk{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
+#lk .c{background:#131826;border:1px solid #232c42;border-radius:14px;padding:32px;width:320px;text-align:center}
+input,button{font-family:inherit}input{background:#0b0e14;border:1px solid #2a3450;color:#fff;border-radius:8px;padding:10px 12px;font-size:15px;width:100%;outline:0}
+input:focus{border-color:#4f7cff}button{background:#4f7cff;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;cursor:pointer}
+button:hover{background:#3b68e8}button.r{background:#e84f4f}button.g{background:#1faa6b}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:#131826;border-bottom:1px solid #232c42;flex-wrap:wrap;gap:10px}
+header b{font-size:18px}.st{display:flex;gap:16px;font-size:13px;color:#9aa5bd}.st span b{color:#4f7cff;font-size:16px}
+.w{max-width:1200px;margin:0 auto;padding:18px}table{width:100%;border-collapse:collapse;background:#131826;border-radius:12px;overflow:hidden;font-size:14px}
+th,td{padding:10px 8px;border-bottom:1px solid #1e2536;text-align:right}th{background:#0f1420;color:#8fa3d0;font-size:12px;white-space:nowrap}
+tr:hover td{background:#171e30}td small{color:#7d8aa8;display:block;font-size:11px;direction:ltr;text-align:right}
+.bl{color:#2fd27e;font-weight:700;font-size:15px;white-space:nowrap}.bi{width:110px;padding:6px 8px;font-size:14px}
+.ac{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}.ac button{padding:6px 10px;font-size:12px;white-space:nowrap}
+#srch{margin-bottom:14px;max-width:420px}#ld{text-align:center;padding:50px;color:#8fa3d0}
+#ts{position:fixed;bottom:20px;right:20px;background:#1faa6b;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;display:none;z-index:9}
+#ts.e{background:#e84f4f}.bdg{font-size:11px;background:#1faa6b22;color:#2fd27e;padding:2px 8px;border-radius:20px;margin-right:8px}
+@media(max-width:700px){.w{overflow-x:auto}table{min-width:760px}}
+</style></head><body>
+<div id="lk"><div class="c"><h2 style="margin:0 0 6px">🔐 لوحة التحكم</h2><p style="color:#8fa3d0;font-size:13px;margin:0 0 16px">DunFin Admin</p>
+<input id="pw" type="password" inputmode="numeric" placeholder="كلمة السر" autocomplete="off">
+<div style="height:10px"></div><button id="go" style="width:100%">دخول</button>
+<div id="er" style="color:#e84f4f;font-size:13px;margin-top:10px;min-height:18px"></div></div></div>
+<div id="ap" hidden><header><b>⚡ DunFin — لوحة تحكم الأدمن <span class="bdg">Admin</span></b>
+<div class="st"><span>المستخدمين: <b id="cu">0</b></span><span>إجمالي الأرصدة: <b id="tb">0</b></span><span>آخر تحديث: <b id="lu">-</b></span></div>
+<button class="r" id="out" style="padding:8px 14px;font-size:13px">خروج</button></header>
+<div class="w"><input id="srch" placeholder="🔍 بحث بالاسم / الهاتف / الإيميل / UID...">
+<div id="ld">⏳ جاري تحميل المستخدمين من فيرباس...</div>
+<table id="tb1" hidden><thead><tr><th>#</th><th>المستخدم</th><th>الهاتف</th><th>UID</th><th>الرصيد الحالي</th><th>تعديل الرصيد</th></tr></thead><tbody id="bd"></tbody></table></div></div>
+<div id="ts"></div>
+<script type="module">
+import{initializeApp,getApps}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import{getFirestore,collection,onSnapshot,doc,updateDoc}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+const app=getApps()[0]||initializeApp({apiKey:"AIzaSyBvzfJOOjRFZnTgTUrwEZQPr8Ba7zKKlNg",authDomain:"hhhxh-5ebe4.firebaseapp.com",projectId:"hhhxh-5ebe4",storageBucket:"hhhxh-5ebe4.firebasestorage.app",messagingSenderId:"79243000696",appId:"1:79243000696:web:ee0fb2d2ccce791954e68d"}),db=getFirestore(app),P="12366",$=i=>document.getElementById(i);
+let US=[],Q="";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])),fm=n=>Number(n||0).toLocaleString("en-US",{maximumFractionDigits:8});
+function ts(m,e){const t=$("ts");t.textContent=m;t.className=e?"e":"";t.style.display="block";clearTimeout(t._x);t._x=setTimeout(()=>t.style.display="none",2800)}
+function open(){$("lk").style.display="none";$("ap").hidden=false;start()}
+$("go").onclick=()=>{if($("pw").value===P){sessionStorage.dfAdm=P;open()}else{$("er").textContent="❌ كلمة سر غلط";$("pw").value="";$("pw").focus()}};
+$("pw").onkeydown=e=>e.key==="Enter"&&$("go").click();
+$("out").onclick=()=>{sessionStorage.removeItem("dfAdm");location.reload()};
+$("srch").oninput=e=>{Q=e.target.value.trim().toLowerCase();draw()};
+function start(){onSnapshot(collection(db,"users"),s=>{US=s.docs.map(d=>({id:d.id,...d.data()}));$("ld").style.display="none";$("tb1").hidden=false;$("lu").textContent=new Date().toLocaleTimeString("ar-EG");draw()},e=>{$("ld").textContent="❌ خطأ: "+e.message})}
+function draw(){const L=US.filter(u=>!Q||(u.name||"").toLowerCase().includes(Q)||(u.phone||"").includes(Q)||(u.email||"").toLowerCase().includes(Q)||u.id.toLowerCase().includes(Q));
+$("cu").textContent=US.length;$("tb").textContent=fm(US.reduce((a,u)=>a+Number(u.balance||0),0));
+$("bd").innerHTML=L.map((u,i)=>`<tr><td>${i+1}</td><td><b>${esc(u.name||"بدون اسم")}</b><small>${esc(u.email||"")}</small></td><td>${esc(u.phone||"-")}</td><td><small>${esc(u.id)}</small></td><td class="bl">${fm(u.balance)}</td>
+<td><div class="ac"><input class="bi" type="number" step="any" id="n${i}" placeholder="الرصيد الجديد"><button class="g" onclick="sv('${u.id}',${i})">حفظ</button><button onclick="ad('${u.id}',${i},1)">+ إضافة</button><button class="r" onclick="ad('${u.id}',${i},-1)">− خصم</button></div></td></tr>`).join("")}
+window.sv=async(id,i)=>{const v=parseFloat($("n"+i).value);if(isNaN(v))return ts("⚠️ اكتب رقم صحيح",1);try{await updateDoc(doc(db,"users",id),{balance:v});ts("✅ تم تعديل الرصيد بنجاح")}catch(e){ts("❌ فشل: "+e.message,1)}};
+window.ad=async(id,i,s)=>{const v=parseFloat($("n"+i).value);if(isNaN(v))return ts("⚠️ اكتب المبلغ في الخانة الأول",1);const u=US.find(x=>x.id===id),nb=Number(u.balance||0)+v*s;try{await updateDoc(doc(db,"users",id),{balance:nb});ts((s>0?"✅ تم إضافة ":"✅ تم خصم ")+fm(v)+" — الرصيد الجديد: "+fm(nb))}catch(e){ts("❌ فشل: "+e.message,1)}};
+if(sessionStorage.dfAdm===P)open();else $("pw").focus();
+</script></body></html>
