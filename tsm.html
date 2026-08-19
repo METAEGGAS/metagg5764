@@ -1,0 +1,155 @@
+<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>لوحة التحكم - DunFin</title><style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Noto Sans Arabic',Tahoma,Arial,sans-serif;-webkit-tap-highlight-color:transparent}body{background:#111;color:#fff;min-height:100vh}
+/* شاشة الرمز السري */
+#lk{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:99}
+#lk h1{font-size:22px;font-weight:700}
+#lk input{background:#1a1a1a;border:1px solid #252525;border-radius:12px;padding:14px 18px;color:#fff;font-size:18px;text-align:center;width:240px;outline:none;letter-spacing:6px}
+#lk button{background:#f0b90b;color:#000;border:0;border-radius:12px;padding:13px 44px;font-size:16px;font-weight:700;cursor:pointer}
+#lk .er{color:#f6465d;font-size:13px;min-height:18px}
+/* الهيكل */
+header{position:sticky;top:0;background:#111;border-bottom:1px solid #252525;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:10}
+header b{font-size:17px}header button{background:#1a1a1a;border:1px solid #252525;color:#ccc;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+nav{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;background:#111;position:sticky;top:53px;z-index:9}
+nav button{flex:0 0 auto;background:#1a1a1a;border:1px solid #252525;color:#9a9a9a;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;white-space:nowrap}
+nav button.on{background:#f0b90b;color:#000;border-color:#f0b90b;font-weight:700}
+main{padding:6px 16px 90px;max-width:1100px;margin:auto}
+/* إحصائيات */
+.sts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:10px 0 18px}
+.st{background:#1a1a1a;border:1px solid #252525;border-radius:14px;padding:14px}
+.st .n{font-size:20px;font-weight:700;color:#f0b90b}.st .l{font-size:12px;color:#9a9a9a;margin-top:4px}
+/* بحث */
+.sr{display:flex;gap:8px;margin-bottom:14px}
+.sr input{flex:1;background:#1a1a1a;border:1px solid #252525;border-radius:10px;padding:10px 14px;color:#fff;font-size:14px;outline:none}
+.sr button{background:#f0b90b;color:#000;border:0;border-radius:10px;padding:0 18px;font-weight:700;cursor:pointer}
+/* بطاقات */
+.cd{background:#1a1a1a;border:1px solid #252525;border-radius:14px;padding:14px;margin-bottom:10px}
+.cd .tp{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.cd .id{font-size:11px;color:#666;direction:ltr;word-break:break-all}
+.cd .nm{font-size:14px;font-weight:700}
+.cd .rw{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed #222}
+.cd .rw:last-child{border:0}.cd .rw span:first-child{color:#9a9a9a}.cd .rw span:last-child{direction:ltr}
+.badge{font-size:11px;padding:3px 10px;border-radius:12px;font-weight:700}
+.b-pend{background:#3a2f0b;color:#f0b90b}.b-ok{background:#0b3a24;color:#2ebd85}.b-no{background:#3a0b16;color:#f6465d}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.btn{border:0;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.btn.ok{background:#2ebd85;color:#000}.btn.no{background:#f6465d;color:#fff}.btn.bl{background:#f0b90b;color:#000}.btn.gy{background:#252525;color:#ccc}
+.empty{text-align:center;color:#666;padding:40px 0;font-size:14px}
+/* دردشات الدعم */
+.chl{display:flex;gap:12px;align-items:center;background:#1a1a1a;border:1px solid #252525;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer}
+.av{width:44px;height:44px;border-radius:50%;background:#f0b90b;color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+.ci{flex:1;min-width:0}.ct{display:flex;justify-content:space-between;align-items:center}.ct b{font-size:14px}
+.tm2{font-size:11px;color:#666}
+.cp{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:3px}
+.cp span{font-size:12px;color:#9a9a9a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.un{background:#f6465d;color:#fff;border-radius:12px;min-width:20px;height:20px;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 6px;font-weight:700}
+.chw{position:fixed;inset:0;background:#111;z-index:60;display:none;flex-direction:column}
+.chw.op{display:flex}
+.chh{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #252525;background:#1a1a1a}
+.chh>button{background:#252525;border:0;color:#fff;border-radius:8px;width:36px;height:36px;font-size:17px;cursor:pointer}
+.chh b{display:block;font-size:14px}
+.idu{font-size:11px;color:#666;direction:ltr;display:block}
+.chb{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:8px;background:#0d0d0d}
+.m{max-width:78%;padding:9px 13px;border-radius:14px;font-size:13px;line-height:1.6;word-break:break-word}
+.m i{display:block;font-size:10px;opacity:.6;margin-top:4px;font-style:normal}
+.mS{align-self:flex-start;background:#f6465d;color:#fff;border-bottom-right-radius:4px}
+.mR{align-self:flex-end;background:#fff;color:#111;border-bottom-left-radius:4px}
+.m img{max-width:200px;border-radius:10px;display:block}
+.chf{display:flex;gap:8px;padding:10px 14px 16px;border-top:1px solid #252525;background:#1a1a1a}
+.chf input{flex:1;background:#111;border:1px solid #252525;border-radius:22px;padding:11px 16px;color:#fff;font-size:14px;outline:none}
+.chf button{background:#f0b90b;color:#000;border:0;border-radius:22px;padding:0 22px;font-weight:700;cursor:pointer}
+/* مودال */
+.md{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.md.op{display:flex}.mb{background:#1a1a1a;border:1px solid #252525;border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:88vh;overflow:auto}
+.mb h3{font-size:16px;margin-bottom:14px;color:#f0b90b}
+.mb label{display:block;font-size:12px;color:#9a9a9a;margin:10px 0 4px}
+.mb input,.mb select{width:100%;background:#111;border:1px solid #252525;border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;outline:none}
+.mb .row{display:flex;gap:10px;margin-top:18px}
+.mb .row button{flex:1;padding:11px;border-radius:10px;font-size:14px}
+#tost{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2ebd85;color:#000;padding:10px 22px;border-radius:12px;font-weight:700;font-size:14px;display:none;z-index:99}
+.lod{text-align:center;padding:30px;color:#f0b90b;font-size:14px}
+</style></head><body>
+<div id="lk"><h1>🔐 لوحة تحكم DunFin</h1><input id="pin" type="password" inputmode="numeric" placeholder="الرمز السري" maxlength="10"><button onclick="go()">دخول</button><div class="er" id="lkE"></div></div>
+<header><b>🛠 لوحة التحكم</b><button onclick="out()">خروج ⎋</button></header>
+<nav id="nv"></nav>
+<main>
+<div class="sts" id="sts"></div>
+<div class="sr"><input id="q" placeholder="بحث برقم UID أو الهاتف..." oninput="render()"><button onclick="load(1)">تحديث ⟳</button></div>
+<div id="list"></div>
+</main>
+<div class="chw" id="chw"><div class="chh"><button onclick="cCh()">→</button><div class="av" id="chA"></div><div><b id="chN"></b><span class="idu" id="chI"></span></div></div><div class="chb" id="chb"></div><div class="chf"><input id="chIn" placeholder="اكتب ردك على المستخدم..."><button onclick="sCh()">إرسال</button></div></div>
+<div class="md" id="md"><div class="mb" id="mbC"></div></div>
+<div id="tost"></div>
+<script type="module">
+import{initializeApp,getApps}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import{getFirestore,collection,doc,getDoc,getDocs,addDoc,setDoc,updateDoc,query,orderBy,serverTimestamp,runTransaction,onSnapshot}from"https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyBvzfJOOjRFZnTgTUrwEZQPr8Ba7zKKlNg",authDomain:"hhhxh-5ebe4.firebaseapp.com",projectId:"hhhxh-5ebe4",storageBucket:"hhhxh-5ebe4.firebasestorage.app",messagingSenderId:"79243000696",appId:"1:79243000696:web:ee0fb2d2ccce791954e68d",measurementId:"G-08BR6LN6PT"};
+const db=getFirestore(getApps()[0]||initializeApp(cfg));
+const PIN="2233",G=id=>document.getElementById(id),fmt=n=>(+n||0).toLocaleString("en-US",{maximumFractionDigits:2}),dt=t=>{if(!t)return"-";let d=t.toDate?t.toDate():new Date(+t||t);return d.toLocaleString("en-GB",{hour12:!1})};
+let tab="users",users=[],wd=[],dep=[],tr=[],chats=[];let chUn=null,chUid=null;
+/* دخول */
+window.go=()=>{if(G("pin").value.trim()===PIN){sessionStorage.setItem("dfAdm","1");G("lk").style.display="none";init()}else G("lkE").textContent="الرمز السري غير صحيح"};
+G("pin").addEventListener("keydown",e=>e.key==="Enter"&&go());
+window.out=()=>{sessionStorage.removeItem("dfAdm");location.reload()};
+if(sessionStorage.getItem("dfAdm")==="1"){G("lk").style.display="none";init()}
+/* التبويبات */
+const TABS=[["users","المستخدمون 👥"],["wd","السحوبات 💸"],["dep","الإبداعات (الإيداع) ⚡"],["tr","الصفقات 📈"],["chats","الدردشات 💬"]];
+function init(){G("nv").innerHTML=TABS.map(t=>`<button data-t="${t[0]}" onclick="sw('${t[0]}')">${t[1]}</button>`).join("");sw("users")}
+window.sw=t=>{tab=t;document.querySelectorAll("#nv button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));load()};
+/* تحميل */
+window.load=async r=>{G("list").innerHTML='<div class="lod">جارٍ التحميل...</div>';try{
+if(tab==="users")users=(await getDocs(collection(db,"users"))).docs.map(d=>({id:d.id,...d.data()}));
+else if(tab==="wd"){wd=[];for(let u of users.length?users:(await getDocs(collection(db,"users"))).docs.map(d=>({id:d.id,...d.data()}))){if(!users.length)users.push(u);let s=await getDocs(query(collection(db,"users",u.id,"سحب"),orderBy("createdAt","desc"))).catch(()=>null);s&&s.docs.forEach(d=>wd.push({rid:d.id,uid:u.id,phone:u.phone,...d.data()}))}}
+else if(tab==="dep"){dep=[];if(!users.length)users=(await getDocs(collection(db,"users"))).docs.map(d=>({id:d.id,...d.data()}));for(let u of users){let s=await getDocs(query(collection(db,"users",u.id,"ايداع"),orderBy("createdAt","desc"))).catch(()=>null);s&&s.docs.forEach(d=>dep.push({rid:d.id,uid:u.id,phone:u.phone,...d.data()}))}}
+else if(tab==="chats"){chats=[];if(!users.length)users=(await getDocs(collection(db,"users"))).docs.map(d=>({id:d.id,...d.data()}));for(let u of users){let s=await getDocs(query(collection(db,"users",u.id,"customerService"),orderBy("ts","desc"))).catch(()=>null);if(s&&s.docs.length){let ms=s.docs.map(d=>d.data()),last=ms[0],un=ms.filter(m=>m.sender==="user"&&!m.readByAdmin).length;chats.push({uid:u.id,phone:u.phone,last,un})}}chats.sort((a,b)=>(b.last.ts||0)-(a.last.ts||0));let tb=document.querySelector('#nv button[data-t="chats"]');if(tb){let tot=chats.reduce((x,c)=>x+c.un,0);tb.textContent="الدردشات 💬"+(tot?` (${tot})`:"")}}
+else{tr=[];if(!users.length)users=(await getDocs(collection(db,"users"))).docs.map(d=>({id:d.id,...d.data()}));for(let u of users){let s=await getDocs(query(collection(db,"users",u.id,"trades"),orderBy("ts","desc"))).catch(()=>null);s&&s.docs.forEach(d=>tr.push({rid:d.id,uid:u.id,phone:u.phone,...d.data()}))}}
+stats();render()}catch(e){console.error(e);G("list").innerHTML='<div class="empty">تعذر التحميل — تحقق من الصلاحيات</div>'}};
+function stats(){let pend=a=>a.filter(x=>(x.status||"pending")==="pending").length;
+G("sts").innerHTML=[["المستخدمون",users.length],["سحوبات معلّقة",pend(wd)],["إيداعات معلّقة",pend(dep)],["إجمالي الأرصدة",fmt(users.reduce((s,u)=>s+(+u.balance||0),0))+" USDT"]].map(s=>`<div class="st"><div class="n">${s[1]}</div><div class="l">${s[0]}</div></div>`).join("")}
+const fl=a=>{let q=G("q").value.trim().toLowerCase();return q?a.filter(x=>(x.id||x.uid||"").toLowerCase().includes(q)||(x.phone||"").toLowerCase().includes(q)):a};
+const bd=s=>{s=(s||"pending")+"";return s==="pending"?'<span class="badge b-pend">قيد المعالجة</span>':["approved","ok","completed","success","done","مكتمل"].includes(s)?'<span class="badge b-ok">مكتمل</span>':'<span class="badge b-no">مرفوض</span>'};
+/* عرض */
+window.render=()=>{
+if(tab==="users"){let a=fl(users);G("list").innerHTML=a.length?a.map(u=>`<div class="cd"><div class="tp"><span class="nm">${u.phone||u.name||"مستخدم"}</span><span class="id">${u.id}</span></div>
+${["balance|الرصيد (USDT)","usdtAvail|المتاح","usdtFreeze|المجمّد","accounttrade|حساب التداول","usdtTotal|الإجمالي","profitday|ربح اليوم","createdAt|تاريخ التسجيل"].map(f=>{let[k,l]=f.split("|");return`<div class="rw"><span>${l}</span><span>${k==="createdAt"?dt(u[k]):fmt(u[k])}</span></div>`}).join("")}
+<div class="acts"><button class="btn bl" onclick="mBal('${u.id}')">💰 إضافة / تعديل رصيد</button><button class="btn gy" onclick="mWd('${u.id}')">💸 تقديم طلب سحب</button><button class="btn gy" onclick="q='${u.id}';G('q').value='${u.id}';sw('wd')">سحوباته</button></div></div>`).join(""):'<div class="empty">لا توجد بيانات بعد</div>'}
+else if(tab==="wd"){let a=fl(wd);G("list").innerHTML=a.length?a.map(r=>`<div class="cd"><div class="tp"><span class="nm">${r.phone||r.uid}</span>${bd(r.status)}</div>
+${["amount|المبلغ","received|المستلم","fee|العمولة","coin|العملة","chain|الشبكة","address|العنوان","createdAt|الوقت"].map(f=>{let[k,l]=f.split("|");return`<div class="rw"><span>${l}</span><span>${k==="createdAt"?dt(r[k]):r[k]??"-"}</span></div>`}).join("")}
+${(r.status||"pending")==="pending"?`<div class="acts"><button class="btn ok" onclick="okWd('${r.uid}','${r.rid}')">✔ قبول</button><button class="btn no" onclick="noWd('${r.uid}','${r.rid}',${+r.amount||0})">✖ رفض + استرداد</button></div>`:""}</div>`).join(""):'<div class="empty">لا توجد سحوبات بعد</div>'}
+else if(tab==="dep"){let a=fl(dep);G("list").innerHTML=a.length?a.map(r=>`<div class="cd"><div class="tp"><span class="nm">${r.phone||r.uid}</span>${bd(r.status)}</div>
+${["amount|المبلغ","currency|العملة","network|الشبكة","address|العنوان","createdAt|الوقت"].map(f=>{let[k,l]=f.split("|");return`<div class="rw"><span>${l}</span><span>${k==="createdAt"?dt(r[k]):r[k]??"-"}</span></div>`}).join("")}
+${(r.status||"pending")==="pending"?`<div class="acts"><button class="btn ok" onclick="okDep('${r.uid}','${r.rid}',${+r.amount||0})">✔ قبول + شحن الرصيد</button><button class="btn no" onclick="noDep('${r.uid}','${r.rid}')">✖ رفض</button></div>`:""}</div>`).join(""):'<div class="empty">لا توجد إيداعات بعد</div>'}
+else if(tab==="chats"){let a=fl(chats);G("list").innerHTML=a.length?a.map(c=>{let l=c.last,t=l.type==="image"?"📷 صورة":String(l.text||"");t=t.length>42?t.slice(0,42)+"…":t;return`<div class="chl" onclick="oCh('${c.uid}')"><div class="av">${String(c.phone||c.uid||"؟")[0]}</div><div class="ci"><div class="ct"><b>${c.phone||c.uid}</b><span class="tm2">${dt(l.ts||l.createdAt)}</span></div><div class="cp"><span>${(l.sender==="bot"?"✓ ":"")+t.replace(/</g,"&lt;")}</span>${c.un?`<b class="un">${c.un}</b>`:""}</div></div></div>`}).join(""):'<div class="empty">لا توجد دردشات دعم بعد</div>'}
+else{let a=fl(tr);G("list").innerHTML=a.length?a.map(r=>`<div class="cd"><div class="tp"><span class="nm">${r.pair||"صفقة"} — ${r.dir==="call"?"⬆ اتصل":"⬇ ضع"}</span>${bd(r.status==="won"?"approved":r.status==="lost"?"rejected":"pending")}</div>
+${["amt|المبلغ","profit|الربح %","mode|الوضع","cycle|الدورة","ts|الوقت"].map(f=>{let[k,l]=f.split("|");return`<div class="rw"><span>${l}</span><span>${k==="ts"?dt(r[k]):r[k]??"-"}</span></div>`}).join("")}</div>`).join(""):'<div class="empty">لا توجد صفقات بعد</div>'}};
+/* قبول/رفض سحب */
+window.okWd=async(u,r)=>{await updateDoc(doc(db,"users",u,"سحب",r),{status:"approved",statusText:"مكتمل",completed:!0,handledAt:serverTimestamp()});toast("تم قبول السحب ✔");load()};
+window.noWd=async(u,r,am)=>{try{await runTransaction(db,async t=>{let ref=doc(db,"users",u),s=await t.get(ref),b=+(s.data()?.balance)||0;t.update(doc(db,"users",u,"سحب",r),{status:"rejected",statusText:"مرفوض",rejected:!0,refunded:!0,handledAt:serverTimestamp()});t.set(ref,{balance:b+am},{merge:!0})});toast("تم الرفض واسترداد المبلغ ✖")}catch(e){toast("تعذر التنفيذ",1)}load()};
+/* قبول/رفض إيداع */
+window.okDep=async(u,r,am)=>{try{await runTransaction(db,async t=>{let ref=doc(db,"users",u),s=await t.get(ref),d=s.data()||{},b=+(d.balance)||0,tot=+(d.usdtTotal)||b;t.update(doc(db,"users",u,"ايداع",r),{status:"approved",statusText:"مكتمل",completed:!0,handledAt:serverTimestamp()});t.set(ref,{balance:b+am,usdtAvail:+(d.usdtAvail||b)+am,usdtTotal:tot+am},{merge:!0})});toast("تم القبول وشحن الرصيد ✔")}catch(e){toast("تعذر التنفيذ",1)}load()};
+window.noDep=async(u,r)=>{await updateDoc(doc(db,"users",u,"ايداع",r),{status:"rejected",statusText:"مرفوض",rejected:!0,handledAt:serverTimestamp()});toast("تم رفض الإيداع ✖");load()};
+/* مودال تعديل الرصيد */
+window.mBal=u=>{let x=users.find(a=>a.id===u)||{};G("mbC").innerHTML=`<h3>💰 تعديل رصيد — ${x.phone||u}</h3>
+<label>الحقل</label><select id="fF"><option value="balance">الرصيد balance</option><option value="accounttrade">حساب التداول accounttrade</option><option value="usdtAvail">المتاح usdtAvail</option><option value="usdtFreeze">المجمّد usdtFreeze</option><option value="usdtTotal">الإجمالي usdtTotal</option><option value="profitday">ربح اليوم profitday</option></select>
+<label>العملية</label><select id="fO"><option value="set">تعيين قيمة جديدة</option><option value="add">إضافة (+)</option><option value="sub">خصم (−)</option></select>
+<label>المبلغ (USDT)</label><input id="fV" type="number" inputmode="decimal" placeholder="0.00">
+<div class="row"><button class="btn gy" onclick="cm()">إلغاء</button><button class="btn bl" onclick="svBal('${u}')">حفظ</button></div>`;G("md").classList.add("op")};
+window.svBal=async u=>{let v=+G("fV").value;if(isNaN(v))return toast("أدخل مبلغاً صحيحاً",1);let f=G("fF").value,o=G("fO").value;
+try{await runTransaction(db,async t=>{let ref=doc(db,"users",u),s=await t.get(ref),cur=+(s.data()?.[f])||0,nv=o==="set"?v:o==="add"?cur+v:Math.max(0,cur-v),p={[f]:nv};if(f==="balance")p.usdtAvail=nv,p.usdtTotal=nv+ +(s.data()?.accounttrade||0);t.set(ref,p,{merge:!0})});toast("تم حفظ الرصيد ✔");cm();load()}catch(e){toast("تعذر الحفظ",1)}};
+/* مودال تقديم سحب نيابة عن مستخدم */
+window.mWd=u=>{G("mbC").innerHTML=`<h3>💸 طلب سحب نيابةً عن المستخدم</h3>
+<label>العملة</label><select id="wC"><option>USDT</option><option>USDC</option><option>BTC</option><option>ETH</option></select>
+<label>الشبكة</label><select id="wN"><option>TRC20</option><option>ERC20</option><option>BEP20</option></select>
+<label>عنوان المحفظة</label><input id="wA" placeholder="T... / 0x..." style="direction:ltr">
+<label>المبلغ (USDT)</label><input id="wM" type="number" inputmode="decimal" placeholder="40">
+<div class="row"><button class="btn gy" onclick="cm()">إلغاء</button><button class="btn bl" onclick="svWd('${u}')">تقديم الطلب</button></div>`;G("md").classList.add("op")};
+window.svWd=async u=>{let a=+G("wM").value,ad=G("wA").value.trim();if(!ad)return toast("أدخل العنوان",1);if(!a||a<=0)return toast("أدخل مبلغاً صحيحاً",1);
+try{await runTransaction(db,async t=>{let ref=doc(db,"users",u),s=await t.get(ref),b=+(s.data()?.balance)||0;if(a>b)throw Error("low");t.set(ref,{balance:b-a},{merge:!0})});
+await addDoc(collection(db,"users",u,"سحب"),{uid:u,mode:"real",section:"سحب",type:"withdraw",name:"سحب",coin:G("wC").value,chain:G("wN").value,address:ad,amount:a,fee:+(a*.01).toFixed(2),received:+(a*.99).toFixed(2),status:"pending",statusText:"قيد المعالجة",refunded:!1,byAdmin:!0,createdAt:serverTimestamp()});
+toast("تم تقديم طلب السحب ويظهر في حساب المستخدم ✔");cm();load()}catch(e){toast(e.message==="low"?"الرصيد غير كافٍ":"تعذر تنفيذ الطلب",1)}};
+window.oCh=u=>{chUid=u;let c=chats.find(x=>x.uid===u)||{};G("chN").textContent=c.phone||u;G("chI").textContent=u;G("chA").textContent=String(c.phone||u)[0]||"؟";G("chw").classList.add("op");chUn&&chUn();chUn=onSnapshot(query(collection(db,"users",u,"customerService"),orderBy("ts","asc")),async q=>{G("chb").innerHTML=q.docs.length?q.docs.map(d=>{let m=d.data();return`<div class="m ${m.sender==="user"?"mR":"mS"}">${m.type==="image"&&m.image?`<img src="${m.image}">`:String(m.text||"").replace(/</g,"&lt;").replace(/\n/g,"<br>")}<i>${dt(m.ts||m.createdAt)}</i></div>`}).join(""):'<div class="empty">لا توجد رسائل — ابدأ المحادثة</div>';G("chb").scrollTop=G("chb").scrollHeight;for(let d of q.docs){let m=d.data();m.sender==="user"&&!m.readByAdmin&&updateDoc(doc(db,"users",u,"customerService",d.id),{readByAdmin:!0}).catch(()=>{})}},e=>console.error(e))};
+window.cCh=()=>{chUn&&chUn();chUn=null;chUid=null;G("chw").classList.remove("op");load()};
+window.sCh=async()=>{let v=G("chIn").value.trim();if(!v||!chUid)return;G("chIn").value="";try{await addDoc(collection(db,"users",chUid,"customerService"),{uid:chUid,ts:Date.now(),createdAt:serverTimestamp(),sender:"bot",type:"text",text:v,fromAdmin:!0,readByAdmin:!0});toast("تم إرسال الرد ✔")}catch(e){toast("تعذر الإرسال",1)}};
+G("chIn").addEventListener("keydown",e=>e.key==="Enter"&&sCh());
+window.cm=()=>G("md").classList.remove("op");
+window.toast=(m,b)=>{let t=G("tost");t.textContent=m;t.style.background=b?"#f6465d":"#2ebd85";t.style.color=b?"#fff":"#000";t.style.display="block";setTimeout(()=>t.style.display="none",2400)};
+</script></body></html>
